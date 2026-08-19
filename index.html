@@ -1,0 +1,2646 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOYOTA GA4 COMMAND — toyota.jp デジタル計測ボード</title>
+<meta name="description" content="トヨタ toyota.jp の GA4 データを車種×商材×動線×オーディエンス×広告でクロス分析するゲームUIダッシュボード（デモデータ）">
+<meta property="og:title" content="TOYOTA GA4 COMMAND">
+<meta property="og:description" content="車種・商材・動線・再訪・アフィニティ・広告トラッキングを1画面でクロス分析">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2300E5C7'/><text x='50' y='68' font-size='52' text-anchor='middle' font-family='monospace' font-weight='800' fill='%23041220'>T</text></svg>">
+<style>
+/* ============ TOYOTA GA4 COMMAND — デザインシステム ============ */
+:root{
+  --bg:#070C15; --bg2:#0A1120; --card:#0D1626; --card2:#111C2E; --card3:#15223A;
+  --line:#1B2A42; --line2:#28395A;
+  --tx:#E9EFF8; --tx2:#A5B6CE; --mut:#647694;
+  --cy:#38BDF8; --te:#00E5C7; --am:#FFB020; --rd:#FF5A76; --pu:#A78BFA; --gn:#34D399; --gd:#FFD84D;
+  /* 検証済みカテゴリカル8色（ダーク面用） */
+  --c1:#3987E5; --c2:#D95926; --c3:#199E70; --c4:#C98500; --c5:#D55181; --c6:#008300; --c7:#9085E9; --c8:#E66767;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --shadow:0 14px 40px rgba(2,8,20,.55);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:
+    radial-gradient(1100px 520px at 12% -10%, rgba(56,189,248,.10), transparent 60%),
+    radial-gradient(900px 480px at 88% -14%, rgba(0,229,199,.07), transparent 60%),
+    var(--bg);
+  color:var(--tx);
+  font-family:'BIZ UDPGothic','BIZ UDGothic','Hiragino Sans','Noto Sans JP',Meiryo,sans-serif;
+  font-size:13.5px; line-height:1.75; -webkit-font-smoothing:antialiased;
+}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(56,189,248,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.028) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(1200px 800px at 50% 0%,#000 30%,transparent 80%);
+  -webkit-mask-image:radial-gradient(1200px 800px at 50% 0%,#000 30%,transparent 80%);}
+a{color:var(--cy);text-decoration:none}
+a:hover{text-decoration:underline}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+
+/* ---------- アプリ骨格 ---------- */
+.app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh;position:relative;z-index:1}
+@media(max-width:980px){.app{grid-template-columns:1fr}.app>.side{display:none;position:fixed;z-index:80;width:250px;height:100vh}.menubtn{display:inline-flex!important}}
+
+/* ---------- サイドバー ---------- */
+.side{background:linear-gradient(180deg,#0A1322 0%,#080E1A 100%);border-right:1px solid var(--line);
+  padding:20px 0 24px;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 18px 14px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand .logo{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;
+  background:linear-gradient(135deg,var(--cy),var(--te));box-shadow:0 0 18px rgba(0,229,199,.35);
+  color:#04121C;font-family:var(--mono);font-weight:800;font-size:15px}
+.brand .t1{font-weight:700;font-size:14.5px;letter-spacing:.14em}
+.brand .t2{font-size:10px;color:var(--mut);letter-spacing:.22em;font-family:var(--mono)}
+.sgroup{padding:10px 18px 4px;font-size:9.5px;letter-spacing:.24em;color:var(--mut);font-family:var(--mono)}
+.nav{display:flex;flex-direction:column}
+.nav button{all:unset;cursor:pointer;display:flex;align-items:center;gap:11px;padding:9.5px 18px;color:var(--tx2);
+  border-left:3px solid transparent;font-size:13px;transition:background .18s,color .18s}
+.nav button svg{width:17px;height:17px;flex:0 0 auto;opacity:.8}
+.nav button:hover{background:rgba(56,189,248,.06);color:var(--tx)}
+.nav button.on{background:linear-gradient(90deg,rgba(0,229,199,.13),transparent 78%);border-left-color:var(--te);color:#fff;font-weight:700}
+.nav button.on svg{opacity:1}
+.nav .lv{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--mut);letter-spacing:.06em}
+.sfoot{margin-top:auto;padding:14px 18px 0;border-top:1px solid var(--line);font-size:10.5px;color:var(--mut);line-height:1.9}
+.sfoot a{color:var(--tx2)}
+
+/* ---------- トップバー ---------- */
+.main{min-width:0;padding-bottom:70px}
+.top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:11px 24px;border-bottom:1px solid var(--line);
+  background:rgba(7,12,21,.78);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5)}
+.menubtn{display:none;align-items:center;gap:6px;cursor:pointer;border:1px solid var(--line2);border-radius:8px;padding:5px 10px;color:var(--tx2);background:var(--card)}
+.crumb{display:flex;align-items:center;gap:9px;font-size:13px}
+.crumb b{font-size:14.5px;letter-spacing:.02em}
+.crumb .dm{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--am);
+  border:1px solid color-mix(in srgb,var(--am) 45%,transparent);border-radius:6px;padding:1.5px 7px;
+  background:color-mix(in srgb,var(--am) 10%,transparent)}
+.seg,.rng{display:flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;background:var(--card)}
+.seg button,.rng button{all:unset;cursor:pointer;padding:6px 13px;font-size:12px;color:var(--tx2);border-right:1px solid var(--line);transition:.18s}
+.seg button:last-child,.rng button:last-child{border-right:0}
+.seg button:hover,.rng button:hover{color:var(--tx);background:rgba(56,189,248,.07)}
+.seg button.on{background:linear-gradient(135deg,rgba(56,189,248,.22),rgba(0,229,199,.18));color:#fff;font-weight:700;text-shadow:0 0 12px rgba(0,229,199,.5)}
+.rng button.on{background:linear-gradient(135deg,rgba(56,189,248,.22),rgba(0,229,199,.18));color:#fff;font-weight:700}
+.top .sp{flex:1}
+.period{font-family:var(--mono);font-size:11px;color:var(--tx2);letter-spacing:.02em}
+.live{display:flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:9px;padding:5.5px 12px;background:var(--card)}
+.live .dot{width:8px;height:8px;border-radius:50%;background:var(--gn);box-shadow:0 0 10px var(--gn);animation:pulse 1.8s infinite}
+.live .n{font-family:var(--mono);font-weight:800;font-size:13px;color:var(--gn)}
+.live .l{font-size:10px;color:var(--mut)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.kbtn{display:flex;align-items:center;gap:7px;cursor:pointer;border:1px solid var(--line2);border-radius:9px;padding:5.5px 12px;background:var(--card);color:var(--mut);font-size:11.5px;transition:.18s}
+.kbtn:hover{color:var(--tx);border-color:var(--cy)}
+.kbtn b{font-family:var(--mono);font-size:10px;border:1px solid var(--line2);border-radius:5px;padding:0 5px;color:var(--tx2)}
+
+/* ---------- ビュー共通 ---------- */
+.view{display:none;padding:22px 24px 10px;max-width:1560px;margin:0 auto}
+.view.on{display:block;animation:vin .45s var(--ease)}
+@keyframes vin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.vhead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:4px 0 16px}
+.vhead .sector{font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:var(--te)}
+.vhead h1{font-size:21px;letter-spacing:.03em}
+.vhead .desc{font-size:12px;color:var(--mut)}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}
+.card{grid-column:span 12;background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:15px;padding:18px 20px;min-width:0;transition:border-color .25s,transform .25s,box-shadow .25s}
+.card:hover{border-color:var(--line2)}
+.card.glow:hover{border-color:color-mix(in srgb,var(--cy) 45%,var(--line));box-shadow:0 0 0 1px color-mix(in srgb,var(--cy) 18%,transparent),var(--shadow);transform:translateY(-2px)}
+.s3{grid-column:span 3}.s4{grid-column:span 4}.s5{grid-column:span 5}.s6{grid-column:span 6}.s7{grid-column:span 7}.s8{grid-column:span 8}.s9{grid-column:span 9}.s12{grid-column:span 12}
+@media(max-width:1280px){.s3{grid-column:span 6}.s4{grid-column:span 6}.s5{grid-column:span 12}.s6{grid-column:span 12}.s7{grid-column:span 12}.s8{grid-column:span 12}.s9{grid-column:span 12}}
+@media(max-width:760px){.s3,.s4{grid-column:span 12}.view{padding:16px 14px}}
+.ct{display:flex;align-items:center;gap:10px;margin-bottom:13px;flex-wrap:wrap}
+.ct .bar{width:4px;height:16px;border-radius:2px;background:var(--te);box-shadow:0 0 8px rgba(0,229,199,.6)}
+.ct h3{font-size:14px;letter-spacing:.02em}
+.ct .sub{font-size:11px;color:var(--mut)}
+.ct .r{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.chart{width:100%;min-height:320px}
+.chart.tall{min-height:560px}
+.chart.mid{min-height:260px}
+.chart.short{min-height:210px}
+
+/* ---------- チップ・バッジ ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:999px;padding:3px 11px;font-size:11px;color:var(--tx2);cursor:pointer;transition:.18s;background:var(--card)}
+.chip:hover{color:var(--tx);border-color:var(--cy)}
+.chip.on{background:linear-gradient(135deg,rgba(56,189,248,.24),rgba(0,229,199,.2));color:#fff;border-color:color-mix(in srgb,var(--te) 55%,transparent);font-weight:700}
+.chip .sw{width:9px;height:9px;border-radius:3px}
+.tag{display:inline-flex;align-items:center;border-radius:6px;padding:1px 8px;font-size:10.5px;font-weight:700;letter-spacing:.03em}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1.5px 9px;font-size:11px;font-family:var(--mono);font-weight:700}
+.pill.up{color:var(--gn);background:color-mix(in srgb,var(--gn) 13%,transparent)}
+.pill.down{color:var(--rd);background:color-mix(in srgb,var(--rd) 13%,transparent)}
+.pill.flat{color:var(--tx2);background:rgba(255,255,255,.06)}
+.hexwrap{display:flex;flex-direction:column;align-items:center;gap:3px}
+.hex{width:46px;height:52px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);display:grid;place-items:center;font-family:var(--mono);font-weight:800;font-size:20px;color:#04121C}
+.hex.S{background:linear-gradient(160deg,#FFE785,var(--gd) 55%,#E4A900);box-shadow:0 0 22px rgba(255,216,77,.5);animation:shine 2.6s ease-in-out infinite}
+.hex.A{background:linear-gradient(160deg,#7FF7E3,var(--te) 60%,#00A88F)}
+.hex.B{background:linear-gradient(160deg,#8ED7FF,var(--cy) 60%,#1683BF)}
+.hex.C{background:linear-gradient(160deg,#C4D2E4,#94A3B8 60%,#5F7186)}
+.hex.sm{width:30px;height:34px;font-size:13px}
+@keyframes shine{0%,100%{filter:brightness(1)}50%{filter:brightness(1.22)}}
+.hexlabel{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;color:var(--mut)}
+.medal{font-family:var(--mono);font-weight:800;font-size:12px;width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center}
+.medal.m1{background:linear-gradient(150deg,#FFE785,#E4A900);color:#3A2A00;box-shadow:0 0 12px rgba(255,216,77,.45)}
+.medal.m2{background:linear-gradient(150deg,#E7EEF7,#9FB0C4);color:#26313F}
+.medal.m3{background:linear-gradient(150deg,#F0B98A,#B26B31);color:#3A2005}
+.medal.mx{background:var(--card3);color:var(--mut);font-weight:700}
+
+/* ---------- 蛍光ペン・インサイト ---------- */
+.hl{background:linear-gradient(transparent 58%,rgba(255,216,77,.38) 58%);font-weight:700;padding:0 1px}
+.hl-b{background:linear-gradient(transparent 58%,rgba(56,189,248,.34) 58%);font-weight:700;padding:0 1px}
+.hl-g{background:linear-gradient(transparent 58%,rgba(52,211,153,.32) 58%);font-weight:700;padding:0 1px}
+.hl-r{background:linear-gradient(transparent 58%,rgba(255,90,118,.32) 58%);font-weight:700;padding:0 1px}
+.insight{border-left:4px solid var(--te);background:color-mix(in srgb,var(--te) 7%,var(--card));border-radius:0 12px 12px 0;padding:13px 17px;font-size:12.8px;line-height:2.0}
+.insight.warn{border-left-color:var(--am);background:color-mix(in srgb,var(--am) 7%,var(--card))}
+.insight.crit{border-left-color:var(--rd);background:color-mix(in srgb,var(--rd) 7%,var(--card))}
+.insight .it{font-family:var(--mono);font-size:9.5px;letter-spacing:.24em;color:var(--te);display:block;margin-bottom:4px}
+.insight.warn .it{color:var(--am)}
+.insight.crit .it{color:var(--rd)}
+.insight p+p{margin-top:5px}
+
+/* ---------- HQ：ヒーロー ---------- */
+.hero{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+.ringwrap{display:flex;align-items:center;gap:20px}
+.ring{width:148px;height:148px;flex:0 0 auto;display:grid;place-items:center;position:relative}
+.ring svg{width:148px;height:148px;transform:rotate(-90deg)}
+.ring .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+.ring .sc{font-family:var(--mono);font-weight:800;font-size:37px;letter-spacing:-.04em;line-height:1;
+  background:linear-gradient(135deg,var(--cy),var(--te));-webkit-background-clip:text;background-clip:text;color:transparent}
+.ring .lb{font-family:var(--mono);font-size:8.5px;letter-spacing:.26em;color:var(--mut);margin-top:5px}
+.hero .hmeta{flex:1;min-width:240px}
+.hero .hrow1{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin-bottom:7px}
+.hero h2{font-size:17px}
+.lvl{display:flex;align-items:center;gap:9px;margin:9px 0 4px}
+.lvl .lvn{font-family:var(--mono);font-size:12px;font-weight:800;color:var(--gd)}
+.xp{flex:1;max-width:330px;height:9px;border-radius:6px;background:var(--card3);overflow:hidden;border:1px solid var(--line)}
+.xp i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--cy),var(--te));box-shadow:0 0 12px rgba(0,229,199,.55);position:relative;overflow:hidden}
+.xp i::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.5) 50%,transparent 70%);animation:sweep 2.4s linear infinite;transform:translateX(-100%)}
+@keyframes sweep{to{transform:translateX(100%)}}
+.xp.small{height:7px;max-width:none}
+.hero .hnote{font-size:12px;color:var(--tx2);line-height:1.9}
+.qlog{margin-top:12px;border-top:1px dashed var(--line);padding-top:9px;display:flex;flex-direction:column;gap:4.5px}
+.qhead{font-family:var(--mono);font-size:9px;letter-spacing:.22em;color:var(--mut);margin-bottom:2px}
+.qrow{display:flex;gap:10px;font-size:11.5px;color:var(--tx2);align-items:center}
+.qrow .qd{color:var(--mut);font-size:10px;flex:0 0 auto}
+.qrow .qeff{margin-left:auto;color:var(--am);font-size:10.5px;font-weight:700}
+
+/* ---------- ミッション ---------- */
+.mission{display:flex;flex-direction:column;gap:11px}
+.mrow{display:flex;align-items:center;gap:13px;padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:var(--card2);transition:.2s}
+.mrow:hover{border-color:var(--line2);transform:translateX(3px)}
+.mrow .mic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto;background:var(--card3)}
+.mrow .mic svg{width:17px;height:17px}
+.mrow .mm{flex:1;min-width:0}
+.mrow .mt{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.mrow .mt b{font-size:12.5px}
+.mrow .mnum{font-family:var(--mono);font-size:11px;color:var(--tx2)}
+.mrow .st{font-size:10px;font-weight:700;border-radius:6px;padding:1px 8px;flex:0 0 auto;display:flex;align-items:center;gap:4px}
+.st.ahead{color:var(--gn);background:color-mix(in srgb,var(--gn) 13%,transparent)}
+.st.ontrack{color:var(--cy);background:color-mix(in srgb,var(--cy) 13%,transparent)}
+.st.behind{color:var(--rd);background:color-mix(in srgb,var(--rd) 14%,transparent)}
+.mbar{height:7px;border-radius:5px;background:var(--card3);overflow:hidden;margin-top:6px;position:relative}
+.mbar i{display:block;height:100%;border-radius:5px}
+.mbar .pace{position:absolute;top:-2px;bottom:-2px;width:2px;background:rgba(255,255,255,.55);border-radius:2px}
+.mbar i.ahead{background:linear-gradient(90deg,#0FB98B,var(--gn))}
+.mbar i.ontrack{background:linear-gradient(90deg,#1D8FD6,var(--cy))}
+.mbar i.behind{background:linear-gradient(90deg,#D6456B,var(--rd))}
+
+/* ---------- KPIタイル ---------- */
+.kpi{grid-column:span 2;background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:14px;padding:14px 16px 11px;min-width:0;position:relative;overflow:hidden;transition:.22s}
+.kpi:hover{border-color:color-mix(in srgb,var(--cy) 40%,var(--line));transform:translateY(-2px)}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--cy),var(--te))}
+@media(max-width:1280px){.kpi{grid-column:span 4}}
+@media(max-width:760px){.kpi{grid-column:span 6}}
+.kpi .kl{font-size:10.5px;color:var(--mut);letter-spacing:.06em;display:flex;align-items:center;gap:6px}
+.kpi .kv{font-family:var(--mono);font-weight:800;font-size:23px;letter-spacing:-.03em;margin:3px 0 1px;color:var(--tx)}
+.kpi .kv small{font-size:12px;color:var(--tx2);font-weight:700;margin-left:1px}
+.kpi .kd{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--mut)}
+.kpi svg.spark{width:100%;height:30px;margin-top:6px;display:block}
+
+/* ---------- テーブル ---------- */
+.twrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:12.3px;min-width:640px}
+th{background:var(--card3);color:var(--tx2);font-size:10.5px;letter-spacing:.05em;text-align:left;padding:9px 12px;white-space:nowrap;border-bottom:1px solid var(--line2);user-select:none}
+th.sortable{cursor:pointer}
+th.sortable:hover{color:var(--cy)}
+th .arrow{font-size:9px;margin-left:3px;color:var(--te)}
+td{padding:8.5px 12px;border-bottom:1px solid var(--line);vertical-align:middle;word-break:break-word}
+tr:last-child td{border-bottom:0}
+tbody tr{transition:background .15s}
+tbody tr:hover td{background:rgba(56,189,248,.05)}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.tbar{display:flex;align-items:center;gap:8px;min-width:130px}
+.tbar .bg{flex:1;height:7px;border-radius:5px;background:var(--card3);overflow:hidden}
+.tbar .bg i{display:block;height:100%;border-radius:5px}
+.mono{font-family:var(--mono);font-size:11px;color:var(--tx2)}
+.utm{font-family:var(--mono);font-size:10.5px;background:var(--card3);border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--cy)}
+
+/* ---------- 車種カード ---------- */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(305px,1fr));gap:14px}
+.mcard{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:15px;padding:15px 17px;cursor:pointer;transition:.24s;position:relative;overflow:hidden;min-width:0}
+.mcard::after{content:"";position:absolute;inset:0;background:radial-gradient(420px 140px at 85% -20%,rgba(56,189,248,.12),transparent 70%);opacity:0;transition:.3s;pointer-events:none}
+.mcard:hover{border-color:color-mix(in srgb,var(--cy) 50%,var(--line));transform:translateY(-3px);box-shadow:var(--shadow)}
+.mcard:hover::after{opacity:1}
+.mcard.tS{border-color:color-mix(in srgb,var(--gd) 38%,var(--line))}
+.mcard .mh{display:flex;align-items:center;gap:10px}
+.mcard .rk{font-family:var(--mono);font-size:10px;color:var(--mut)}
+.mcard .nm{font-weight:700;font-size:15px}
+.mcard .cat{font-size:9.5px;color:var(--tx2);border:1px solid var(--line2);border-radius:5px;padding:0 6px}
+.mcard .mh .hexwrap{margin-left:auto}
+svg.car{width:110px;height:42px;flex:0 0 auto;color:var(--cy)}
+.mcard .carline{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:8px 0 4px}
+.mcard .car{width:120px;height:44px;color:var(--cy);opacity:.85;flex:0 0 auto}
+.mcard.tS .car{color:var(--gd)}
+.mcard .sess{text-align:right}
+.mcard .sess .v{font-family:var(--mono);font-weight:800;font-size:21px;letter-spacing:-.03em}
+.mcard .sess .u{font-size:10px;color:var(--mut)}
+.stat{display:grid;grid-template-columns:64px 1fr 44px;align-items:center;gap:8px;font-size:10.5px;color:var(--tx2);margin-top:5px}
+.stat .sb{height:6px;border-radius:4px;background:var(--card3);overflow:hidden}
+.stat .sb i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--cy),var(--te))}
+.stat .sv{font-family:var(--mono);font-size:10.5px;text-align:right;color:var(--tx)}
+.mcard .mf{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:9px;border-top:1px dashed var(--line);font-size:10.5px;color:var(--mut);flex-wrap:wrap}
+.mcard svg.spark{width:96px;height:26px;margin-left:auto}
+
+/* ---------- ステージゲート（動線） ---------- */
+.gates{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;align-items:stretch}
+@media(max-width:1100px){.gates{grid-template-columns:1fr;gap:8px}.gate::after{display:none}}
+.gate{position:relative;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-right:26px;min-width:0}
+.gate:last-child{margin-right:0}
+.gate::after{content:"";position:absolute;right:-20px;top:50%;width:0;height:0;margin-top:-9px;
+  border-left:13px solid var(--line2);border-top:9px solid transparent;border-bottom:9px solid transparent;z-index:2}
+.gate .gs{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--te)}
+.gate .gn2{font-size:12.5px;font-weight:700;margin:2px 0}
+.gate .gv{font-family:var(--mono);font-weight:800;font-size:19px;letter-spacing:-.02em}
+.gate .gd{font-size:10px;color:var(--mut)}
+.gate .gr{margin-top:7px;display:flex;align-items:center;gap:7px;font-size:10px;color:var(--tx2)}
+.gate.clear{border-color:color-mix(in srgb,var(--gd) 40%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--gd) 9%,var(--card2)),var(--card2))}
+.gate.clear .gs{color:var(--gd)}
+
+/* ---------- コンボ ---------- */
+.combo{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+@media(max-width:900px){.combo{grid-template-columns:repeat(2,1fr)}}
+.cbox{border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:13px 14px;text-align:center;transition:.2s;position:relative;overflow:hidden}
+.cbox:hover{transform:translateY(-2px);border-color:var(--line2)}
+.cbox .cx{font-family:var(--mono);font-weight:800;font-size:15px}
+.cbox .cn{font-size:11px;color:var(--tx2);margin:1px 0 7px}
+.cbox .cv{font-family:var(--mono);font-weight:800;font-size:24px;letter-spacing:-.03em}
+.cbox .cs{font-size:10px;color:var(--mut)}
+.cbox .cbar{height:6px;border-radius:4px;background:var(--card3);margin-top:9px;overflow:hidden}
+.cbox .cbar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--cy),var(--te))}
+.cbox.hot{border-color:color-mix(in srgb,var(--te) 45%,var(--line))}
+.cbox.hot .cx{color:var(--te);text-shadow:0 0 14px rgba(0,229,199,.55)}
+
+/* ---------- VS ---------- */
+.vs{display:grid;grid-template-columns:1fr 74px 1fr;gap:14px;align-items:start}
+@media(max-width:900px){.vs{grid-template-columns:1fr}.vsmid{flex-direction:row!important;padding:6px 0}}
+.vscol{border:1px solid var(--line);border-radius:13px;background:var(--card2);padding:14px 16px;min-width:0}
+.vsmid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding-top:30px}
+.vsmid .vslogo{font-family:var(--mono);font-weight:800;font-size:21px;color:var(--rd);text-shadow:0 0 16px rgba(255,90,118,.6);letter-spacing:.06em}
+.vsrow{display:grid;grid-template-columns:1fr 92px;gap:8px;align-items:center;font-size:11.5px;color:var(--tx2);padding:4.5px 0;border-bottom:1px dashed var(--line)}
+.vsrow:last-child{border-bottom:0}
+.vsrow .vv{font-family:var(--mono);font-weight:700;text-align:right;color:var(--tx)}
+.vsrow.win .vv{color:var(--te)}
+.vsrow.win{background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--te) 7%,transparent))}
+select.sel{background:var(--card3);border:1px solid var(--line2);color:var(--tx);border-radius:8px;padding:6px 10px;font-size:12.5px;font-family:inherit;cursor:pointer;max-width:100%}
+select.sel:focus{outline:1px solid var(--cy)}
+
+/* ---------- ラボ ---------- */
+.labctl{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:13px}
+.labctl .grp{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.labctl .lb{font-size:10px;color:var(--mut);letter-spacing:.14em;font-family:var(--mono)}
+.preset{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+
+/* ---------- モーダル ---------- */
+.modal{position:fixed;inset:0;z-index:90;display:none;align-items:flex-start;justify-content:center;padding:4vh 16px;overflow-y:auto;
+  background:rgba(3,7,14,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.modal.on{display:flex}
+.mbox{width:min(1060px,100%);background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line2);border-radius:18px;padding:22px 24px;box-shadow:var(--shadow);animation:vin .35s var(--ease)}
+.mbox .mhx{display:flex;align-items:center;gap:13px;margin-bottom:13px;flex-wrap:wrap}
+.mbox .close{margin-left:auto;cursor:pointer;border:1px solid var(--line2);border-radius:8px;background:var(--card2);color:var(--tx2);padding:5px 12px;font-size:12px}
+.mbox .close:hover{color:var(--tx);border-color:var(--rd)}
+.mgrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+@media(max-width:860px){.mgrid2{grid-template-columns:1fr}}
+.mcell{border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:12px 14px;min-width:0}
+.mcell h4{font-size:12px;color:var(--tx2);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.mcell h4::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--te)}
+
+/* ---------- コマンドパレット ---------- */
+.cmdk{position:fixed;inset:0;z-index:100;display:none;align-items:flex-start;justify-content:center;padding-top:12vh;background:rgba(3,7,14,.66);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.cmdk.on{display:flex}
+.ckbox{width:min(560px,92vw);background:var(--card);border:1px solid var(--line2);border-radius:15px;overflow:hidden;box-shadow:var(--shadow);animation:vin .25s var(--ease)}
+.ckbox input{width:100%;background:transparent;border:0;outline:0;color:var(--tx);font-size:15px;padding:15px 18px;font-family:inherit;border-bottom:1px solid var(--line)}
+.cklist{max-height:330px;overflow-y:auto;padding:7px}
+.ckitem{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;cursor:pointer;font-size:13px;color:var(--tx2)}
+.ckitem.sel,.ckitem:hover{background:rgba(56,189,248,.1);color:var(--tx)}
+.ckitem .k{font-family:var(--mono);font-size:9.5px;color:var(--mut);margin-left:auto;letter-spacing:.1em}
+
+/* ---------- トースト ---------- */
+.toasts{position:fixed;right:18px;bottom:18px;z-index:120;display:flex;flex-direction:column;gap:9px;max-width:340px}
+.toast{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line2);border-left:3px solid var(--te);border-radius:11px;padding:11px 15px;font-size:12px;box-shadow:var(--shadow);animation:tin .4s var(--ease);line-height:1.7}
+.toast b{color:var(--te)}
+.toast.warn{border-left-color:var(--am)}.toast.warn b{color:var(--am)}
+@keyframes tin{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+.toast.out{opacity:0;transform:translateX(24px);transition:.4s}
+
+/* ---------- フッター ---------- */
+.foot{max-width:1560px;margin:26px auto 0;padding:16px 24px 6px;border-top:1px solid var(--line);font-size:11px;color:var(--mut);line-height:2.1}
+.foot .src{font-size:10px}
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important;transition:none!important}
+  .reveal{opacity:1;transform:none}
+}
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-thumb{background:var(--card3);border-radius:6px;border:2px solid var(--bg)}
+::-webkit-scrollbar-track{background:transparent}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ サイドバー ============ -->
+  <aside class="side">
+    <div class="brand">
+      <div class="logo">T</div>
+      <div>
+        <div class="t1">TOYOTA</div>
+        <div class="t2">GA4 COMMAND</div>
+      </div>
+    </div>
+    <div class="sgroup">COMMAND</div>
+    <nav class="nav" id="nav">
+      <button data-view="hq" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>総合HQ<span class="lv" id="navScore">—</span></button>
+      <button data-view="garage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17h1l1.5-4.5A2 2 0 0 1 7.4 11h9.2a2 2 0 0 1 1.9 1.5L20 17h1"/><circle cx="7.5" cy="17.5" r="1.6"/><circle cx="16.5" cy="17.5" r="1.6"/><path d="M5 11l1-3.2A2 2 0 0 1 7.9 6h8.2a2 2 0 0 1 1.9 1.8L19 11"/></svg>車種ガレージ</button>
+      <button data-view="goods"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7l-8-4-8 4v10l8 4 8-4z"/><path d="M4 7l8 4 8-4"/><path d="M12 11v10"/></svg>商材・CV</button>
+      <button data-view="flow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h6v5H4zM14 3h6v5h-6zM14 13h6v5h-6zM4 15h6v6H4z"/><path d="M10 7h4M10 17h4"/></svg>動線マップ</button>
+      <button data-view="acq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>集客・広告</button>
+      <button data-view="aud"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c.7-3.6 3.3-5.5 6.5-5.5S14.8 16.4 15.5 20"/><circle cx="17" cy="9" r="2.6"/><path d="M16.4 14.6c2.8.2 4.6 1.9 5.1 4.9"/></svg>オーディエンス</button>
+      <button data-view="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v6L4 19a2 2 0 0 0 1.8 3h12.4A2 2 0 0 0 20 19L15 9V3"/><path d="M7 3h10"/><path d="M7.5 14h9"/></svg>クロス分析ラボ</button>
+      <button data-view="dict"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/><path d="M9 7h7M9 11h5"/></svg>計測設計</button>
+    </nav>
+    <div class="sfoot">
+      データ最終日 <span class="num">2026-08-18</span><br>
+      GitHub Actions で日次更新（予定）<br>
+      <span id="footMode">DEMO MODE</span>
+    </div>
+  </aside>
+
+  <!-- ============ メイン ============ -->
+  <div class="main">
+    <header class="top">
+      <span class="menubtn" id="menubtn">☰ メニュー</span>
+      <div class="crumb"><b>toyota.jp</b><span style="color:var(--mut)">／</span><span id="crumbView">総合HQ</span>
+        <span class="dm" title="実データ接続前の合成デモデータで動作中">DEMO DATA</span></div>
+      <div class="rng" id="rngCtl">
+        <button data-r="7">7日</button><button data-r="28" class="on">28日</button><button data-r="90">90日</button>
+      </div>
+      <div class="seg" id="segCtl">
+        <button data-s="all" class="on">全体</button><button data-s="new">新規</button><button data-s="ret">再訪</button>
+      </div>
+      <span class="period" id="periodLbl">—</span>
+      <div class="sp"></div>
+      <div class="live" title="現在サイトにいるユーザー（デモ値）"><span class="dot"></span><span class="n" id="liveN">—</span><span class="l">アクティブ</span></div>
+      <div class="kbtn" id="kbtn">検索・ジャンプ <b>⌘K</b></div>
+    </header>
+
+    <!-- ==== VIEW: 総合HQ ==== -->
+    <section class="view on" data-view="hq">
+      <div class="vhead"><span class="sector">SECTOR 00</span><h1>総合HQ</h1><span class="desc" id="hqDesc">サイト全体の戦況と今月のミッション</span></div>
+      <div class="grid">
+        <div class="card glow s7 reveal" id="heroCard"></div>
+        <div class="card glow s5 reveal">
+          <div class="ct"><span class="bar"></span><h3>8月ミッションボード</h3><span class="sub">月間目標 × 18日経過時点</span></div>
+          <div class="mission" id="missionBox"></div>
+        </div>
+        <div id="kpiRow" style="display:contents"></div>
+        <div class="card glow s8 reveal">
+          <div class="ct"><span class="bar"></span><h3>セッション・CV トレンド</h3><span class="sub" id="trendSub"></span>
+            <div class="r"><span class="chip on" data-tr="both" >両方</span><span class="chip" data-tr="sess">セッション</span><span class="chip" data-tr="cv">CV</span></div></div>
+          <div class="chart" id="chTrend"></div>
+        </div>
+        <div class="card glow s4 reveal">
+          <div class="ct"><span class="bar"></span><h3>チャネル構成</h3><span class="sub">セッションシェア</span></div>
+          <div class="chart" id="chChannelDonut"></div>
+        </div>
+        <div class="card s12 reveal"><div class="insight" id="hqInsight"></div></div>
+      </div>
+    </section>
+
+    <!-- ==== VIEW: 車種ガレージ ==== -->
+    <section class="view" data-view="garage">
+      <div class="vhead"><span class="sector">SECTOR 01</span><h1>車種ガレージ</h1><span class="desc">車種別の集客・転換ステータス（カードをクリックで詳細）</span></div>
+      <div class="grid">
+        <div class="card s12 reveal" style="padding:13px 20px">
+          <div class="ct" style="margin-bottom:0"><span class="bar"></span><h3>ソート・絞り込み</h3>
+            <div class="r" id="garageCtl">
+              <span class="chip on" data-sort="sessions">セッション順</span>
+              <span class="chip" data-sort="cvr">CVR順</span>
+              <span class="chip" data-sort="growth">伸び率順</span>
+              <span style="width:10px"></span>
+              <span class="chip on" data-cat="all">全カテゴリ</span>
+            </div>
+          </div>
+        </div>
+        <div class="s12"><div class="mgrid" id="modelCards"></div></div>
+        <div class="card glow s7 reveal">
+          <div class="ct"><span class="bar"></span><h3>車種マップ</h3><span class="sub">面積=セッション ／ 色=CVR（濃いほど高い）</span></div>
+          <div class="chart" id="chTreemap" style="min-height:380px"></div>
+        </div>
+        <div class="card glow s5 reveal">
+          <div class="ct"><span class="bar"></span><h3>伸び率ランキング</h3><span class="sub">前期間比</span></div>
+          <div class="chart" id="chGrowth" style="min-height:380px"></div>
+        </div>
+        <div class="card s12 reveal">
+          <div class="ct"><span class="bar"></span><h3>車種リーグ表</h3><span class="sub">列見出しクリックでソート</span></div>
+          <div class="twrap"><table id="leagueTable"></table></div>
+        </div>
+        <div class="card s12 reveal"><div class="insight" id="garageInsight"></div></div>
+      </div>
+    </section>
+
+    <!-- ==== VIEW: 商材・CV ==== -->
+    <section class="view" data-view="goods">
+      <div class="vhead"><span class="sector">SECTOR 02</span><h1>商材・CV</h1><span class="desc">新車・中古車・KINTO・サービス・アクセサリーの成果</span></div>
+      <div class="grid">
+        <div id="goodsCards" style="display:contents"></div>
+        <div class="card glow s7 reveal">
+          <div class="ct"><span class="bar"></span><h3>商材 × チャネル</h3><span class="sub">CVの獲得元チャネル内訳</span></div>
+          <div class="chart" id="chGoodsCh"></div>
+        </div>
+        <div class="card glow s5 reveal">
+          <div class="ct"><span class="bar"></span><h3>CV構成</h3><span class="sub">8種のコンバージョン</span></div>
+          <div class="chart" id="chGoalDonut"></div>
+        </div>
+        <div class="card s12 reveal">
+          <div class="ct"><span class="bar"></span><h3>CVスコアボード</h3><span class="sub">前期間比つき</span></div>
+          <div class="grid" id="goalTiles" style="gap:11px"></div>
+        </div>
+        <div class="card glow s6 reveal">
+          <div class="ct"><span class="bar"></span><h3>フォーム到達ファネル</h3>
+            <div class="r" id="funnelGoalCtl"></div></div>
+          <div class="chart" id="chGoalFunnel"></div>
+        </div>
+        <div class="card glow s6 reveal">
+          <div class="ct"><span class="bar"></span><h3>車種 × 主要CV</h3><span class="sub">見積り・試乗・KINTOの獲得マップ</span></div>
+          <div class="chart" id="chModelGoal"></div>
+        </div>
+        <div class="card s12 reveal"><div class="insight" id="goodsInsight"></div></div>
+      </div>
+    </section>
+
+    <!-- ==== VIEW: 動線マップ ==== -->
+    <section class="view" data-view="flow">
+      <div class="vhead"><span class="sector">SECTOR 03</span><h1>動線マップ</h1><span class="desc">流入 → 回遊 → コンバージョンのルート全体図</span></div>
+      <div class="grid">
+        <div class="card s12 reveal">
+          <div class="ct"><span class="bar"></span><h3>ステージクリア状況</h3><span class="sub">左から右へ進むほど深い検討</span></div>
+          <div class="gates" id="gateRow"></div>
+        </div>
+        <div class="card glow s12 reveal">
+          <div class="ct"><span class="bar"></span><h3>サイト内ルートマップ（サンキー図）</h3><span class="sub">帯の太さ=セッション量 ／ ノードをドラッグ可能</span></div>
+          <div class="chart tall" id="chSankey"></div>
+        </div>
+        <div class="card glow s6 reveal">
+          <div class="ct"><span class="bar"></span><h3>ランディング別 その後の行動</h3><span class="sub">入口ページ群ごとの回遊内訳</span></div>
+          <div class="chart" id="chLpNext"></div>
+        </div>
+        <div class="card glow s6 reveal">
+          <div class="ct"><span class="bar"></span><h3>検討ツールの威力</h3><span class="sub">見積りシミュレーター利用有無 × CVR</span></div>
+          <div class="chart" id="chToolPower"></div>
+        </div>
+        <div class="card s12 reveal"><div class="insight" id="flowInsight"></div></div>
+      </div>
+    </section>
+
+    <!-- ==== VIEW: 集客・広告 ==== -->
+    <section class="view" data-view="acq">
+      <div class="vhead"><span class="sector">SECTOR 04</span><h1>集客・広告</h1><span class="desc">チャネル・キャンペーン・トラッキングコード（UTM）の成績</span></div>
+      <div class="grid">
+        <div class="card s12 reveal">
+          <div class="ct"><span class="bar"></span><h3>チャネル成績表</h3><span class="sub" id="acqSub"></span></div>
+          <div class="twrap"><table id="channelTable"></table></div>
+        </div>
+        <div class="card s12 reveal">
+          <div class="ct"><span class="bar"></span><h3>キャンペーンリーグ</h3><span class="sub">ROAS順（商談価値換算）／ 列見出しクリックでソート</span></div>
+          <div class="twrap"><table id="campaignTable"></table></div>
+        </div>
+        <div class="card glow s5 reveal">
+          <div class="ct"><span class="bar"></span><h3>トラッキングコード ツリー</h3><span class="sub">utm_source → utm_campaign</span></div>
+          <div class="chart" id="chUtm" style="min-height:380px"></div>
+        </div>
+        <div class="card glow s7 reveal">
+          <div class="ct"><span class="bar"></span><h3>投資対効果マップ</h3><span class="sub">横=広告費 ／ 縦=CV ／ 円=セッション量</span></div>
+          <div class="chart" id="chBubble" style="min-height:380px"></div>
+        </div>
+        <div class="card s12 reveal"><div class="insight" id="acqInsight"></div></div>
+      </div>
+    </section>
+
+    <!-- ==== VIEW: オーディエンス ==== -->
+    <section class="view" data-view="aud">
+      <div class="vhead"><span class="sector">SECTOR 05</span><h1>オーディエンス</h1><span class="desc">新規・再訪、アフィニティ、属性のプロファイル</span></div>
+      <div class="grid">
+        <div class="card glow s4 reveal">
+          <div class="ct"><span class="bar"></span><h3>新規 × 再訪</h3><span class="sub">セッション構成</span></div>
+          <div class="chart mid" id="chNewRet"></div>
+        </div>
+        <div class="card glow s8 reveal">
+          <div class="ct"><span class="bar"></span><h3>再訪コンボ</h3><span class="sub">訪問回数が増えるほどCVRが跳ね上がる</span></div>
+          <div class="combo" id="comboRow"></div>
+        </div>
+        <div class="card glow s6 reveal">
+          <div class="ct"><span class="bar"></span><h3>アフィニティセグメント</h3><span class="sub">構成シェアとCVR指数（全体=100）</span></div>
+          <div class="chart" id="chAffinity" style="min-height:360px"></div>
+        </div>
+        <div class="card glow s6 reveal">
+          <div class="ct"><span class="bar"></span><h3>再訪の鮮度 × 頻度</h3><span class="sub">再訪セッションのRF分布</span></div>
+          <div class="chart" id="chRf" style="min-height:360px"></div>
+        </div>
+        <div class="card glow s6 reveal">
+          <div class="ct"><span class="bar"></span><h3>年齢 × 性別</h3><span class="sub">推定属性（Googleシグナル）</span></div>
+          <div class="chart" id="chDemo"></div>
+        </div>
+        <div class="card glow s6 reveal">
+          <div class="ct"><span class="bar"></span><h3>会員ランク × CVR</h3><span class="sub">カスタムディメンション member_rank</span></div>
+          <div class="chart" id="chMember"></div>
+        </div>
+        <div class="card glow s4 reveal">
+          <div class="ct"><span class="bar"></span><h3>デバイス</h3></div>
+          <div class="chart mid" id="chDevice"></div>
+        </div>
+        <div class="card glow s8 reveal">
+          <div class="ct"><span class="bar"></span><h3>エリア別セッション</h3><span class="sub">販売店エリア（dealer_area）ベース</span></div>
+          <div class="chart mid" id="chArea"></div>
+        </div>
+        <div class="card s12 reveal"><div class="insight" id="audInsight"></div></div>
+      </div>
+    </section>
+
+    <!-- ==== VIEW: クロス分析ラボ ==== -->
+    <section class="view" data-view="lab">
+      <div class="vhead"><span class="sector">SECTOR 06</span><h1>クロス分析ラボ</h1><span class="desc">6ディメンション × 4指標を自由にクロス</span></div>
+      <div class="grid">
+        <div class="card s12 reveal">
+          <div class="ct"><span class="bar"></span><h3>おすすめクロス</h3></div>
+          <div class="preset" id="labPresets"></div>
+          <div class="labctl">
+            <div class="grp"><span class="lb">行</span><span id="labRow"></span></div>
+            <div class="grp"><span class="lb">列</span><span id="labCol"></span></div>
+            <div class="grp"><span class="lb">指標</span><span id="labMetric"></span></div>
+          </div>
+          <div class="chart tall" id="chLab"></div>
+          <div style="margin-top:13px"><div class="insight" id="labInsight"></div></div>
+        </div>
+        <div class="card s12 reveal">
+          <div class="ct"><span class="bar"></span><h3>車種 対戦モード</h3><span class="sub">2車種のデジタル戦闘力を直接比較</span></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:13px">
+            <select class="sel" id="vsA"></select>
+            <select class="sel" id="vsB"></select>
+          </div>
+          <div class="vs">
+            <div class="vscol" id="vsColA"></div>
+            <div class="vsmid"><span class="vslogo">VS</span></div>
+            <div class="vscol" id="vsColB"></div>
+          </div>
+          <div class="chart" id="chVsRadar" style="min-height:340px;margin-top:13px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==== VIEW: 計測設計 ==== -->
+    <section class="view" data-view="dict">
+      <div class="vhead"><span class="sector">SECTOR 07</span><h1>計測設計</h1><span class="desc">カスタムディメンション・イベント・UTM命名の管理台帳</span></div>
+      <div class="grid">
+        <div class="card s12 reveal">
+          <div class="ct"><span class="bar"></span><h3>カスタムディメンション台帳</h3><span class="sub">GA4 プロパティ設定と同期（デモ）</span></div>
+          <div class="twrap"><table id="cdTable"></table></div>
+        </div>
+        <div class="card s7 reveal">
+          <div class="ct"><span class="bar"></span><h3>イベント辞書</h3><span class="sub">主要イベントと発生数（選択期間）</span></div>
+          <div class="twrap"><table id="evTable"></table></div>
+        </div>
+        <div class="card s5 reveal">
+          <div class="ct"><span class="bar"></span><h3>UTM命名規約</h3></div>
+          <div id="utmRules" style="font-size:12.3px;line-height:2.05"></div>
+        </div>
+        <div class="card s12 reveal"><div class="insight warn" id="dictInsight"></div></div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <div>本ボードは <b>合成デモデータ</b> で動作しています。GA4 Data API（<span class="num">runReport</span>）接続時は、チャネル＝<a href="https://support.google.com/analytics/answer/9756891?hl=ja" target="_blank" rel="noopener">デフォルトチャネルグループ</a>、アフィニティ＝<a href="https://support.google.com/analytics/answer/2819950?hl=ja" target="_blank" rel="noopener">Googleシグナルのアフィニティカテゴリ</a>、車種・商材・ステージ＝<a href="https://support.google.com/analytics/answer/14240153?hl=ja" target="_blank" rel="noopener">カスタムディメンション</a>にそのまま置き換わる設計です。</div>
+      <div class="src">出典・定義：<a href="https://developers.google.com/analytics/devguides/reporting/data/v1?hl=ja" target="_blank" rel="noopener">GA4 Data API</a> ／ <a href="https://support.google.com/analytics/answer/9143382?hl=ja" target="_blank" rel="noopener">GA4 ディメンションと指標</a> ／ 姉妹ボード：<a href="https://ketrketr2.github.io/toyota-geo-board/" target="_blank" rel="noopener">AI Visibility KPI Board（GEO）</a> ／ ソースコード：<a href="https://github.com/ketrketr2/toyota-ga-board" target="_blank" rel="noopener">GitHub</a></div>
+    </footer>
+  </div>
+</div>
+
+<!-- モーダル・パレット・トースト -->
+<div class="modal" id="modelModal"><div class="mbox" id="modelModalBox"></div></div>
+<div class="cmdk" id="cmdk"><div class="ckbox"><input id="ckInput" placeholder="ビュー・車種・キャンペーンを検索…（Esc で閉じる）"><div class="cklist" id="ckList"></div></div></div>
+<div class="toasts" id="toasts"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
+<script>window.echarts||document.write('<script src="assets/echarts.min.js"><\/script>')</script>
+<script>
+/* =====================================================
+   TOYOTA GA4 COMMAND — データエンジン（デモデータ）
+   すべての画面はこの単一テンソルから導出されるため、
+   どの画面でも合計値・内訳が必ず一致する。
+   ===================================================== */
+const GA = (() => {
+
+  /* ---------- 乱数（シード固定・決定論） ---------- */
+  function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+  const R = mulberry32(20260818);
+  const jit = (amp=1)=> (R()-0.5)*2*amp;          // -amp〜+amp
+  const pick=(arr)=>arr[Math.floor(R()*arr.length)];
+
+  /* ---------- カレンダー ---------- */
+  const END = new Date(2026,7,18);                 // 2026-08-18（データ最終日）
+  const NDAYS = 200;
+  const DATES=[]; const DOW=[];
+  for(let i=NDAYS-1;i>=0;i--){
+    const d=new Date(END); d.setDate(d.getDate()-i);
+    DATES.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    DOW.push(d.getDay());
+  }
+  const IDX = Object.fromEntries(DATES.map((s,i)=>[s,i]));
+
+  /* ---------- マスタ：チャネル（表示順＝固定・配色順） ---------- */
+  const CHANNELS=[
+    {id:'org', name:'自然検索',        color:'#3987E5', share:.335, newShare:.55, paid:false},
+    {id:'sem', name:'リスティング広告', color:'#D95926', share:.165, newShare:.64, paid:true},
+    {id:'dsp', name:'ディスプレイ広告', color:'#199E70', share:.062, newShare:.82, paid:true},
+    {id:'vid', name:'動画広告',        color:'#C98500', share:.078, newShare:.78, paid:true},
+    {id:'sns', name:'SNS広告',        color:'#D55181', share:.070, newShare:.74, paid:true},
+    {id:'crm', name:'メール・LINE',    color:'#008300', share:.050, newShare:.12, paid:false},
+    {id:'ref', name:'外部サイト',      color:'#9085E9', share:.095, newShare:.60, paid:false},
+    {id:'dir', name:'ダイレクト',      color:'#E66767', share:.145, newShare:.28, paid:false},
+  ];
+  const NC=CHANNELS.length;
+
+  /* ---------- マスタ：車種 ----------
+     base: 平常時の1日あたり車種ページセッション（千）
+     mix: チャネル補正（1=平均）/ cvr: 見積り完了率の基準
+     tool: 検討ツール到達率 / dealer: 販売店接点率 */
+  const MODELS=[
+    {id:'alphard', name:'アルファード',     cat:'ミニバン',   price:'510万〜', base:68, cvr:.019, tool:.24, dealer:.072, eng:.66, pps:5.8,
+     mix:{org:1.15,sem:1.0,dsp:.9,vid:1.1,sns:.8,crm:1.1,ref:1.1,dir:1.2}, icon:'van'},
+    {id:'voxy',    name:'ヴォクシー',       cat:'ミニバン',   price:'309万〜', base:38, cvr:.022, tool:.26, dealer:.078, eng:.63, pps:5.2,
+     mix:{org:1.0,sem:1.05,dsp:1.0,vid:1.0,sns:1.35,crm:1.0,ref:.9,dir:.95}, icon:'van'},
+    {id:'noah',    name:'ノア',            cat:'ミニバン',   price:'305万〜', base:30, cvr:.021, tool:.25, dealer:.076, eng:.62, pps:5.0,
+     mix:{org:1.0,sem:1.05,dsp:1.0,vid:.95,sns:1.3,crm:1.0,ref:.9,dir:.95}, icon:'van'},
+    {id:'sienta',  name:'シエンタ',         cat:'ミニバン',   price:'199万〜', base:42, cvr:.024, tool:.27, dealer:.082, eng:.64, pps:4.8,
+     mix:{org:.95,sem:1.1,dsp:1.05,vid:.9,sns:1.5,crm:1.05,ref:.85,dir:.9}, icon:'van'},
+    {id:'harrier', name:'ハリアー',         cat:'SUV',       price:'320万〜', base:56, cvr:.021, tool:.25, dealer:.070, eng:.67, pps:6.1,
+     mix:{org:1.05,sem:1.1,dsp:1.15,vid:1.05,sns:1.0,crm:.9,ref:1.0,dir:1.0}, icon:'suv'},
+    {id:'rav4',    name:'RAV4',           cat:'SUV',       price:'324万〜', base:33, cvr:.019, tool:.23, dealer:.068, eng:.63, pps:5.4,
+     mix:{org:1.0,sem:1.0,dsp:1.05,vid:.95,sns:1.05,crm:.9,ref:1.0,dir:.95}, icon:'suv'},
+    {id:'landcruiser',name:'ランドクルーザー',cat:'SUV',      price:'525万〜', base:62, cvr:.013, tool:.20, dealer:.055, eng:.70, pps:6.8,
+     mix:{org:1.3,sem:.8,dsp:.7,vid:.9,sns:.7,crm:.9,ref:1.35,dir:1.3}, icon:'suv'},
+    {id:'corolla', name:'カローラ',         cat:'セダン・ワゴン', price:'216万〜', base:40, cvr:.021, tool:.24, dealer:.075, eng:.60, pps:4.6,
+     mix:{org:1.05,sem:1.0,dsp:.95,vid:.9,sns:.85,crm:1.15,ref:.95,dir:1.0}, icon:'sedan'},
+    {id:'crown',   name:'クラウン',         cat:'セダン・ワゴン', price:'475万〜', base:34, cvr:.014, tool:.21, dealer:.058, eng:.68, pps:6.2,
+     mix:{org:1.1,sem:.9,dsp:1.0,vid:1.4,sns:.8,crm:.95,ref:1.1,dir:1.1}, icon:'sedan'},
+    {id:'prius',   name:'プリウス',         cat:'コンパクト・HEV', price:'275万〜', base:36, cvr:.018, tool:.23, dealer:.066, eng:.64, pps:5.3,
+     mix:{org:1.1,sem:.95,dsp:.95,vid:1.0,sns:.95,crm:1.1,ref:1.05,dir:1.05}, icon:'sedan'},
+    {id:'aqua',    name:'アクア',           cat:'コンパクト・HEV', price:'214万〜', base:24, cvr:.020, tool:.24, dealer:.074, eng:.59, pps:4.4,
+     mix:{org:1.0,sem:1.05,dsp:1.0,vid:.85,sns:1.0,crm:1.2,ref:.85,dir:.95}, icon:'compact'},
+    {id:'yaris',   name:'ヤリス',           cat:'コンパクト・HEV', price:'155万〜', base:30, cvr:.022, tool:.25, dealer:.080, eng:.58, pps:4.2,
+     mix:{org:1.0,sem:1.1,dsp:1.05,vid:.85,sns:1.05,crm:1.1,ref:.85,dir:.9}, icon:'compact'},
+    {id:'bz4x',    name:'bZ4X',           cat:'BEV',       price:'550万〜', base:12, cvr:.009, tool:.19, dealer:.045, eng:.61, pps:5.6,
+     mix:{org:.8,sem:1.05,dsp:1.5,vid:1.6,sns:1.25,crm:.8,ref:1.0,dir:.7}, icon:'ev'},
+    {id:'gr86',    name:'GR86',           cat:'スポーツ',    price:'293万〜', base:9,  cvr:.010, tool:.18, dealer:.050, eng:.72, pps:7.2,
+     mix:{org:1.2,sem:.8,dsp:.7,vid:1.0,sns:1.2,crm:.8,ref:1.5,dir:1.2}, icon:'sport'},
+  ];
+  const NM=MODELS.length;
+
+  /* ---------- マスタ：商材・コンバージョン ---------- */
+  const GOODS=[
+    {id:'new',    name:'新車',        color:'#3987E5'},
+    {id:'used',   name:'認定中古車',  color:'#D95926'},
+    {id:'kinto',  name:'KINTO',      color:'#199E70'},
+    {id:'service',name:'点検・サービス',color:'#C98500'},
+    {id:'acc',    name:'アクセサリー', color:'#D55181'},
+  ];
+  const GOALS=[
+    {id:'estimate', name:'見積りシミュレーション完了', goods:'new',    mult:0.60,  value:8000,  ev:'estimate_complete'},
+    {id:'testdrive',name:'試乗予約',                goods:'new',    mult:0.093, value:25000, ev:'test_drive_reserve'},
+    {id:'visit',    name:'来店予約',                goods:'new',    mult:0.063, value:22000, ev:'dealer_visit_reserve'},
+    {id:'catalog',  name:'WEBカタログ閲覧完了',      goods:'new',    mult:0.32,  value:1500,  ev:'catalog_view_complete'},
+    {id:'kinto',    name:'KINTO 申込・見積り',      goods:'kinto',  mult:0.033, value:18000, ev:'kinto_apply'},
+    {id:'used',     name:'中古車 在庫問合せ',        goods:'used',   mult:0.057, value:9000,  ev:'used_stock_inquiry'},
+    {id:'service',  name:'点検・サービス予約',       goods:'service',mult:0.21,  value:4500,  ev:'service_reserve'},
+    {id:'acc',      name:'アクセサリー購入',         goods:'acc',    mult:0.024, value:6000,  ev:'acc_purchase'},
+  ];
+  /* ゴール×チャネル係数（メールはサービス系に強い等） */
+  const GOAL_CH={
+    estimate:{org:1.15,sem:1.25,dsp:.45,vid:.55,sns:.7,crm:1.1,ref:.9,dir:1.15},
+    testdrive:{org:1.1,sem:1.2,dsp:.5,vid:.65,sns:.8,crm:1.15,ref:.85,dir:1.2},
+    visit:{org:1.1,sem:1.15,dsp:.5,vid:.6,sns:.75,crm:1.3,ref:.85,dir:1.25},
+    catalog:{org:1.05,sem:1.1,dsp:.8,vid:.9,sns:1.0,crm:.9,ref:1.0,dir:.95},
+    kinto:{org:.85,sem:1.1,dsp:.9,vid:1.15,sns:2.6,crm:.85,ref:1.0,dir:.75},
+    used:{org:1.2,sem:1.15,dsp:.6,vid:.5,sns:.7,crm:.9,ref:1.1,dir:1.0},
+    service:{org:.55,sem:.30,dsp:.15,vid:.15,sns:.25,crm:8.5,dir:1.2,ref:.35},
+    acc:{org:1.0,sem:.9,dsp:.7,vid:.7,sns:1.2,crm:1.6,ref:.9,dir:1.1},
+  };
+  /* 再訪/新規のCV倍率（再訪÷新規） */
+  const GOAL_RET_RATIO={estimate:3.0,testdrive:3.4,visit:3.6,catalog:1.8,kinto:2.6,used:2.4,service:5.5,acc:2.8};
+  /* 車種ごとの商材関心シェア（セッション帰属・合計1） */
+  function goodsShare(m){
+    let s={new:.62,used:.10,kinto:.09,service:.13,acc:.06};
+    if(m.id==='landcruiser'){s={new:.55,used:.20,kinto:.05,service:.13,acc:.07}}
+    if(m.id==='alphard'){s={new:.58,used:.15,kinto:.08,service:.12,acc:.07}}
+    if(m.cat==='コンパクト・HEV'){s={new:.58,used:.11,kinto:.12,service:.14,acc:.05}}
+    if(m.id==='bz4x'){s={new:.60,used:.04,kinto:.22,service:.09,acc:.05}}
+    if(m.id==='gr86'){s={new:.52,used:.22,kinto:.06,service:.10,acc:.10}}
+    if(m.id==='sienta'||m.id==='voxy'||m.id==='noah'){s={new:.60,used:.10,kinto:.12,service:.12,acc:.06}}
+    return s;
+  }
+  /* サービス予約は保有台数の多い車種で高い（cvr補正） */
+  const SERVICE_W={corolla:2.6,prius:2.2,aqua:2.4,yaris:1.9,sienta:1.5,voxy:1.4,noah:1.3,alphard:1.1,harrier:1.0,rav4:.9,landcruiser:.8,crown:.9,bz4x:.4,gr86:.5};
+
+  /* ---------- マスタ：アフィニティ／ステージ／エリア ---------- */
+  const AFFINITY=[
+    {id:'car',   name:'クルマ好き'},
+    {id:'family',name:'ファミリー層'},
+    {id:'outdoor',name:'アウトドア派'},
+    {id:'tech',  name:'テクノロジー志向'},
+    {id:'eco',   name:'エコ・環境志向'},
+    {id:'travel',name:'旅行好き'},
+    {id:'sports',name:'スポーツ観戦好き'},
+    {id:'biz',   name:'ビジネス層'},
+  ];
+  const AFF_CVR_MULT={car:1.35,family:1.22,outdoor:1.05,tech:.95,eco:1.0,travel:.92,sports:.85,biz:1.08};
+  function affShare(m){
+    const base={car:.16,family:.18,outdoor:.12,tech:.11,eco:.11,travel:.12,sports:.09,biz:.11};
+    const t={...base};
+    const boost=(k,v)=>{t[k]*=v};
+    if(m.cat==='ミニバン'){boost('family',1.8);boost('travel',1.2);boost('car',.75);boost('biz',.7)}
+    if(m.cat==='SUV'){boost('outdoor',1.7);boost('car',1.15);boost('travel',1.15)}
+    if(m.id==='landcruiser'){boost('outdoor',1.4);boost('car',1.3);boost('biz',1.1)}
+    if(m.cat==='セダン・ワゴン'){boost('biz',1.5)}
+    if(m.id==='crown'){boost('biz',1.9);boost('car',1.2);boost('family',.6)}
+    if(m.cat==='コンパクト・HEV'){boost('eco',1.5);boost('family',1.1)}
+    if(m.id==='bz4x'){boost('tech',2.1);boost('eco',1.9);boost('family',.7)}
+    if(m.id==='gr86'){boost('car',2.6);boost('sports',1.5);boost('family',.4)}
+    const sum=Object.values(t).reduce((a,b)=>a+b,0);
+    Object.keys(t).forEach(k=>t[k]/=sum);
+    return t;
+  }
+  const STAGES=[
+    {id:'aware', name:'認知'},
+    {id:'interest', name:'興味・比較'},
+    {id:'consider', name:'検討・シミュレーション'},
+    {id:'nego', name:'商談・来店'},
+  ];
+  const STAGE_CH={ // チャネル→ステージ構成（合計1）
+    org:[.38,.30,.22,.10], sem:[.28,.30,.29,.13], dsp:[.62,.25,.10,.03], vid:[.58,.27,.11,.04],
+    sns:[.52,.30,.13,.05], crm:[.10,.22,.38,.30], ref:[.44,.31,.18,.07], dir:[.22,.26,.30,.22],
+  };
+  const STAGE_CV_W=[.02,.10,.45,.43];     // CVのステージ帰属
+  const STAGE_LOGIN=[.08,.17,.34,.55];    // ステージ別ログイン率
+  const AREAS=[
+    {id:'hokkaido',name:'北海道・東北'},{id:'kanto',name:'関東'},{id:'chubu',name:'中部'},
+    {id:'kinki',name:'近畿'},{id:'chushi',name:'中国・四国'},{id:'kyushu',name:'九州・沖縄'},
+  ];
+  function areaShare(m){
+    const t={hokkaido:.09,kanto:.35,chubu:.17,kinki:.19,chushi:.09,kyushu:.11};
+    if(m.id==='landcruiser'){t.chubu*=1.2;t.kyushu*=1.25;t.hokkaido*=1.3;t.kanto*=.85}
+    if(m.id==='crown'){t.kanto*=1.12;t.chubu*=1.1}
+    if(m.id==='bz4x'){t.kanto*=1.25;t.kinki*=1.05;t.chushi*=.8;t.hokkaido*=.7}
+    if(m.cat==='ミニバン'){t.kanto*=1.02;t.kyushu*=1.05}
+    const s=Object.values(t).reduce((a,b)=>a+b,0);Object.keys(t).forEach(k=>t[k]/=s);
+    return t;
+  }
+
+  /* ---------- 訪問回数（コンボ）・RF ---------- */
+  const BUCKETS=[
+    {id:'v1', name:'1回（初訪問）', share:.46, cvrMult:.42},
+    {id:'v2', name:'2〜3回',      share:.27, cvrMult:.95},
+    {id:'v3', name:'4〜9回',      share:.17, cvrMult:1.95},
+    {id:'v4', name:'10回以上',    share:.10, cvrMult:3.20},
+  ];
+  const RECENCY=['当日','1〜7日前','8〜30日前','31日以上前'];
+  const RF_SHARE=[ // recency×frequency(2回目以降のみ) 構成
+    [.07,.05,.03],[ .16,.11,.05],[ .13,.14,.07],[ .08,.07,.04]
+  ];
+
+  /* ---------- デバイス・デモグラ ---------- */
+  const DEVICES=[{id:'mob',name:'モバイル'},{id:'pc',name:'PC'},{id:'tab',name:'タブレット'}];
+  const DEV_CH={org:[.71,.25,.04],sem:[.74,.22,.04],dsp:[.80,.16,.04],vid:[.83,.13,.04],sns:[.88,.09,.03],crm:[.76,.20,.04],ref:[.62,.34,.04],dir:[.58,.37,.05]};
+  const AGES=['18-24','25-34','35-44','45-54','55-64','65+'];
+  function ageGender(m){ // [male share by age…, female share by age…] 合計1
+    let male=[.04,.12,.16,.15,.11,.08], female=[.03,.08,.09,.07,.04,.03];
+    if(m.cat==='ミニバン'){male=[.03,.14,.19,.13,.07,.04];female=[.03,.13,.13,.07,.03,.01]}
+    if(m.id==='crown'||m.id==='landcruiser'){male=[.02,.08,.14,.19,.16,.12];female=[.01,.04,.07,.08,.05,.04]}
+    if(m.id==='gr86'){male=[.09,.19,.18,.14,.10,.05];female=[.03,.07,.07,.05,.02,.01]}
+    if(m.id==='aqua'||m.id==='yaris'){male=[.05,.10,.12,.12,.11,.10];female=[.04,.08,.10,.09,.05,.04]}
+    if(m.id==='bz4x'){male=[.03,.14,.20,.17,.11,.06];female=[.02,.08,.09,.06,.03,.01]}
+    const s=[...male,...female].reduce((a,b)=>a+b,0);
+    return {male:male.map(v=>v/s), female:female.map(v=>v/s)};
+  }
+
+  /* ---------- イベント（スパイク） ---------- */
+  const EVENTS=[
+    {date:'2026-05-03',model:null,      amp:1.10,dur:4, label:'GW連休'},
+    {date:'2026-06-26',model:'gr86',    amp:2.4, dur:7, label:'GR86 限定車抽選 受付開始'},
+    {date:'2026-07-01',model:'harrier', amp:1.9, dur:10,label:'ハリアー 特別仕様車 発表'},
+    {date:'2026-07-17',model:'alphard', amp:1.8, dur:12,label:'アルファード 一部改良 発表'},
+    {date:'2026-08-01',model:'crown',   amp:1.7, dur:10,label:'クラウン 一部改良 発表'},
+    {date:'2026-08-07',model:'bz4x',    amp:2.2, dur:42,label:'bZ4X サマーキャンペーン 開始'},
+  ];
+  const WD=[1.16,.94,.90,.92,.94,1.00,1.22]; // 日〜土
+  /* CV日次ノイズ（決定論・セグメント間で共通のため合計整合は維持される） */
+  const DN={};
+  GOALS.forEach((g,gi)=>{
+    DN[g.id]=new Array(NDAYS);
+    for(let d=0;d<NDAYS;d++){
+      const x=Math.sin((d+3)*12.9898+gi*78.233)*43758.5453;
+      DN[g.id][d]=1+((x-Math.floor(x))-0.5)*0.20;
+    }
+  });
+
+  /* ---------- 基幹テンソル S[d][m][c]（車種ページセッション） ---------- */
+  const S=[]; const OTHER=[]; // OTHER[d][c] 車種ページ以外
+  const trendAt=(d)=> 1 + 0.0006*(d-NDAYS/2);   // ゆるやかな成長
+  const eventAmp=(d,mid)=>{
+    let a=1;
+    for(const ev of EVENTS){
+      const s=IDX[ev.date]; if(s==null||d<s||d>=s+ev.dur) continue;
+      const decay = ev.dur>20 ? 1 : (1-(d-s)/ev.dur);          // 長期キャンペーンは維持
+      const amp = 1+(ev.amp-1)*(ev.dur>20?(d-s<3?(d-s+1)/3:1):decay);
+      if(ev.model===null) a*=amp;
+      else if(ev.model===mid) a*=amp;
+    }
+    return a;
+  };
+  // チャネルミックス（車種ごと正規化）
+  const MIXN = MODELS.map(m=>{
+    const w=CHANNELS.map(c=>c.share*(m.mix[c.id]||1));
+    const s=w.reduce((a,b)=>a+b,0);
+    return w.map(v=>v/s);
+  });
+  for(let d=0;d<NDAYS;d++){
+    const wd=WD[DOW[d]]*trendAt(d);
+    const row=[];
+    for(let mi=0;mi<NM;mi++){
+      const m=MODELS[mi];
+      const dayN = 1+jit(.055);
+      const tot = m.base*1000*wd*eventAmp(d,m.id)*dayN;
+      const cells=[];
+      for(let c=0;c<NC;c++){
+        let v=tot*MIXN[mi][c]*(1+jit(.06));
+        // イベント時は広告チャネルがより増える（キャンペーン連動）
+        if(eventAmp(d,m.id)>1.15 && (CHANNELS[c].paid)) v*=1.25;
+        cells.push(v);
+      }
+      row.push(cells);
+    }
+    S.push(row);
+    // 車種ページ以外（TOP・企業情報・サポート等）
+    const oc=[];
+    for(let c=0;c<NC;c++){
+      const modelSum=row.reduce((a,r)=>a+r[c],0);
+      const f={org:.95,sem:.30,dsp:.55,vid:.60,sns:.65,crm:1.45,ref:1.15,dir:1.35}[CHANNELS[c].id];
+      oc.push(modelSum*f*.52*(1+jit(.05)));
+    }
+    OTHER.push(oc);
+  }
+
+  /* ---------- セグメント係数 ---------- */
+  function segShare(seg,c){ // セッションに掛ける割合
+    const n=CHANNELS[c].newShare;
+    return seg==='new'? n : seg==='ret'? 1-n : 1;
+  }
+  function segCvFactor(seg,gid,c){ // CVに掛ける割合（合計が全体と一致するよう厳密に分解）
+    const n=CHANNELS[c].newShare, k=GOAL_RET_RATIO[gid];
+    const newF = n/(n+(1-n)*k);       // 新規が持つCVシェア
+    return seg==='new'? newF : seg==='ret'? 1-newF : 1;
+  }
+
+  /* ---------- 集計（range: 日数 / seg: all|new|ret） ---------- */
+  const memo={};
+  function agg(range,seg){
+    const key=range+'_'+seg;
+    if(memo[key]) return memo[key];
+    const to=NDAYS-1, from=NDAYS-range, pfrom=NDAYS-range*2, pto=from-1;
+    const win=(a,b)=>({a,b});
+    const cur=win(from,to), prev=win(pfrom,pto);
+
+    function sumWindow(w){
+      const byModel=MODELS.map(()=>({sessions:0,byChannel:new Array(NC).fill(0),cv:{},cvByChannel:{},daily:[]}));
+      const byChannel=new Array(NC).fill(0);
+      const dailySessions=[],dailyCv=[],dailyByChannel=CHANNELS.map(()=>[]);
+      let other=0; const otherByChannel=new Array(NC).fill(0);
+      GOALS.forEach(g=>byModel.forEach(bm=>{bm.cv[g.id]=0;bm.cvByChannel[g.id]=new Array(NC).fill(0)}));
+      for(let d=w.a;d<=w.b;d++){
+        let daySess=0, dayCv=0;
+        const dayCh=new Array(NC).fill(0);
+        for(let mi=0;mi<NM;mi++){
+          const m=MODELS[mi]; let mDay=0;
+          for(let c=0;c<NC;c++){
+            const s0=S[d][mi][c], s=s0*segShare(seg,c);
+            byModel[mi].sessions+=s; byModel[mi].byChannel[c]+=s; byChannel[c]+=s;
+            daySess+=s; dayCh[c]+=s; mDay+=s;
+            for(const g of GOALS){
+              let rate=m.cvr*g.mult*(GOAL_CH[g.id][CHANNELS[c].id]||1);
+              if(g.id==='service') rate=m.cvr*g.mult*(GOAL_CH.service[CHANNELS[c].id]||1)*(SERVICE_W[m.id]||1)*.55;
+              const cv=s0*rate*segCvFactor(seg,g.id,c)*DN[g.id][d];
+              byModel[mi].cv[g.id]+=cv; byModel[mi].cvByChannel[g.id][c]+=cv; dayCv+=cv;
+            }
+          }
+          byModel[mi].daily.push(mDay);
+        }
+        for(let c=0;c<NC;c++){
+          const o=OTHER[d][c]*segShare(seg,c);
+          other+=o; otherByChannel[c]+=o; daySess+=o; dayCh[c]+=o;
+          // サイト共通CV（サービス予約・アクセサリー等の一部は車種ページ外）
+        }
+        dailySessions.push(daySess); dailyCv.push(dayCv);
+        for(let c=0;c<NC;c++) dailyByChannel[c].push(dayCh[c]);
+      }
+      return {byModel,byChannel,other,otherByChannel,dailySessions,dailyCv,dailyByChannel,
+              dates:DATES.slice(w.a,w.b+1)};
+    }
+
+    const A=sumWindow(cur), P=sumWindow(prev);
+
+    function totals(X){
+      const modelSessions=X.byModel.reduce((a,b)=>a+b.sessions,0);
+      const sessions=modelSessions+X.other;
+      const cvByGoal={}; GOALS.forEach(g=>cvByGoal[g.id]=X.byModel.reduce((a,b)=>a+b.cv[g.id],0));
+      const cv=Object.values(cvByGoal).reduce((a,b)=>a+b,0);
+      const value=GOALS.reduce((a,g)=>a+cvByGoal[g.id]*g.value,0);
+      // ユーザー数はセッション÷頻度係数（範囲が長いほど重複が増える）
+      const freq= range<=7?1.32: range<=28?1.78:2.45;
+      const users=sessions/freq;
+      const nsAll=CHANNELS.reduce((a,c,i)=>a+(X.byChannel[i]+X.otherByChannel[i])*(seg==='all'?c.newShare:seg==='new'?1:0),0);
+      const newRate= sessions? nsAll/sessions:0;
+      const pv=X.byModel.reduce((a,b,i)=>a+b.sessions*MODELS[i].pps,0)+X.other*2.1;
+      return {sessions,users,newRate,cv,cvByGoal,value,pv,modelSessions};
+    }
+    const T=totals(A), TP=totals(P);
+    // エンゲージメント（車種加重）
+    const engRate=A.byModel.reduce((a,b,i)=>a+MODELS[i].eng*b.sessions,0)/Math.max(1,T.modelSessions)*(seg==='ret'?1.08:seg==='new'?0.94:1);
+    const avgDur=A.byModel.reduce((a,b,i)=>a+(52+MODELS[i].pps*21)*b.sessions,0)/Math.max(1,T.modelSessions);
+
+    /* 車種オブジェクト */
+    const models=MODELS.map((m,mi)=>{
+      const bm=A.byModel[mi], pm=P.byModel[mi];
+      const cv=GOALS.reduce((a,g)=>a+bm.cv[g.id],0);
+      const cvPrev=GOALS.reduce((a,g)=>a+pm.cv[g.id],0);
+      const retShare=bm.byChannel.reduce((a,v,c)=>a+v*(1-CHANNELS[c].newShare),0)/Math.max(1,bm.sessions);
+      const adShare=bm.byChannel.reduce((a,v,c)=>a+(CHANNELS[c].paid?v:0),0)/Math.max(1,bm.sessions);
+      return {...m, mi, sessions:bm.sessions, prevSessions:pm.sessions,
+        byChannel:bm.byChannel, cvGoal:bm.cv, cvByChannel:bm.cvByChannel, cv, cvPrev,
+        cvr:cv/Math.max(1,bm.sessions), retShare, adShare,
+        pv:bm.sessions*m.pps, daily:bm.daily,
+        toolSessions:bm.sessions*m.tool, dealerSessions:bm.sessions*m.dealer};
+    });
+    // ティア（セッション順位で S/A/B/C）
+    const sorted=[...models].sort((a,b)=>b.sessions-a.sessions);
+    sorted.forEach((m,i)=>{m.tier= i<2?'S': i<6?'A': i<10?'B':'C'; m.rank=i+1;});
+
+    /* チャネルオブジェクト */
+    const channels=CHANNELS.map((c,ci)=>{
+      const sess=A.byChannel[ci]+A.otherByChannel[ci];
+      const prevSess=P.byChannel[ci]+P.otherByChannel[ci];
+      const cv=models.reduce((a,m)=>a+GOALS.reduce((x,g)=>x+m.cvByChannel[g.id][ci],0),0);
+      return {...c, ci, sessions:sess, prevSessions:prevSess, cv, cvr:cv/Math.max(1,sess),
+        daily:A.dailyByChannel[ci]};
+    });
+
+    /* ゴール・商材 */
+    const goals=GOALS.map(g=>{
+      const cv=T.cvByGoal[g.id], prev=TP.cvByGoal[g.id];
+      const daily=A.dates.map((_,i)=>0);
+      // 日次はモデル日次から比例配分（表示用の近似・合計は厳密一致）
+      return {...g, cv, prev, value:cv*g.value};
+    });
+    const goods=GOODS.map(gd=>{
+      const gs=GOALS.filter(g=>g.goods===gd.id);
+      const cv=gs.reduce((a,g)=>a+T.cvByGoal[g.id],0);
+      const prev=gs.reduce((a,g)=>a+TP.cvByGoal[g.id],0);
+      const sessions=models.reduce((a,m)=>a+m.sessions*goodsShare(m)[gd.id],0);
+      const prevSessions=MODELS.reduce((a,m,mi)=>a+P.byModel[mi].sessions*goodsShare(m)[gd.id],0);
+      const value=gs.reduce((a,g)=>a+T.cvByGoal[g.id]*g.value,0);
+      return {...gd, cv, prev, sessions, prevSessions, value, goals:gs.map(g=>({id:g.id,name:g.name,cv:T.cvByGoal[g.id],prev:TP.cvByGoal[g.id],value:T.cvByGoal[g.id]*g.value}))};
+    });
+
+    const out={range,seg,from:DATES[from],to:DATES[to],prevFrom:DATES[pfrom],prevTo:DATES[pto],
+      dates:A.dates, dailySessions:A.dailySessions, dailyCv:A.dailyCv, dailyByChannel:A.dailyByChannel,
+      prevDailySessions:P.dailySessions,
+      total:{...T,engRate,avgDur}, prevTotal:TP,
+      models, channels, goals, goods, otherSessions:A.other};
+    memo[key]=out;
+    return out;
+  }
+
+  /* ---------- クロス行列 ---------- */
+  const DIMS={
+    model:{name:'車種', items:()=>MODELS.map(m=>m.name)},
+    channel:{name:'チャネル', items:()=>CHANNELS.map(c=>c.name)},
+    goods:{name:'商材', items:()=>GOODS.map(g=>g.name)},
+    affinity:{name:'アフィニティ', items:()=>AFFINITY.map(a=>a.name)},
+    stage:{name:'検討ステージ', items:()=>STAGES.map(s=>s.name)},
+    area:{name:'エリア', items:()=>AREAS.map(a=>a.name)},
+  };
+  // 車種正規化アフィニティCV倍率
+  const AFF_MULT_N=MODELS.map(m=>{
+    const sh=affShare(m); const denom=AFFINITY.reduce((a,af)=>a+sh[af.id]*AFF_CVR_MULT[af.id],0);
+    const o={}; AFFINITY.forEach(af=>o[af.id]=AFF_CVR_MULT[af.id]/denom); return o;
+  });
+  function factorLen(dim){return dim==='model'?NM:dim==='channel'?NC:dim==='goods'?GOODS.length:dim==='affinity'?AFFINITY.length:dim==='stage'?STAGES.length:AREAS.length}
+  // (m,c)セルのセッション/CVを 各ディメンションへ按分する係数ベクトル
+  function factorVec(dim, mi, ci, kind){ // kind: 'sess' | 'cv'
+    const m=MODELS[mi], cid=CHANNELS[ci].id;
+    switch(dim){
+      case 'model':{const v=new Array(NM).fill(0);v[mi]=1;return v}
+      case 'channel':{const v=new Array(NC).fill(0);v[ci]=1;return v}
+      case 'goods':{
+        if(kind==='sess'){const gs=goodsShare(m);return GOODS.map(g=>gs[g.id])}
+        return null; // cvはゴール直付けで扱う
+      }
+      case 'affinity':{
+        const sh=affShare(m);
+        if(kind==='sess')return AFFINITY.map(a=>sh[a.id]);
+        return AFFINITY.map(a=>sh[a.id]*AFF_MULT_N[mi][a.id]);
+      }
+      case 'stage':{
+        const st=STAGE_CH[cid];
+        if(kind==='sess')return st;
+        return STAGE_CV_W;
+      }
+      case 'area':{
+        const ar=areaShare(m);return AREAS.map(a=>ar[a.id]);
+      }
+    }
+  }
+  function pairMatrix(rowDim,colDim,metric,range,seg){
+    const A=agg(range,seg);
+    const nr=factorLen(rowDim), nc2=factorLen(colDim);
+    const sess=Array.from({length:nr},()=>new Array(nc2).fill(0));
+    const cv=Array.from({length:nr},()=>new Array(nc2).fill(0));
+    const news=Array.from({length:nr},()=>new Array(nc2).fill(0));
+    for(let mi=0;mi<NM;mi++){
+      const M=A.models[mi];
+      for(let ci=0;ci<NC;ci++){
+        const s=M.byChannel[ci];
+        const cvCell=GOALS.reduce((a,g)=>a+M.cvByChannel[g.id][ci],0);
+        const rS=factorVec(rowDim,mi,ci,'sess'), cS=factorVec(colDim,mi,ci,'sess');
+        const rC=factorVec(rowDim,mi,ci,'cv')||null, cC=factorVec(colDim,mi,ci,'cv')||null;
+        const nsh=CHANNELS[ci].newShare;
+        for(let r=0;r<nr;r++)for(let c2=0;c2<nc2;c2++){
+          sess[r][c2]+=s*rS[r]*cS[c2];
+          news[r][c2]+=s*rS[r]*cS[c2]*nsh;
+        }
+        // CV按分：goods はゴール直付け、それ以外は係数
+        const rowIsGoods=rowDim==='goods', colIsGoods=colDim==='goods';
+        for(const g of GOALS){
+          const gcv=M.cvByChannel[g.id][ci];
+          const gi=GOODS.findIndex(x=>x.id===g.goods);
+          const rV=rowIsGoods? GOODS.map((_,i)=>i===gi?1:0) : (rC||rS.map((v,i)=>rDimCvFallback(rowDim,mi,ci,i,rS)));
+          const cV=colIsGoods? GOODS.map((_,i)=>i===gi?1:0) : (cC||cS.map((v,i)=>rDimCvFallback(colDim,mi,ci,i,cS)));
+          for(let r=0;r<nr;r++)for(let c2=0;c2<nc2;c2++)cv[r][c2]+=gcv*rV[r]*cV[c2];
+        }
+      }
+    }
+    function rDimCvFallback(dim,mi,ci,i,sVec){return sVec[i]} // model/channel/areaはセッション按分と同じ
+    const rows=DIMS[rowDim].items(), cols=DIMS[colDim].items();
+    const val=Array.from({length:nr},(_,r)=>cols.map((_,c2)=>{
+      if(metric==='sessions')return sess[r][c2];
+      if(metric==='cv')return cv[r][c2];
+      if(metric==='cvr')return cv[r][c2]/Math.max(1,sess[r][c2]);
+      if(metric==='newRate')return news[r][c2]/Math.max(1,sess[r][c2]);
+    }));
+    return {rows,cols,val,sess,cv};
+  }
+
+  /* ---------- サンキー（動線） ---------- */
+  function sankey(range,seg){
+    const A=agg(range,seg);
+    const chSess=A.channels.map(c=>c.sessions);
+    const LP=['車種トップ','キャンペーンLP','サイトトップ','販売店検索','KINTO・中古車'];
+    const LP_MIX={org:[.46,.05,.30,.09,.10],sem:[.50,.16,.14,.10,.10],dsp:[.24,.58,.10,.03,.05],vid:[.28,.54,.10,.03,.05],
+      sns:[.30,.44,.12,.04,.10],crm:[.26,.16,.30,.14,.14],ref:[.38,.10,.34,.08,.10],dir:[.30,.04,.48,.10,.08]};
+    const MID=['グレード・価格','見積りシミュレーター','車種比較・ギャラリー','販売店・在庫検索','離脱（回遊なし）'];
+    const LP_MID=[[.26,.16,.22,.10,.26],[.20,.22,.18,.08,.32],[.14,.08,.16,.12,.50],[.10,.10,.06,.52,.22],[.16,.30,.10,.16,.28]];
+    const OUT=['見積り完了','試乗・来店予約','KINTO・中古車CV','サービス予約','未CVで離脱'];
+    const links=[],nodes=[];
+    const nodeIdx={}; const addNode=n=>{if(nodeIdx[n]==null){nodeIdx[n]=nodes.length;nodes.push({name:n})}return nodeIdx[n]};
+    const lpTotals=new Array(LP.length).fill(0);
+    A.channels.forEach((c)=>{
+      const mix=LP_MIX[c.id];
+      LP.forEach((lp,li)=>{
+        const v=c.sessions*mix[li]; lpTotals[li]+=v;
+        links.push({source:addNode(c.name),target:addNode(lp),value:v});
+      });
+    });
+    const midTotals=new Array(MID.length).fill(0);
+    LP.forEach((lp,li)=>{
+      MID.forEach((md,mi2)=>{
+        const v=lpTotals[li]*LP_MID[li][mi2]; midTotals[mi2]+=v;
+        links.push({source:addNode(lp),target:addNode(md),value:v});
+      });
+    });
+    // 成果ノード：実CVに厳密整合
+    const cvEst=A.total.cvByGoal.estimate+A.total.cvByGoal.catalog;
+    const cvVisit=A.total.cvByGoal.testdrive+A.total.cvByGoal.visit;
+    const cvKU=A.total.cvByGoal.kinto+A.total.cvByGoal.used;
+    const cvSrv=A.total.cvByGoal.service+A.total.cvByGoal.acc;
+    const outVals=[cvEst,cvVisit,cvKU,cvSrv];
+    const midSum=midTotals.reduce((a,b)=>a+b,0);
+    const cvSum=outVals.reduce((a,b)=>a+b,0);
+    // CVの発生源構成（シミュレーター経由が最多）
+    const CV_FROM=[[.30,.42,.08,.20,0],[ .22,.30,.10,.38,0],[ .30,.30,.14,.26,0],[ .30,.18,.10,.42,0]];
+    MID.forEach((md,mi2)=>{
+      let used=0;
+      OUT.forEach((o,oi)=>{
+        if(oi<4){const v=outVals[oi]*CV_FROM[oi][mi2];used+=v;links.push({source:addNode(md),target:addNode(o),value:v})}
+      });
+      const drop=Math.max(0,midTotals[mi2]-used);
+      links.push({source:addNode(md),target:addNode('未CVで離脱'),value:drop});
+    });
+    return {nodes,links,lp:LP,lpTotals};
+  }
+
+  /* ---------- ステージファネル ---------- */
+  function funnel(range,seg){
+    const A=agg(range,seg);
+    const s1=A.total.sessions;
+    const s2=A.total.modelSessions;
+    const s3=A.models.reduce((a,m)=>a+m.toolSessions,0);
+    const s4=A.models.reduce((a,m)=>a+m.dealerSessions,0);
+    const s5=A.total.cv;
+    return [
+      {name:'STAGE 1｜サイト流入',    v:s1, desc:'全セッション'},
+      {name:'STAGE 2｜車種ページ閲覧', v:s2, desc:'いずれかの車種を閲覧'},
+      {name:'STAGE 3｜検討ツール利用', v:s3, desc:'見積り・比較・シミュレーター'},
+      {name:'STAGE 4｜販売店コンタクト', v:s4, desc:'販売店検索・店舗ページ'},
+      {name:'CLEAR｜コンバージョン',   v:s5, desc:'8種のCV合計'},
+    ];
+  }
+
+  /* ---------- 訪問回数（コンボ）・RF ---------- */
+  function comboData(range){
+    const A=agg(range,'all');
+    const denom=BUCKETS.reduce((a,b)=>a+b.share*b.cvrMult,0);
+    const baseCvr=A.total.cv/A.total.sessions;
+    return BUCKETS.map(b=>({...b,
+      sessions:A.total.sessions*b.share,
+      cvr: baseCvr*b.cvrMult/denom,
+      cv: A.total.cv*(b.share*b.cvrMult/denom),
+    }));
+  }
+  function rfMatrix(range){
+    const A=agg(range,'ret');
+    const total=A.total.sessions;
+    const flat=RF_SHARE.flat(); const s=flat.reduce((a,b)=>a+b,0);
+    return RECENCY.map((r,ri)=>RF_SHARE[ri].map(v=>total*v/s));
+  }
+
+  /* ---------- アフィニティ集計 ---------- */
+  function affinityAgg(range,seg){
+    const A=agg(range,seg);
+    const sess=AFFINITY.map(()=>0), cv=AFFINITY.map(()=>0);
+    A.models.forEach((m,mi)=>{
+      const sh=affShare(MODELS[mi]);
+      AFFINITY.forEach((af,ai)=>{
+        sess[ai]+=m.sessions*sh[af.id];
+        cv[ai]+=m.cv*sh[af.id]*AFF_MULT_N[mi][af.id];
+      });
+    });
+    const totS=sess.reduce((a,b)=>a+b,0), totC=cv.reduce((a,b)=>a+b,0);
+    return AFFINITY.map((af,ai)=>({...af,sessions:sess[ai],cv:cv[ai],
+      cvr:cv[ai]/Math.max(1,sess[ai]),
+      share:sess[ai]/totS,
+      idx: (cv[ai]/Math.max(1,sess[ai]))/(totC/totS)*100 }));
+  }
+
+  /* ---------- キャンペーン（広告トラッキング） ---------- */
+  const CAMPAIGNS=[
+    {id:'brand_go', name:'指名検索 常時運用',        ch:'sem', src:'google', med:'cpc',  utm:'always-on_brand',       from:'2026-02-01',to:'2026-08-18', share:.34, cpc:38,  q:1.35, goal:'estimate'},
+    {id:'gen_go',   name:'一般KW 常時運用',          ch:'sem', src:'google', med:'cpc',  utm:'always-on_generic',     from:'2026-02-01',to:'2026-08-18', share:.27, cpc:95,  q:0.85, goal:'estimate'},
+    {id:'brand_yh', name:'Yahoo!検索 指名',          ch:'sem', src:'yahoo',  med:'cpc',  utm:'always-on_brand-y',     from:'2026-02-01',to:'2026-08-18', share:.18, cpc:41,  q:1.22, goal:'estimate'},
+    {id:'alp_dsp',  name:'アルファード改良 告知',     ch:'dsp', src:'dv360',  med:'display',utm:'alphard_mc_202607',   from:'2026-07-17',to:'2026-08-31', share:.30, cpc:52,  q:1.10, goal:'catalog', model:'alphard'},
+    {id:'har_dsp',  name:'ハリアー特別仕様 告知',     ch:'dsp', src:'yda',    med:'display',utm:'harrier_sp_202607',   from:'2026-07-01',to:'2026-08-15', share:.24, cpc:49,  q:1.05, goal:'catalog', model:'harrier'},
+    {id:'bz_dsp',   name:'bZ4X サマー ディスプレイ',  ch:'dsp', src:'gdn',    med:'display',utm:'bz4x_summer_202608',  from:'2026-08-07',to:'2026-08-18', share:.22, cpc:55,  q:0.92, goal:'estimate', model:'bz4x'},
+    {id:'crown_tver',name:'クラウン改良 TVer',        ch:'vid', src:'tver',   med:'video', utm:'crown_mc_202608',      from:'2026-08-01',to:'2026-08-18', share:.30, cpc:64,  q:1.02, goal:'catalog', model:'crown'},
+    {id:'bz_yt',    name:'bZ4X サマー YouTube',      ch:'vid', src:'youtube',med:'video', utm:'bz4x_summer_202608',   from:'2026-08-07',to:'2026-08-18', share:.34, cpc:58,  q:0.96, goal:'estimate', model:'bz4x'},
+    {id:'kinto_meta',name:'KINTO 夏の乗り換え',       ch:'sns', src:'meta',   med:'paid_social',utm:'kinto_summer_2026',from:'2026-07-01',to:'2026-08-18', share:.36, cpc:72,  q:1.18, goal:'kinto'},
+    {id:'sienta_line',name:'シエンタ ファミリー訴求',  ch:'sns', src:'line',   med:'paid_social',utm:'sienta_family_2026',from:'2026-07-01',to:'2026-08-18',share:.28, cpc:66,  q:1.08, goal:'testdrive', model:'sienta'},
+    {id:'gr86_x',   name:'GR86 抽選告知',            ch:'sns', src:'x',      med:'paid_social',utm:'gr86_lottery_202606',from:'2026-06-20',to:'2026-07-10',share:.18, cpc:60,  q:0.90, goal:'catalog', model:'gr86'},
+    {id:'after_crm',name:'点検・入庫促進（CRM）',     ch:'crm', src:'crm',    med:'email', utm:'aftersales_202608',    from:'2026-08-01',to:'2026-08-18', share:.44, cpc:0,   q:1.60, goal:'service'},
+  ];
+  function campaigns(range){
+    const A=agg(range,'all');
+    const chIdx=Object.fromEntries(CHANNELS.map((c,i)=>[c.id,i]));
+    return CAMPAIGNS.map(cp=>{
+      const w={a:Math.max(NDAYS-range,IDX[cp.from]??0), b:Math.min(NDAYS-1,IDX[cp.to]??NDAYS-1)};
+      let sess=0;
+      if(w.a<=w.b){
+        for(let d=w.a;d<=w.b;d++){
+          let chSum=0;
+          for(let mi=0;mi<NM;mi++)chSum+=S[d][mi][chIdx[cp.ch]];
+          chSum+=OTHER[d][chIdx[cp.ch]];
+          // 車種指定キャンペーンはその車種の伸びに連動
+          if(cp.model){
+            const mi=MODELS.findIndex(m=>m.id===cp.model);
+            sess+=S[d][mi][chIdx[cp.ch]]*2.6*cp.share;
+          }else{
+            sess+=chSum*cp.share;
+          }
+        }
+      }
+      const g=GOALS.find(x=>x.id===cp.goal);
+      const chObj=A.channels[chIdx[cp.ch]];
+      const cvr=chObj.cvr*cp.q*(cp.goal==='service'?2.4:1);
+      const cv=sess*cvr;
+      const spend=sess*cp.cpc;
+      const value=cv*g.value*3.2;         // 商談価値換算
+      return {...cp, chName:CHANNELS[chIdx[cp.ch]].name, chColor:CHANNELS[chIdx[cp.ch]].color,
+        sessions:sess, cv, cvr, spend, cpa:cv>0?spend/cv:0, roas:spend>0?value/spend:null,
+        active: IDX[cp.to]>=NDAYS-range};
+    }).filter(c=>c.sessions>500);
+  }
+
+  /* ---------- UTMサンバースト ---------- */
+  function utmTree(range){
+    const cps=campaigns(range);
+    const bySrc={};
+    cps.forEach(c=>{
+      bySrc[c.src]=bySrc[c.src]||{name:c.src,children:[],value:0,med:c.med};
+      bySrc[c.src].children.push({name:c.utm,value:Math.round(c.sessions),cv:c.cv,cp:c});
+      bySrc[c.src].value+=c.sessions;
+    });
+    const A=agg(range,'all');
+    const paidSess=A.channels.filter(c=>c.paid).reduce((a,c)=>a+c.sessions,0);
+    const tracked=cps.reduce((a,c)=>a+c.sessions,0);
+    return {tree:Object.values(bySrc),tracked,paidSess,untracked:Math.max(0,paidSess-tracked)};
+  }
+
+  /* ---------- ミッション（8月・月次目標） ---------- */
+  function missions(){
+    // 8/1〜8/18 の実績
+    const a=IDX['2026-08-01'], b=IDX['2026-08-18'];
+    const mtd={estimate:0,testdrive:0,kinto:0,newSessions:0};
+    for(let d=a;d<=b;d++){
+      for(let mi=0;mi<NM;mi++){
+        const m=MODELS[mi];
+        for(let c=0;c<NC;c++){
+          const s=S[d][mi][c];
+          mtd.newSessions+=s*CHANNELS[c].newShare;
+          for(const gid of ['estimate','testdrive','kinto']){
+            const g=GOALS.find(x=>x.id===gid);
+            mtd[gid]+=s*m.cvr*g.mult*(GOAL_CH[gid][CHANNELS[c].id]||1)*DN[gid][d];
+          }
+        }
+      }
+      for(let c=0;c<NC;c++)mtd.newSessions+=OTHER[d][c]*CHANNELS[c].newShare;
+    }
+    const pace=18/31;
+    const defs=[
+      {id:'m1',name:'見積りシミュレーション完了', target:190000, actual:mtd.estimate, unit:'件', icon:'target'},
+      {id:'m2',name:'試乗予約',                target:31500, actual:mtd.testdrive, unit:'件', icon:'wheel'},
+      {id:'m3',name:'KINTO 申込・見積り',       target:9200,  actual:mtd.kinto,    unit:'件', icon:'key'},
+      {id:'m4',name:'新規ユーザー獲得',          target:15000000, actual:mtd.newSessions/1.06, unit:'人', icon:'user'},
+    ];
+    return defs.map(d=>{
+      const prog=d.actual/d.target;
+      const vsPace=prog/pace;
+      return {...d, prog, pace, vsPace,
+        status: vsPace>=1.02?'ahead': vsPace>=0.92?'ontrack':'behind'};
+    });
+  }
+  function score(){
+    const ms=missions();
+    const w=[.32,.28,.16,.24];
+    const s=ms.reduce((a,m,i)=>a+w[i]*Math.min(1.15,m.vsPace),0)/1.15*100;
+    const tier= s>=90?'S': s>=72?'A': s>=58?'B':'C';
+    return {score:s, tier, missions:ms};
+  }
+
+  /* ---------- カスタムディメンション辞書 ---------- */
+  const CUSTOM_DIMS=[
+    {scope:'User',  disp:'会員ランク',            param:'member_rank',        fill:.92, vals:'gold / silver / bronze / guest', note:'TOYOTAアカウント連携。CRM側IDと突合可能'},
+    {scope:'User',  disp:'ログイン状態',           param:'login_status',       fill:.99, vals:'logged_in / guest', note:'全ヒットに付与。ステージ分析の基礎'},
+    {scope:'User',  disp:'検討ステージ',           param:'consideration_stage',fill:.84, vals:'aware / interest / consider / nego', note:'行動スコアリングで日次更新'},
+    {scope:'User',  disp:'保有車種',              param:'owned_model',        fill:.61, vals:'model_code準拠', note:'申告ベース。取得率が低く改善対象'},
+    {scope:'Event', disp:'車種コード',            param:'model_code',         fill:.97, vals:'alphard / harrier / …', note:'車種ページ・見積りに付与'},
+    {scope:'Event', disp:'グレードコード',         param:'grade_code',         fill:.88, vals:'Z / G / X / Executive…', note:'グレード選択以降のヒット'},
+    {scope:'Event', disp:'シミュレーター結果金額',  param:'sim_price',          fill:.76, vals:'数値（万円）', note:'月額換算はkinto_plan側'},
+    {scope:'Event', disp:'販売店エリア',           param:'dealer_area',        fill:.81, vals:'都道府県コード', note:'販売店検索・来店予約に付与'},
+    {scope:'Event', disp:'CPパス_内部リンク',      param:'padid',              fill:.93, vals:'top_kv / cp_banner_01 / …', note:'サイト内バナー・導線の効果測定キー'},
+    {scope:'Event', disp:'KINTOプラン',           param:'kinto_plan',         fill:.95, vals:'initial / solutions', note:'KINTO遷移・申込ヒット'},
+    {scope:'Event', disp:'来訪目的',              param:'visit_purpose',      fill:.58, vals:'buy / maintain / browse…', note:'アンケート由来。取得率が低く改善対象'},
+    {scope:'Event', disp:'フォームステップ',       param:'form_step',          fill:.96, vals:'step1〜4 / complete', note:'EFO分析用'},
+  ];
+  const EVENTS_DICT=[
+    {ev:'page_view',            disp:'ページ表示',          scale:'pv'},
+    {ev:'view_item',            disp:'車種詳細 閲覧',        scale:'modelSessions'},
+    {ev:'select_grade',         disp:'グレード選択',         scale:'grade'},
+    {ev:'simulation_start',     disp:'見積りシミュレーター開始', scale:'simStart'},
+    {ev:'estimate_complete',    disp:'見積り完了',           goal:'estimate'},
+    {ev:'test_drive_reserve',   disp:'試乗予約',            goal:'testdrive'},
+    {ev:'dealer_search',        disp:'販売店検索',           scale:'dealer'},
+    {ev:'catalog_view_complete',disp:'カタログ閲覧完了',      goal:'catalog'},
+    {ev:'kinto_apply',          disp:'KINTO 申込・見積り',   goal:'kinto'},
+    {ev:'favorite_add',         disp:'お気に入り登録',        scale:'fav'},
+  ];
+
+  /* ---------- 会員ランク・ログイン ---------- */
+  function memberData(range){
+    const A=agg(range,'all');
+    const ranks=[
+      {name:'ゴールド会員', share:.06, cvrMult:4.2},
+      {name:'シルバー会員', share:.11, cvrMult:2.6},
+      {name:'ブロンズ会員', share:.17, cvrMult:1.6},
+      {name:'未ログイン',   share:.66, cvrMult:.62},
+    ];
+    const denom=ranks.reduce((a,r)=>a+r.share*r.cvrMult,0);
+    const base=A.total.cv/A.total.sessions;
+    return ranks.map(r=>({...r,sessions:A.total.sessions*r.share,cvr:base*r.cvrMult/denom,cv:A.total.cv*r.share*r.cvrMult/denom}));
+  }
+
+  /* ---------- デバイス・デモグラ集計 ---------- */
+  function deviceAgg(range,seg){
+    const A=agg(range,seg);
+    const v=[0,0,0];
+    A.channels.forEach(c=>{const d=DEV_CH[c.id];for(let i=0;i<3;i++)v[i]+=c.sessions*d[i]});
+    return DEVICES.map((d,i)=>({...d,sessions:v[i]}));
+  }
+  function demoAgg(range){
+    const A=agg(range,'all');
+    const male=new Array(6).fill(0), female=new Array(6).fill(0);
+    A.models.forEach((m,mi)=>{
+      const g=ageGender(MODELS[mi]);
+      for(let i=0;i<6;i++){male[i]+=m.sessions*g.male[i];female[i]+=m.sessions*g.female[i]}
+    });
+    return {ages:AGES,male,female};
+  }
+  function areaAgg(range){
+    const A=agg(range,'all');
+    const v=AREAS.map(()=>0);
+    A.models.forEach((m,mi)=>{
+      const ar=areaShare(MODELS[mi]);
+      AREAS.forEach((a,ai)=>v[ai]+=m.sessions*ar[a.id]);
+    });
+    const other=A.otherSessions; const s=v.reduce((a,b)=>a+b,0);
+    return AREAS.map((a,ai)=>({...a,sessions:v[ai]*(1+other/Math.max(1,s))}));
+  }
+
+  return {DATES,CHANNELS,MODELS,GOODS,GOALS,AFFINITY,STAGES,AREAS,BUCKETS,RECENCY,DEVICES,AGES,EVENTS,
+    CUSTOM_DIMS,EVENTS_DICT,DIMS,STAGE_LOGIN,
+    agg,pairMatrix,sankey,funnel,comboData,rfMatrix,affinityAgg,campaigns,utmTree,missions,score,
+    memberData,deviceAgg,demoAgg,areaAgg,affShare,goodsShare,areaShare};
+})();
+
+</script>
+<script>
+/* ============ 描画エンジン 1/2：ヘルパー・HQ・ガレージ・商材・動線 ============ */
+const $=(s,el=document)=>el.querySelector(s);
+const $$=(s,el=document)=>Array.from(el.querySelectorAll(s));
+
+/* ---------- 状態 ---------- */
+const ST={range:28,seg:'all',view:'hq',trendMode:'both',
+  garage:{sort:'sessions',cat:'all'},
+  lab:{row:'model',col:'channel',metric:'sessions'},
+  vs:{a:'alphard',b:'harrier'}, funnelGoal:'estimate',
+  dirty:{}, campSort:{key:'roas',dir:-1}, leagueSort:{key:'sessions',dir:-1}};
+
+/* ---------- 表示フォーマッタ ---------- */
+const CM=n=>Math.round(n).toLocaleString('ja-JP');
+function fmtJP(n){
+  if(n>=1e8) return (n/1e8).toFixed(2).replace(/\.?0+$/,'')+'億';
+  if(n>=1e4){const m=n/1e4; return (m<10? m.toFixed(1).replace(/\.0$/,'') : CM(m))+'万'}
+  if(n>=100) return CM(n);
+  return (Math.round(n*10)/10).toLocaleString('ja-JP');
+}
+const pct=(v,d=1)=>(v*100).toFixed(d)+'%';
+function yen(n){
+  if(n>=1e8) return '¥'+(n/1e8).toFixed(1)+'億';
+  if(n>=1e4) return '¥'+CM(n/1e4)+'万';
+  return '¥'+CM(n);
+}
+function deltaPill(cur,prev,inverse=false){
+  if(!prev) return '<span class="pill flat">—</span>';
+  const d=(cur-prev)/prev;
+  const up=inverse? d<0 : d>0;
+  const cls=Math.abs(d)<0.002?'flat':up?'up':'down';
+  const sign=d>0?'+':'';
+  const arrow=Math.abs(d)<0.002?'→':d>0?'▲':'▼';
+  return `<span class="pill ${cls}">${arrow} ${sign}${(d*100).toFixed(1)}%</span>`;
+}
+function spark(values,color='#38BDF8',w=110,h=28){
+  if(!values.length) return '';
+  const mx=Math.max(...values),mn=Math.min(...values),rg=mx-mn||1;
+  const pts=values.map((v,i)=>`${(i/(values.length-1)*w).toFixed(1)},${(h-3-(v-mn)/rg*(h-7)).toFixed(1)}`);
+  const uid='g'+Math.abs((color+w).split('').reduce((a,c)=>a+c.charCodeAt(0),0))+Math.round(values[0]);
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <defs><linearGradient id="${uid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${color}" stop-opacity=".34"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    <polygon points="0,${h} ${pts.join(' ')} ${w},${h}" fill="url(#${uid})"/>
+    <polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+
+/* ---------- カウントアップ ---------- */
+const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function countUp(el){
+  const v=parseFloat(el.dataset.cu), suf=el.dataset.suf||'', dec=parseInt(el.dataset.dec||'0');
+  const jp=el.dataset.jp==='1';
+  const render=x=> (jp? fmtJP(x) : dec? x.toFixed(dec) : CM(x))+suf;
+  if(REDUCED){el.textContent=render(v);return}
+  const t0=performance.now(),dur=850;
+  function step(t){
+    const p=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-p,3);
+    el.textContent=render(v*e);
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function runCountUps(root){$$('[data-cu]',root).forEach(countUp)}
+
+/* ---------- ECharts 基盤 ---------- */
+const FONT="'BIZ UDPGothic','BIZ UDGothic','Hiragino Sans',Meiryo,sans-serif";
+const MONOF="'JetBrains Mono',ui-monospace,monospace";
+const TX='#E9EFF8',TX2='#A5B6CE',MUT='#647694',LINE='#1B2A42',LINE2='#28395A';
+const CY='#38BDF8',TE='#00E5C7',AM='#FFB020',RD='#FF5A76',GD='#FFD84D',GN='#34D399';
+const CAT8=['#3987E5','#D95926','#199E70','#C98500','#D55181','#008300','#9085E9','#E66767'];
+const SEQ=v=>{ // 0..1 → シアン系シーケンシャル（暗→明）
+  const stops=[[14,42,68],[21,74,118],[30,108,168],[59,155,219],[124,199,245]];
+  const x=Math.max(0,Math.min(1,v))*(stops.length-1), i=Math.floor(x), f=x-i;
+  const a=stops[i],b=stops[Math.min(stops.length-1,i+1)];
+  return `rgb(${Math.round(a[0]+(b[0]-a[0])*f)},${Math.round(a[1]+(b[1]-a[1])*f)},${Math.round(a[2]+(b[2]-a[2])*f)})`;
+};
+const charts={};
+function E(id){
+  const el=document.getElementById(id);
+  if(!el) return null;
+  if(charts[id] && !charts[id].isDisposed()){return charts[id]}
+  const c=echarts.init(el,null,{renderer:'canvas'});
+  charts[id]=c; return c;
+}
+const TIP={backgroundColor:'#111C2E',borderColor:LINE2,borderWidth:1,padding:[9,13],
+  textStyle:{color:TX,fontSize:12,fontFamily:FONT},
+  extraCssText:'border-radius:10px;box-shadow:0 10px 30px rgba(2,8,20,.5);'};
+function baseOpt(o){
+  return Object.assign({
+    textStyle:{fontFamily:FONT,color:TX2},
+    animationDuration:800,animationEasing:'cubicOut',
+    tooltip:Object.assign({},TIP),
+  },o);
+}
+function axX(extra={}){return Object.assign({type:'category',axisLine:{lineStyle:{color:LINE2}},axisTick:{show:false},
+  axisLabel:{color:MUT,fontSize:10.5,fontFamily:MONOF}},extra)}
+function axY(extra={}){return Object.assign({type:'value',axisLine:{show:false},axisTick:{show:false},
+  splitLine:{lineStyle:{color:LINE,type:[3,4]}},axisLabel:{color:MUT,fontSize:10.5,fontFamily:MONOF}},extra)}
+
+/* ---------- 車シルエットSVG ---------- */
+const CARS={
+  van:'M6 30 L8 16 Q9 12 14 11 L40 9 Q46 9 50 13 L56 18 L74 20 Q78 21 78 25 L78 30 L70 30 A6 6 0 0 0 58 30 L26 30 A6 6 0 0 0 14 30 Z M16 15 L38 13 L38 19 L14 19 Z M42 13 L54 14 L58 19 L42 19 Z',
+  suv:'M6 30 L9 20 Q10 17 14 16 L22 10 Q24 8 28 8 L52 8 Q56 8 58 11 L64 16 L74 19 Q78 20 78 24 L78 30 L69 30 A6.5 6.5 0 0 0 56 30 L27 30 A6.5 6.5 0 0 0 14 30 Z M24 15 L38 11 L38 17 L20 17 Z M42 11 L52 11 L57 16 L42 17 Z',
+  sedan:'M4 30 L7 23 Q8 20 12 19 L24 17 L32 11 Q34 9 38 9 L52 9 Q56 9 59 12 L64 17 L75 20 Q79 21 79 25 L78 30 L69 30 A6 6 0 0 0 57 30 L26 30 A6 6 0 0 0 14 30 Z M33 13 L44 12 L44 17 L28 17 Z M47 12 L54 12 L58 16 L47 17 Z',
+  compact:'M8 30 L10 21 Q11 17 16 16 L26 10 Q28 8 32 8 L48 8 Q54 8 58 13 L62 17 L70 19 Q74 20 74 24 L74 30 L66 30 A6 6 0 0 0 54 30 L28 30 A6 6 0 0 0 16 30 Z M28 14 L40 11 L40 17 L24 17 Z M44 11 L50 12 L54 16 L44 17 Z',
+  ev:'M8 30 L10 20 Q11 16 16 15 L26 9 Q29 7 34 7 L50 7 Q56 7 60 12 L64 16 L72 18 Q76 19 76 23 L76 30 L67 30 A6 6 0 0 0 55 30 L28 30 A6 6 0 0 0 16 30 Z M30 12 L42 10 L42 16 L26 16 Z M46 10 L52 11 L56 15 L46 16 Z M36 20 L41 20 L38 26 L44 19.5 L39 19.5 L41.5 14.5 Z',
+  sport:'M4 29 L8 24 Q10 21 15 20 L28 18 L36 12 Q39 10 44 10 L54 11 Q58 12 61 15 L66 19 L76 21 Q80 22 79 26 L78 29 L70 29 A5.5 5.5 0 0 0 58 29 L26 29 A5.5 5.5 0 0 0 14 29 Z M37 14 L47 13 L48 18 L32 18 Z',
+};
+function carSvg(icon,cls=''){
+  const d=CARS[icon]||CARS.sedan;
+  return `<svg class="car ${cls}" viewBox="0 0 84 34" fill="none">
+    <path d="${d}" fill="currentColor" opacity=".16"/>
+    <path d="${d}" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/></svg>`;
+}
+const ICONS={
+  target:`<svg viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="1.9"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2" fill="#38BDF8"/></svg>`,
+  wheel:`<svg viewBox="0 0 24 24" fill="none" stroke="#00E5C7" stroke-width="1.9"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.6"/><path d="M12 3.5v5.4M12 15.1v5.4M3.5 12h5.4M15.1 12h5.4"/></svg>`,
+  key:`<svg viewBox="0 0 24 24" fill="none" stroke="#FFB020" stroke-width="1.9"><circle cx="8" cy="14" r="4.5"/><path d="M11.5 10.5L20 2M16 6l3 3M13 9l2.2 2.2"/></svg>`,
+  user:`<svg viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="1.9"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.8-4.2 3.9-6.5 7.5-6.5s6.7 2.3 7.5 6.5"/></svg>`,
+};
+
+/* ---------- 期間ラベル ---------- */
+function periodLabel(A){
+  const f=A.from.slice(5).replace('-','/'),t=A.to.slice(5).replace('-','/');
+  return `${f} 〜 ${t}（前期間 ${A.prevFrom.slice(5).replace('-','/')} 〜 ${A.prevTo.slice(5).replace('-','/')} と比較）`;
+}
+const SEGLBL={all:'全体',new:'新規ユーザー',ret:'再訪ユーザー'};
+
+/* ==================================================
+   VIEW: 総合HQ
+   ================================================== */
+function renderHQ(){
+  const A=GA.agg(ST.range,ST.seg), SC=GA.score();
+  $('#navScore').textContent='Lv.'+Math.round(SC.score);
+
+  /* --- ヒーロー --- */
+  const ringR=62, circ=2*Math.PI*ringR, prog=SC.score/100;
+  $('#heroCard').innerHTML=`
+    <div class="hero">
+      <div class="ringwrap">
+        <div class="ring">
+          <svg viewBox="0 0 148 148">
+            <circle cx="74" cy="74" r="${ringR}" fill="none" stroke="#15223A" stroke-width="11"/>
+            <circle cx="74" cy="74" r="${ringR}" fill="none" stroke="url(#ringGrad)" stroke-width="11" stroke-linecap="round"
+              stroke-dasharray="${(circ*prog).toFixed(1)} ${circ.toFixed(1)}" style="filter:drop-shadow(0 0 9px rgba(0,229,199,.55))"/>
+            <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#38BDF8"/><stop offset="1" stop-color="#00E5C7"/></linearGradient></defs>
+          </svg>
+          <div class="in"><span class="sc num" data-cu="${SC.score.toFixed(1)}" data-dec="1">0</span><span class="lb">SITE SCORE</span></div>
+        </div>
+        <div class="hexwrap"><div class="hex ${SC.tier}">${SC.tier}</div><span class="hexlabel">TIER</span></div>
+      </div>
+      <div class="hmeta">
+        <div class="hrow1"><h2>toyota.jp デジタル戦況</h2>${deltaPill(A.total.sessions,A.prevTotal.sessions)}</div>
+        <div class="lvl"><span class="lvn">Lv.${Math.round(SC.score)}</span><div class="xp"><i style="width:${(SC.score%10)*10}%"></i></div>
+          <span class="mono">次のLvまで ${(10-SC.score%10).toFixed(1)}pt</span></div>
+        <p class="hnote">選択期間のセッションは <span class="hl-b num">${fmtJP(A.total.sessions)}</span>（前期間比 <b class="num">${((A.total.sessions/A.prevTotal.sessions-1)*100).toFixed(1)}%</b>）、
+        コンバージョンは <span class="hl num">${fmtJP(A.total.cv)}件</span>。
+        スコアは8月ミッション4本の達成ペースの加重平均。<span class="hl-r">新規ユーザー獲得だけがペース未達</span>で、Sティア昇格の残り条件になっている。</p>
+        <div class="qlog"><div class="qhead">イベントログ — 発表・キャンペーン</div>
+          ${GA.EVENTS.slice(-4).reverse().map(e=>`<div class="qrow"><span class="qd num">${e.date.slice(5).replace('-','/')}</span><span>${e.label}</span><span class="qeff num" title="流入押上げ係数">×${e.amp.toFixed(1)}</span></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+
+  /* --- ミッション --- */
+  const STLBL={ahead:'ペース超過',ontrack:'目標ペース',behind:'ペース遅れ'};
+  const STMK={ahead:'▲',ontrack:'●',behind:'▼'};
+  $('#missionBox').innerHTML=SC.missions.map(m=>`
+    <div class="mrow">
+      <div class="mic">${ICONS[m.icon]}</div>
+      <div class="mm">
+        <div class="mt"><b>${m.name}</b>
+          <span class="mnum"><span data-cu="${Math.round(m.actual)}" data-jp="1">0</span> / ${fmtJP(m.target)}${m.unit}</span></div>
+        <div class="mbar"><i class="${m.status}" style="width:${Math.min(100,m.prog*100).toFixed(1)}%"></i>
+          <span class="pace" style="left:${(m.pace*100).toFixed(1)}%" title="経過日数ペース ${(m.pace*100).toFixed(0)}%"></span></div>
+      </div>
+      <span class="st ${m.status}">${STMK[m.status]} ${STLBL[m.status]} ${(v=>v>0?'+'+v+'%':v<0?v+'%':'±0%')(Math.round((m.vsPace-1)*100))}</span>
+    </div>`).join('');
+
+  /* --- KPIタイル --- */
+  const k=[
+    {l:'セッション', v:A.total.sessions, jp:1, prev:A.prevTotal.sessions, sp:A.dailySessions, c:CY},
+    {l:'ユーザー', v:A.total.users, jp:1, prev:A.prevTotal.users, sp:A.dailySessions.map(v=>v/1.7), c:TE},
+    {l:'新規率', v:A.total.newRate*100, dec:1, suf:'%', prev:A.prevTotal.newRate*100, sp:null, c:AM, raw:true},
+    {l:'コンバージョン', v:A.total.cv, jp:1, prev:A.prevTotal.cv, sp:A.dailyCv, c:GD},
+    {l:'CVR', v:A.total.cv/A.total.sessions*100, dec:2, suf:'%', prev:A.prevTotal.cv/A.prevTotal.sessions*100, sp:null, c:GN, raw:true},
+    {l:'CV価値換算', v:A.total.value, yen:1, prev:A.prevTotal.value, sp:null, c:'#A78BFA'},
+  ];
+  $('#kpiRow').innerHTML=k.map(x=>{
+    const val= x.yen? `<div class="kv num">${yen(x.v)}</div>`
+      : `<div class="kv num" data-cu="${x.jp?Math.round(x.v):x.v.toFixed(x.dec||0)}" ${x.jp?'data-jp="1"':''} ${x.dec?`data-dec="${x.dec}"`:''} data-suf="${x.suf||''}">0</div>`;
+    return `<div class="kpi reveal in">
+      <div class="kl">${x.l}</div>${val}
+      <div class="kd">${deltaPill(x.v,x.prev)}<span>前期間比</span></div>
+      ${x.sp?spark(x.sp,x.c,180,30):'<div style="height:30px;margin-top:6px"></div>'}
+    </div>`;
+  }).join('');
+
+  /* --- トレンド --- */
+  $('#trendSub').textContent= ST.trendMode==='both' ? '指数（期間初日=100）・注釈=主なリリース' : periodLabel(A);
+  const dates=A.dates.map(d=>d.slice(5).replace('-','/'));
+  const evLines=GA.EVENTS.filter(e=>A.dates.includes(e.date)).map(e=>({
+    xAxis:e.date.slice(5).replace('-','/'),
+    label:{formatter:e.label.length>11?e.label.slice(0,11)+'…':e.label,color:MUT,fontSize:9.5,rotate:0},
+    lineStyle:{color:LINE2,type:[4,4]}}));
+  const idx=(arr)=>arr.map(v=>v/arr[0]*100);
+  let series,yopt;
+  if(ST.trendMode==='both'){
+    series=[
+      {name:'セッション指数',type:'line',data:idx(A.dailySessions).map(v=>+v.toFixed(1)),symbol:'circle',symbolSize:1,lineStyle:{width:2.4,color:CAT8[0]},itemStyle:{color:CAT8[0]},emphasis:{scale:3},
+        markLine:{symbol:'none',silent:true,data:evLines,animation:false}},
+      {name:'CV指数',type:'line',data:idx(A.dailyCv).map(v=>+v.toFixed(1)),symbol:'circle',symbolSize:1,lineStyle:{width:2.2,color:CAT8[2],type:[6,3]},itemStyle:{color:CAT8[2]}},
+    ];
+    yopt=axY({min:v=>Math.max(0,Math.floor(v.min/10)*10-10),axisLabel:{formatter:'{value}',color:MUT,fontSize:10.5,fontFamily:MONOF}});
+  }else{
+    const raw=ST.trendMode==='sess'?A.dailySessions:A.dailyCv;
+    const col=ST.trendMode==='sess'?CY:TE;
+    series=[{name:ST.trendMode==='sess'?'セッション':'CV',type:'line',data:raw.map(v=>Math.round(v)),symbol:'circle',symbolSize:1,
+      lineStyle:{width:2.2,color:col},itemStyle:{color:col},
+      areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:col+'33'},{offset:1,color:col+'00'}]}},
+      markLine:{symbol:'none',silent:true,data:evLines,animation:false}}];
+    yopt=axY({axisLabel:{formatter:v=>fmtJP(v),color:MUT,fontSize:10.5,fontFamily:MONOF}});
+  }
+  E('chTrend').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{trigger:'axis',axisPointer:{type:'cross',lineStyle:{color:CY+'55'},crossStyle:{color:CY+'55'},label:{backgroundColor:'#15223A',color:TX,fontSize:10}},
+      valueFormatter:v=>ST.trendMode==='both'? (+v).toFixed(1) : fmtJP(v)}),
+    legend:{top:0,right:0,textStyle:{color:TX2,fontSize:11},itemWidth:14,itemHeight:8,icon:'roundRect'},
+    grid:{left:8,right:14,top:34,bottom:6,containLabel:true},
+    xAxis:axX({data:dates,boundaryGap:false,axisLabel:{color:MUT,fontSize:10,fontFamily:MONOF,interval:Math.floor(dates.length/9)}}),
+    yAxis:yopt, series}),true);
+
+  /* --- チャネルドーナツ --- */
+  document.getElementById('chTrend').style.minHeight='388px';
+  const donutEl=document.getElementById('chChannelDonut'); donutEl.style.minHeight='438px';
+  E('chChannelDonut').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{trigger:'item',valueFormatter:v=>fmtJP(v)+'（セッション）'}),
+    legend:{bottom:0,left:'center',textStyle:{color:TX2,fontSize:10.5},itemWidth:11,itemHeight:11,icon:'roundRect',itemGap:8},
+    series:[{type:'pie',radius:['50%','72%'],center:['50%','37%'],
+      itemStyle:{borderColor:'#0A1120',borderWidth:2,borderRadius:5},
+      label:{show:false},emphasis:{scale:true,scaleSize:4},
+      data:A.channels.map(c=>({name:c.name,value:Math.round(c.sessions),itemStyle:{color:c.color}}))}],
+    graphic:[{type:'text',left:'center',top:'31%',style:{text:fmtJP(A.total.sessions),fill:TX,fontSize:19,fontWeight:800,fontFamily:MONOF}},
+             {type:'text',left:'center',top:'40%',style:{text:'総セッション',fill:MUT,fontSize:10,fontFamily:FONT}}]
+  }),true);
+
+  /* --- インサイト --- */
+  const chs=[...A.channels].sort((a,b)=>(b.sessions/b.prevSessions)-(a.sessions/a.prevSessions));
+  const grow=chs[0], shrink=chs[chs.length-1];
+  const topM=[...A.models].sort((a,b)=>(b.sessions/b.prevSessions)-(a.sessions/a.prevSessions))[0];
+  $('#hqInsight').innerHTML=`<span class="it">INSIGHT — 総合</span>
+    <p>成長ドライバーは <span class="hl-b">${grow.name}</span>（前期間比 <b class="num">+${((grow.sessions/grow.prevSessions-1)*100).toFixed(1)}%</b>）。車種では <span class="hl">${topM.name}</span> が <b class="num">+${((topM.sessions/topM.prevSessions-1)*100).toFixed(1)}%</b> と最も伸びており、発表・キャンペーンの寄与が読み取れる。</p>
+    <p>一方 <span class="hl-r">${shrink.name}</span> は <b class="num">${((shrink.sessions/shrink.prevSessions-1)*100).toFixed(1)}%</b>。CVR は全体 <b class="num">${pct(A.total.cv/A.total.sessions,2)}</b> で、${ST.seg==='ret'?'再訪セグメントは新規の約3倍の転換力を持つ。':'再訪セグメント（ヘッダで切替）は新規の約3倍の転換力を持つ。'}</p>`;
+
+  runCountUps($('section[data-view="hq"]'));
+}
+
+/* ==================================================
+   VIEW: 車種ガレージ
+   ================================================== */
+function renderGarage(){
+  const A=GA.agg(ST.range,ST.seg);
+  let ms=[...A.models];
+  // カテゴリチップ生成（初回）
+  const ctl=$('#garageCtl');
+  if(!ctl.dataset.built){
+    const cats=[...new Set(GA.MODELS.map(m=>m.cat))];
+    ctl.insertAdjacentHTML('beforeend',cats.map(c=>`<span class="chip" data-cat="${c}">${c}</span>`).join(''));
+    ctl.dataset.built='1';
+  }
+  if(ST.garage.cat!=='all') ms=ms.filter(m=>m.cat===ST.garage.cat);
+  const sorters={sessions:(a,b)=>b.sessions-a.sessions, cvr:(a,b)=>b.cvr-a.cvr,
+    growth:(a,b)=>(b.sessions/b.prevSessions)-(a.sessions/a.prevSessions)};
+  ms.sort(sorters[ST.garage.sort]);
+
+  const maxS=Math.max(...A.models.map(m=>m.sessions)),
+        maxC=Math.max(...A.models.map(m=>m.cvr));
+  $('#modelCards').innerHTML=ms.map(m=>{
+    const g=(m.sessions/m.prevSessions-1)*100;
+    return `<div class="mcard ${m.tier==='S'?'tS':''}" data-model="${m.id}">
+      <div class="mh"><span class="rk num">#${String(m.rank).padStart(2,'0')}</span><span class="nm">${m.name}</span>
+        <span class="cat">${m.cat}</span>
+        <div class="hexwrap"><div class="hex sm ${m.tier}">${m.tier}</div></div></div>
+      <div class="carline">${carSvg(m.icon)}
+        <div class="sess"><div class="v num">${fmtJP(m.sessions)}</div><div class="u">セッション ${deltaPill(m.sessions,m.prevSessions)}</div></div></div>
+      <div class="stat"><span>集客力</span><div class="sb"><i style="width:${(m.sessions/maxS*100).toFixed(0)}%"></i></div><span class="sv">${(m.sessions/maxS*100).toFixed(0)}</span></div>
+      <div class="stat"><span>転換力</span><div class="sb"><i style="width:${(m.cvr/maxC*100).toFixed(0)}%"></i></div><span class="sv">${(m.cvr/maxC*100).toFixed(0)}</span></div>
+      <div class="stat"><span>再訪率</span><div class="sb"><i style="width:${(m.retShare*100).toFixed(0)}%;background:linear-gradient(90deg,#A78BFA,#38BDF8)"></i></div><span class="sv">${(m.retShare*100).toFixed(0)}%</span></div>
+      <div class="stat"><span>広告依存</span><div class="sb"><i style="width:${(m.adShare*100).toFixed(0)}%;background:linear-gradient(90deg,#FFB020,#FF5A76)"></i></div><span class="sv">${(m.adShare*100).toFixed(0)}%</span></div>
+      <div class="mf"><span>CVR <b class="num" style="color:var(--tx)">${pct(m.cvr,2)}</b></span>
+        <span>CV <b class="num" style="color:var(--tx)">${fmtJP(m.cv)}</b></span>
+        ${spark(m.daily.filter((_,i)=>i%Math.ceil(m.daily.length/28)===0),m.tier==='S'?GD:CY,96,26)}</div>
+    </div>`;
+  }).join('');
+  $$('#modelCards .mcard').forEach(el=>el.onclick=()=>openModelModal(el.dataset.model));
+
+  /* ツリーマップ */
+  const cats={};
+  A.models.forEach(m=>{(cats[m.cat]=cats[m.cat]||[]).push(m)});
+  const minC=Math.min(...A.models.map(m=>m.cvr));
+  E('chTreemap').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{formatter:p=>{
+      const d=p.data;
+      if(!d.model) return `<b>${p.name}</b><br>セッション ${fmtJP(p.value)}`;
+      return `<b>${d.model.name}</b>（${d.model.cat}）<br>セッション <b>${fmtJP(p.value)}</b><br>CVR <b>${pct(d.model.cvr,2)}</b> ／ CV ${fmtJP(d.model.cv)}`;
+    }}),
+    series:[{type:'treemap',roam:false,nodeClick:false,breadcrumb:{show:false},
+      left:0,right:0,top:6,bottom:34,
+      label:{show:true,formatter:p=>`${p.name}\n${fmtJP(p.value)}`,fontSize:11.5,fontFamily:FONT,color:'#EAF3FC',lineHeight:16},
+      upperLabel:{show:true,height:22,formatter:'{b}',color:TX2,fontSize:10.5},
+      itemStyle:{borderColor:'#0A1120',borderWidth:2,gapWidth:2},
+      levels:[{itemStyle:{borderColor:'#0A1120',borderWidth:3,gapWidth:3}},{}],
+      data:Object.entries(cats).map(([cat,list])=>({name:cat,
+        value:Math.round(list.reduce((a,m)=>a+m.sessions,0)),
+        children:list.map(m=>({name:m.name,value:Math.round(m.sessions),model:m,
+          itemStyle:{color:SEQ((m.cvr-minC)/(maxC-minC||1)*.92+.08)}}))}))}],
+    graphic:[{type:'text',left:6,bottom:6,style:{text:'色＝CVR：',fill:MUT,fontSize:10,fontFamily:FONT}},
+      {type:'rect',left:64,bottom:5,shape:{width:78,height:10,r:3},style:{fill:{type:'linear',x:0,y:0,x2:1,y2:0,colorStops:[{offset:0,color:SEQ(.08)},{offset:1,color:SEQ(1)}]}}},
+      {type:'text',left:148,bottom:6,style:{text:`低 ${pct(minC,1)} → 高 ${pct(maxC,1)}`,fill:MUT,fontSize:10,fontFamily:MONOF}}]
+  }),true);
+
+  /* 伸び率 */
+  const gr=[...A.models].map(m=>({name:m.name,g:(m.sessions/m.prevSessions-1)*100})).sort((a,b)=>a.g-b.g);
+  E('chGrowth').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{valueFormatter:v=>(v>0?'+':'')+(+v).toFixed(1)+'%'}),
+    grid:{left:8,right:44,top:8,bottom:6,containLabel:true},
+    xAxis:axY({axisLabel:{formatter:v=>v+'%',color:MUT,fontSize:10,fontFamily:MONOF}}),
+    yAxis:axX({type:'category',data:gr.map(x=>x.name),axisLabel:{color:TX2,fontSize:11,fontFamily:FONT}}),
+    series:[{name:'前期間比',type:'bar',barWidth:13,
+      itemStyle:{borderRadius:[0,4,4,0],color:p=>p.value>=0?'#199E70':'#E66767'},
+      label:{show:true,position:'right',formatter:p=>(p.value>0?'+':'')+p.value.toFixed(1)+'%',color:TX2,fontSize:10,fontFamily:MONOF},
+      data:gr.map(x=>+x.g.toFixed(1))}]
+  }),true);
+
+  /* リーグ表 */
+  renderLeagueTable(A);
+
+  const top=[...A.models].sort((a,b)=>b.sessions-a.sessions)[0];
+  const eff=[...A.models].sort((a,b)=>b.cvr-a.cvr)[0];
+  const ad=[...A.models].sort((a,b)=>b.adShare-a.adShare)[0];
+  $('#garageInsight').innerHTML=`<span class="it">INSIGHT — 車種</span>
+    <p>集客の王者は <span class="hl">${top.name}</span>（${fmtJP(top.sessions)}）。ただし転換効率の1位は <span class="hl-g">${eff.name}</span>（CVR <b class="num">${pct(eff.cvr,2)}</b>）で、量と質の主役は別。<span class="hl-b">${ad.name}</span> は広告依存度 <b class="num">${pct(ad.adShare,0)}</b> と最も高く、出稿停止時の下振れリスクを抱える。</p>
+    <p>ランドクルーザー・GR86 は指名検索と外部サイト比率が高い「ファン型」、シエンタ・ヴォクシーは SNS 比率が高い「ファミリー拡散型」と、同じトヨタでも集客構造はまったく別物。クロス分析ラボで channel × 車種 を確認のこと。</p>`;
+}
+
+function renderLeagueTable(A){
+  const cols=[
+    {k:'name',l:'車種',num:0},{k:'tier',l:'ティア',num:0},{k:'sessions',l:'セッション',num:1},
+    {k:'growth',l:'前期間比',num:1},{k:'pv',l:'PV',num:1},{k:'cvr',l:'CVR',num:1},
+    {k:'estimate',l:'見積り完了',num:1},{k:'testdrive',l:'試乗予約',num:1},{k:'retShare',l:'再訪率',num:1},{k:'adShare',l:'広告依存',num:1}];
+  const get=(m,k)=> k==='growth'? m.sessions/m.prevSessions-1 : k==='estimate'? m.cvGoal.estimate : k==='testdrive'? m.cvGoal.testdrive : m[k];
+  const ms=[...A.models].sort((a,b)=>{
+    const {key,dir}=ST.leagueSort; const av=get(a,key),bv=get(b,key);
+    return (typeof av==='string'? av.localeCompare(bv) : av-bv)*dir;
+  });
+  const maxS=Math.max(...ms.map(m=>m.sessions));
+  $('#leagueTable').innerHTML=`<thead><tr>${cols.map(c=>
+    `<th class="sortable ${c.num?'num':''}" data-k="${c.k}">${c.l}${ST.leagueSort.key===c.k?`<span class="arrow">${ST.leagueSort.dir<0?'▼':'▲'}</span>`:''}</th>`).join('')}</tr></thead>
+  <tbody>${ms.map(m=>`<tr>
+    <td><b>${m.name}</b> <span style="color:var(--mut);font-size:10px">${m.cat}</span></td>
+    <td><div class="hex sm ${m.tier}" style="display:inline-grid">${m.tier}</div></td>
+    <td class="num"><div class="tbar"><div class="bg"><i style="width:${(m.sessions/maxS*100).toFixed(0)}%;background:linear-gradient(90deg,var(--cy),var(--te))"></i></div><span>${fmtJP(m.sessions)}</span></div></td>
+    <td class="num">${deltaPill(m.sessions,m.prevSessions)}</td>
+    <td class="num">${fmtJP(m.pv)}</td>
+    <td class="num">${pct(m.cvr,2)}</td>
+    <td class="num">${CM(m.cvGoal.estimate)}</td>
+    <td class="num">${CM(m.cvGoal.testdrive)}</td>
+    <td class="num">${pct(m.retShare,0)}</td>
+    <td class="num" ${m.adShare>.42?'style="color:var(--am)"':''}>${pct(m.adShare,0)}</td>
+  </tr>`).join('')}</tbody>`;
+  $$('#leagueTable th.sortable').forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k;
+    if(ST.leagueSort.key===k) ST.leagueSort.dir*=-1; else ST.leagueSort={key:k,dir:-1};
+    renderLeagueTable(A);
+  });
+}
+
+/* ---------- 車種ドリルモーダル ---------- */
+let modalCharts=[];
+function openModelModal(id){
+  const A=GA.agg(ST.range,ST.seg);
+  const m=A.models.find(x=>x.id===id);
+  const box=$('#modelModalBox');
+  box.innerHTML=`
+    <div class="mhx">${carSvg(m.icon)}<div>
+      <div style="display:flex;align-items:center;gap:10px"><b style="font-size:19px">${m.name}</b>
+        <span class="cat" style="font-size:10px;border:1px solid var(--line2);border-radius:5px;padding:0 7px;color:var(--tx2)">${m.cat}</span>
+        <span class="mono">${m.price}</span><div class="hex sm ${m.tier}">${m.tier}</div></div>
+      <div style="font-size:11px;color:var(--mut)">ランク #${m.rank} ／ セッション ${fmtJP(m.sessions)} ${deltaPill(m.sessions,m.prevSessions)} ／ CVR ${pct(m.cvr,2)}</div>
+    </div><button class="close" id="mClose">閉じる esc</button></div>
+    <div class="mgrid2">
+      <div class="mcell"><h4>日次セッション推移</h4><div id="mdTrend" style="min-height:200px"></div></div>
+      <div class="mcell"><h4>流入チャネル構成</h4><div id="mdCh" style="min-height:200px"></div></div>
+      <div class="mcell"><h4>コンバージョン内訳</h4><div id="mdGoal" style="min-height:200px"></div></div>
+      <div class="mcell"><h4>アフィニティ・エリア特徴</h4><div id="mdAff" style="font-size:12px;line-height:2.1;padding-top:2px"></div></div>
+    </div>`;
+  $('#modelModal').classList.add('on');
+  $('#mClose').onclick=closeModal;
+  const mk=(id2)=>{const c=echarts.init($('#'+id2));modalCharts.push(c);return c};
+  mk('mdTrend').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{trigger:'axis',valueFormatter:v=>fmtJP(v)}),
+    grid:{left:6,right:10,top:12,bottom:4,containLabel:true},
+    xAxis:axX({data:A.dates.map(d=>d.slice(5).replace('-','/')),boundaryGap:false,axisLabel:{interval:Math.floor(A.dates.length/6),color:MUT,fontSize:9.5,fontFamily:MONOF}}),
+    yAxis:axY({axisLabel:{formatter:v=>fmtJP(v),color:MUT,fontSize:9.5,fontFamily:MONOF}}),
+    series:[{type:'line',data:m.daily.map(v=>Math.round(v)),symbol:'none',lineStyle:{width:2,color:CY},
+      areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(56,189,248,.25)'},{offset:1,color:'rgba(56,189,248,0)'}]}}}]}));
+  mk('mdCh').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{valueFormatter:v=>fmtJP(v)}),
+    legend:{bottom:0,textStyle:{color:TX2,fontSize:9.5},itemWidth:9,itemHeight:9,icon:'roundRect',itemGap:6},
+    series:[{type:'pie',radius:['46%','70%'],center:['50%','40%'],
+      itemStyle:{borderColor:'#0D1626',borderWidth:2,borderRadius:4},label:{show:false},
+      data:GA.CHANNELS.map((c,ci)=>({name:c.name,value:Math.round(m.byChannel[ci]),itemStyle:{color:c.color}}))}]}));
+  mk('mdGoal').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{valueFormatter:v=>CM(v)+'件'}),
+    grid:{left:6,right:38,top:6,bottom:4,containLabel:true},
+    xAxis:axY({axisLabel:{formatter:v=>fmtJP(v),color:MUT,fontSize:9.5,fontFamily:MONOF}}),
+    yAxis:axX({type:'category',data:GA.GOALS.map(g=>g.name.length>10?g.name.slice(0,10)+'…':g.name).reverse(),axisLabel:{color:TX2,fontSize:10,fontFamily:FONT}}),
+    series:[{type:'bar',barWidth:11,itemStyle:{borderRadius:[0,4,4,0],color:TE},
+      label:{show:true,position:'right',formatter:p=>CM(p.value),color:TX2,fontSize:9.5,fontFamily:MONOF},
+      data:GA.GOALS.map(g=>Math.round(m.cvGoal[g.id])).reverse()}]}));
+  const aff=Object.entries(GA.affShare(GA.MODELS[m.mi])).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const affN=Object.fromEntries(GA.AFFINITY.map(a=>[a.id,a.name]));
+  const ar=Object.entries(GA.areaShare?GA.areaShare(GA.MODELS[m.mi]):{}).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  $('#mdAff').innerHTML=`
+    <div>強いアフィニティ：${aff.map(([k,v],i)=>`<span class="${i===0?'hl':'hl-b'}">${affN[k]} ${pct(v,0)}</span>`).join('　')}</div>
+    <div>強いエリア：${ar.map(([k,v])=>{const a=GA.AREAS.find(x=>x.id===k);return `<b>${a?a.name:k}</b> <span class="num">${pct(v,0)}</span>`}).join('　')}</div>
+    <div style="color:var(--tx2)">再訪率 <b class="num" style="color:var(--tx)">${pct(m.retShare,0)}</b> ／ 広告依存度 <b class="num" style="color:${m.adShare>.42?'var(--am)':'var(--tx)'}">${pct(m.adShare,0)}</b> ／ 検討ツール到達 <b class="num" style="color:var(--tx)">${fmtJP(m.toolSessions)}</b></div>
+    <div style="font-size:10.5px;color:var(--mut)">※ アフィニティ＝Googleシグナル由来の興味関心セグメント（デモ値）</div>`;
+}
+function closeModal(){
+  $('#modelModal').classList.remove('on');
+  modalCharts.forEach(c=>c.dispose()); modalCharts=[];
+}
+
+/* ==================================================
+   VIEW: 商材・CV
+   ================================================== */
+function renderGoods(){
+  const A=GA.agg(ST.range,ST.seg);
+  /* 商材カード */
+  const spans=['s4','s4','s4','s6','s6'];
+  $('#goodsCards').innerHTML=A.goods.map((g,i)=>{
+    const mx=Math.max(...g.goals.map(x=>x.cv),1);
+    return `<div class="card glow ${spans[i]} reveal in">
+      <div class="ct" style="margin-bottom:8px"><span class="bar" style="background:${g.color}"></span><h3>${g.name}</h3>
+        <span class="sub">帰属セッション ${fmtJP(g.sessions)}</span><div class="r">${deltaPill(g.cv,g.prev)}</div></div>
+      <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:9px">
+        <span class="num" style="font-size:26px;font-weight:800" data-cu="${Math.round(g.cv)}" data-jp="1">0</span>
+        <span style="font-size:11px;color:var(--mut)">CV ／ 価値換算 <b class="num">${yen(g.value)}</b></span></div>
+      ${g.goals.map(x=>`<div class="stat" style="grid-template-columns:120px 1fr 58px"><span title="${x.name}">${x.name.length>9?x.name.slice(0,9)+'…':x.name}</span>
+        <div class="sb"><i style="width:${(x.cv/mx*100).toFixed(0)}%;background:linear-gradient(90deg,${g.color}CC,${g.color})"></i></div>
+        <span class="sv">${CM(x.cv)}</span></div>`).join('')}
+    </div>`;
+  }).join('');
+
+  /* 商材×チャネル（CVのチャネル構成比 100%積み上げ） */
+  const MG=GA.pairMatrix('goods','channel','cv',ST.range,ST.seg);
+  const rowTot=MG.val.map(r=>r.reduce((a,b)=>a+b,0));
+  E('chGoodsCh').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{trigger:'axis',axisPointer:{type:'shadow',shadowStyle:{color:'rgba(56,189,248,.06)'}},
+      formatter:ps=>{
+        const ri=MG.rows.length-1-ps[0].dataIndex;
+        let h=`<b>${MG.rows[ri]}</b>　CV合計 ${CM(rowTot[ri])}件<br>`;
+        ps.forEach(p=>{const abs=MG.val[ri][p.seriesIndex];
+          h+=`${p.marker} ${p.seriesName}　<b>${pct(p.value,1)}</b>（${CM(abs)}件）<br>`});
+        return h;}}),
+    legend:{top:0,textStyle:{color:TX2,fontSize:10.5},itemWidth:11,itemHeight:11,icon:'roundRect',itemGap:8},
+    grid:{left:8,right:16,top:32,bottom:4,containLabel:true},
+    xAxis:axY({max:1,axisLabel:{formatter:v=>Math.round(v*100)+'%',color:MUT,fontSize:10,fontFamily:MONOF}}),
+    yAxis:axX({type:'category',data:MG.rows.slice().reverse(),axisLabel:{color:TX2,fontSize:11.5,fontFamily:FONT}}),
+    series:GA.CHANNELS.map((c,ci)=>({name:c.name,type:'bar',stack:'cv',barWidth:19,
+      itemStyle:{color:c.color,borderColor:'#0A1120',borderWidth:1.5},
+      data:MG.rows.map((_,r)=>{const ri=MG.rows.length-1-r;return +(MG.val[ri][ci]/Math.max(1,rowTot[ri])).toFixed(4)})}))
+  }),true);
+
+  /* CVドーナツ */
+  document.getElementById('chGoalDonut').style.minHeight='400px';
+  E('chGoalDonut').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{valueFormatter:v=>CM(v)+'件'}),
+    legend:{bottom:0,left:'center',textStyle:{color:TX2,fontSize:10},itemWidth:10,itemHeight:10,icon:'roundRect',itemGap:7},
+    series:[{type:'pie',radius:['48%','72%'],center:['50%','40%'],
+      itemStyle:{borderColor:'#0A1120',borderWidth:2,borderRadius:5},
+      label:{show:false},
+      data:A.goals.map((g,i)=>({name:g.name.length>12?g.name.slice(0,12)+'…':g.name,value:Math.round(g.cv),itemStyle:{color:CAT8[i]}}))}],
+    graphic:[{type:'text',left:'center',top:'34%',style:{text:fmtJP(A.total.cv),fill:TX,fontSize:19,fontWeight:800,fontFamily:MONOF}},
+             {type:'text',left:'center',top:'44%',style:{text:'総CV',fill:MUT,fontSize:10,fontFamily:FONT}}]
+  }),true);
+
+  /* CVスコアボード */
+  $('#goalTiles').innerHTML=A.goals.map((g,i)=>`
+    <div class="kpi" style="grid-column:span 3">
+      <div class="kl"><span class="sw" style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${CAT8[i]}"></span>${g.name}</div>
+      <div class="kv num" data-cu="${Math.round(g.cv)}" data-jp="1">0</div>
+      <div class="kd">${deltaPill(g.cv,g.prev)}<span>価値 ${yen(g.value)}</span></div>
+    </div>`).join('');
+
+  /* フォームファネル */
+  const fc=$('#funnelGoalCtl');
+  if(!fc.dataset.built){
+    fc.innerHTML=GA.GOALS.filter(g=>['estimate','testdrive','kinto','service'].includes(g.id)).map(g=>
+      `<span class="chip ${g.id===ST.funnelGoal?'on':''}" data-fg="${g.id}">${g.name.length>8?g.name.slice(0,8)+'…':g.name}</span>`).join('');
+    fc.dataset.built='1';
+    fc.onclick=e=>{const c=e.target.closest('[data-fg]');if(!c)return;
+      ST.funnelGoal=c.dataset.fg;$$('#funnelGoalCtl .chip').forEach(x=>x.classList.toggle('on',x.dataset.fg===ST.funnelGoal));drawFunnel(A)};
+  }
+  drawFunnel(A);
+
+  /* 車種×主要CV ヒート（色は列内順位・数値は絶対値） */
+  const mains=['estimate','testdrive','kinto'];
+  const colMax=mains.map(g=>Math.max(...A.models.map(m=>m.cvGoal[g])));
+  const heat=[];
+  A.models.forEach((m,mi)=>mains.forEach((g,gi)=>heat.push([gi,mi,Math.round(m.cvGoal[g]),+(m.cvGoal[g]/colMax[gi]).toFixed(3)])));
+  E('chModelGoal').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{formatter:p=>`<b>${A.models[p.value[1]].name}</b> × ${GA.GOALS.find(g=>g.id===mains[p.value[0]]).name}<br>CV <b>${CM(p.value[2])}件</b>（列内トップ比 ${pct(p.value[3],0)}）`}),
+    grid:{left:8,right:14,top:8,bottom:26,containLabel:true},
+    xAxis:axX({data:['見積り完了','試乗予約','KINTO'],position:'top',axisLabel:{color:TX2,fontSize:11,fontFamily:FONT}}),
+    yAxis:axX({type:'category',data:A.models.map(m=>m.name),inverse:true,axisLabel:{color:TX2,fontSize:10.5,fontFamily:FONT}}),
+    visualMap:{show:false,dimension:3,min:0,max:1,inRange:{color:[SEQ(.06),SEQ(.5),SEQ(1)]}},
+    series:[{type:'heatmap',data:heat,label:{show:true,formatter:p=>fmtJP(p.value[2]),color:'#EAF3FC',fontSize:9.5,fontFamily:MONOF},
+      itemStyle:{borderColor:'#0A1120',borderWidth:2,borderRadius:4},
+      emphasis:{itemStyle:{shadowBlur:8,shadowColor:'rgba(56,189,248,.5)'}}}],
+    graphic:[{type:'text',left:'center',bottom:2,style:{text:'色＝各列（CV種別）内での相対量　／　数値＝件数',fill:MUT,fontSize:10,fontFamily:FONT}}]
+  }),true);
+
+  const kg=A.goods.find(g=>g.id==='kinto'), sg=A.goods.find(g=>g.id==='service');
+  $('#goodsInsight').innerHTML=`<span class="it">INSIGHT — 商材</span>
+    <p>CVの主戦場は新車系（見積り・試乗・来店・カタログ）で全体の <b class="num">${pct(A.goods[0].cv/A.total.cv,0)}</b>。<span class="hl-g">KINTO は前期間比 ${(kg.cv/kg.prev-1)>=0?'+':''}${((kg.cv/kg.prev-1)*100).toFixed(1)}%</span> と Meta 広告キャンペーンの寄与が明確。</p>
+    <p><span class="hl">点検・サービス予約はメール・LINE 経由が圧倒的</span>（商材×チャネルの帯を参照）。保有顧客のCRM動線は広告に頼らず安定してCVを供給しており、費用対効果の面で最も効率的な「静かな主力」。</p>`;
+
+  runCountUps($('section[data-view="goods"]'));
+}
+function drawFunnel(A){
+  const g=A.goals.find(x=>x.id===ST.funnelGoal);
+  const STEPS={estimate:[['車種ページ表示',26],['シミュレーター開始',3.4],['グレード・オプション選択',1.9],['見積り完了',1]],
+    testdrive:[['車種ページ表示',115],['試乗予約フォーム表示',6.5],['入力開始',2.6],['試乗予約 完了',1]],
+    kinto:[['KINTO LP 表示',52],['料金シミュレーション',7.2],['申込フォーム',2.1],['申込・見積り 完了',1]],
+    service:[['サービス案内 表示',30],['店舗・日時選択',3.8],['入力開始',1.7],['予約完了',1]]}[ST.funnelGoal];
+  const cv=g.cv;
+  const data=STEPS.map(([n,mult],i)=>({name:n,value:Math.round(cv*mult),
+    itemStyle:{color:[SEQ(.25),SEQ(.5),SEQ(.75),TE][i]}}));
+  E('chGoalFunnel').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{formatter:p=>{
+      const rate=p.dataIndex>0? (data[p.dataIndex].value/data[p.dataIndex-1].value*100).toFixed(1)+'%（前段からの通過率）':'起点';
+      return `<b>${p.name}</b><br>${fmtJP(p.value)} セッション<br>${rate}`;}}),
+    series:[{type:'funnel',left:'6%',right:'6%',top:8,bottom:8,sort:'descending',gap:5,minSize:'12%',
+      label:{show:true,position:'inside',formatter:p=>`${p.name}\n${fmtJP(p.value)}`,color:'#EAF3FC',fontSize:11,fontFamily:FONT,lineHeight:16},
+      itemStyle:{borderColor:'#0A1120',borderWidth:2,borderRadius:4},
+      emphasis:{label:{fontSize:12.5}},
+      data}]
+  }),true);
+}
+
+/* ==================================================
+   VIEW: 動線マップ
+   ================================================== */
+function renderFlow(){
+  const A=GA.agg(ST.range,ST.seg);
+  const F=GA.funnel(ST.range,ST.seg);
+  /* ステージゲート */
+  $('#gateRow').innerHTML=F.map((s,i)=>{
+    const prev=i>0?F[i-1].v:null;
+    const rate=prev? s.v/prev : null;
+    const isClear=i===F.length-1;
+    return `<div class="gate ${isClear?'clear':''}">
+      <div class="gs">${s.name.split('｜')[0]}</div>
+      <div class="gn2">${s.name.split('｜')[1]}</div>
+      <div class="gv num" data-cu="${Math.round(s.v)}" data-jp="1">0</div>
+      <div class="gd">${s.desc}</div>
+      ${rate?`<div class="gr"><div class="xp small" style="flex:1"><i style="width:${Math.min(100,rate*100)}%;${isClear?'background:linear-gradient(90deg,#E4A900,var(--gd))':''}"></i></div><span class="num">${pct(rate,1)}</span></div>`:'<div class="gr"><span style="color:var(--mut)">エントリー地点</span></div>'}
+    </div>`;
+  }).join('');
+
+  /* サンキー */
+  const SK=GA.sankey(ST.range,ST.seg);
+  const chColor=Object.fromEntries(GA.CHANNELS.map(c=>[c.name,c.color]));
+  const nodeColor=n=>{
+    if(chColor[n]) return chColor[n];
+    if(n==='未CVで離脱') return '#3A4556';
+    if(['見積り完了','試乗・来店予約','KINTO・中古車CV','サービス予約'].includes(n)) return GD;
+    if(['グレード・価格','見積りシミュレーター','車種比較・ギャラリー','販売店・在庫検索'].includes(n)) return TE;
+    if(n==='離脱（回遊なし）') return '#3A4556';
+    return CY;
+  };
+  const CVSET=new Set(['見積り完了','試乗・来店予約','KINTO・中古車CV','サービス予約']);
+  const DROPSET=new Set(['未CVで離脱','離脱（回遊なし）']);
+  E('chSankey').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{trigger:'item',formatter:p=>{
+      if(p.dataType==='edge') return `${p.data.source.replace(/_/g,' ')} → ${p.data.target}<br><b>${fmtJP(p.data.value)}</b> セッション`;
+      return `<b>${p.name}</b><br>${fmtJP(p.value)} セッション`;}}),
+    series:[{type:'sankey',left:10,right:170,top:14,bottom:10,
+      nodeWidth:14,nodeGap:11,nodeAlign:'justify',
+      emphasis:{focus:'adjacency'},
+      lineStyle:{color:'gradient',opacity:.22,curveness:.52},
+      label:{color:TX,fontSize:11,fontFamily:FONT,formatter:p=> CVSET.has(p.name)? `${p.name}  ${fmtJP(p.value)}` : p.name},
+      itemStyle:{borderRadius:3},
+      data:SK.nodes.map(n=>({...n,itemStyle:{color:nodeColor(n.name)},
+        label: CVSET.has(n.name)? {color:GD,fontWeight:700} : DROPSET.has(n.name)? {color:MUT} : undefined})),
+      links:SK.links.map(l=>{
+        const s=SK.nodes[l.source].name,t=SK.nodes[l.target].name;
+        const ls= CVSET.has(t)? {color:'#E4A900',opacity:.55}
+                : DROPSET.has(t)? {color:'#222B3C',opacity:.42} : undefined;
+        return {source:s,target:t,value:Math.round(l.value),...(ls?{lineStyle:ls}:{})};
+      })}]
+  }),true);
+
+  /* LP別 その後の行動（100%積み上げ） */
+  const MIDN=['グレード・価格','見積りシミュレーター','車種比較・ギャラリー','販売店・在庫検索','離脱（回遊なし）'];
+  const LPD=SK.lp.map((lp,li)=>{
+    const flows=SK.links.filter(l=>SK.nodes[l.source].name===lp);
+    const tot=flows.reduce((a,l)=>a+l.value,0);
+    return {lp,vals:MIDN.map(md=>{
+      const f=flows.find(l=>SK.nodes[l.target].name===md);
+      return f? f.value/tot : 0;})};
+  });
+  const MIDC=[CAT8[0],CAT8[2],CAT8[6],CAT8[3],'#3A4556'];
+  E('chLpNext').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{trigger:'axis',axisPointer:{type:'shadow',shadowStyle:{color:'rgba(56,189,248,.06)'}},valueFormatter:v=>pct(v,1)}),
+    legend:{top:0,textStyle:{color:TX2,fontSize:10},itemWidth:10,itemHeight:10,icon:'roundRect',itemGap:7},
+    grid:{left:8,right:16,top:32,bottom:4,containLabel:true},
+    xAxis:axY({max:1,axisLabel:{formatter:v=>Math.round(v*100)+'%',color:MUT,fontSize:10,fontFamily:MONOF}}),
+    yAxis:axX({type:'category',data:LPD.map(x=>x.lp).reverse(),axisLabel:{color:TX2,fontSize:11,fontFamily:FONT}}),
+    series:MIDN.map((md,i)=>({name:md,type:'bar',stack:'x',barWidth:18,
+      itemStyle:{color:MIDC[i],borderColor:'#0A1120',borderWidth:1.5},
+      data:LPD.map(x=>+(x.vals[i]).toFixed(4)).reverse()}))
+  }),true);
+
+  /* 検討ツールの威力 */
+  const toolS=F[2].v, allS=F[0].v, cv=A.total.cv;
+  const cvW=cv*.62, cvWo=cv*.38;
+  const cvrW=cvW/toolS, cvrWo=cvWo/(allS-toolS);
+  E('chToolPower').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{valueFormatter:v=>(+v).toFixed(2)+'%'}),
+    grid:{left:8,right:16,top:36,bottom:6,containLabel:true},
+    xAxis:axX({data:['シミュレーター利用なし','シミュレーター利用あり'],axisLabel:{color:TX2,fontSize:11.5,fontFamily:FONT}}),
+    yAxis:axY({axisLabel:{formatter:'{value}%',color:MUT,fontSize:10,fontFamily:MONOF}}),
+    series:[{type:'bar',barWidth:74,
+      itemStyle:{borderRadius:[5,5,0,0]},
+      label:{show:true,position:'top',formatter:p=>p.value+'%',color:TX,fontWeight:800,fontSize:14,fontFamily:MONOF},
+      data:[{value:+(cvrWo*100).toFixed(2),itemStyle:{color:'#3A4556'}},
+            {value:+(cvrW*100).toFixed(2),itemStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:TE},{offset:1,color:'#0FB98B'}]}}}]}],
+    graphic:[{type:'text',right:20,top:8,style:{text:`威力 ×${(cvrW/cvrWo).toFixed(1)}`,fill:TE,fontSize:15,fontWeight:800,fontFamily:MONOF}}]
+  }),true);
+
+  const g2=F[1].v/F[0].v, g3=F[2].v/F[1].v;
+  $('#flowInsight').innerHTML=`<span class="it">INSIGHT — 動線</span>
+    <p>最大のボトルネックは <span class="hl-r">STAGE 2 → STAGE 3（車種閲覧 → 検討ツール）で通過率 ${pct(g3,1)}</span>。車種ページからシミュレーターへの導線を1クリック化するだけで、CLEAR（CV）の母数が直接増える構造。</p>
+    <p>サンキー図では <span class="hl">ディスプレイ・動画広告 → キャンペーンLP → 離脱</span> の太い帯が確認できる。一方、<span class="hl-g">シミュレーター利用者のCVRは未利用者の約${(cvrW/cvrWo).toFixed(0)}倍</span>。広告LPからも見積りシミュレーターへ直行させる設計が最有力の一手。</p>`;
+
+  runCountUps($('section[data-view="flow"]'));
+}
+
+</script>
+<script>
+/* ============ 描画エンジン 2/2：集客・オーディエンス・ラボ・計測設計 ============ */
+
+/* ==================================================
+   VIEW: 集客・広告
+   ================================================== */
+function renderAcq(){
+  const A=GA.agg(ST.range,ST.seg);
+  $('#acqSub').textContent=periodLabel(A);
+
+  /* チャネル成績表 */
+  const maxS=Math.max(...A.channels.map(c=>c.sessions));
+  $('#channelTable').innerHTML=`<thead><tr>
+    <th>チャネル</th><th class="num">セッション</th><th class="num">構成比</th><th class="num">前期間比</th>
+    <th class="num">新規率</th><th class="num">CV</th><th class="num">CVR</th><th>種別</th></tr></thead>
+    <tbody>${A.channels.map(c=>`<tr>
+      <td><span style="display:inline-flex;align-items:center;gap:8px"><span class="sw" style="width:10px;height:10px;border-radius:3px;background:${c.color};display:inline-block"></span><b>${c.name}</b></span></td>
+      <td class="num"><div class="tbar"><div class="bg"><i style="width:${(c.sessions/maxS*100).toFixed(0)}%;background:${c.color}"></i></div><span>${fmtJP(c.sessions)}</span></div></td>
+      <td class="num">${pct(c.sessions/A.total.sessions,1)}</td>
+      <td class="num">${deltaPill(c.sessions,c.prevSessions)}</td>
+      <td class="num">${pct(ST.seg==='new'?1:ST.seg==='ret'?0:c.newShare,0)}</td>
+      <td class="num">${CM(c.cv)}</td>
+      <td class="num">${pct(c.cvr,2)}</td>
+      <td>${c.paid?'<span class="tag" style="color:var(--am);background:color-mix(in srgb,var(--am) 12%,transparent)">広告</span>':'<span class="tag" style="color:var(--tx2);background:rgba(255,255,255,.06)">オーガニック等</span>'}</td>
+    </tr>`).join('')}</tbody>`;
+
+  /* キャンペーンリーグ */
+  renderCampaignTable();
+
+  /* UTMサンバースト */
+  const U=GA.utmTree(ST.range);
+  const cpColor=c=>c.chColor;
+  E('chUtm').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{formatter:p=>{
+      const d=p.data;
+      if(d.cp) return `<b>utm_campaign=${d.name}</b><br>${d.cp.name}<br>セッション <b>${fmtJP(d.value)}</b> ／ CV ${CM(d.cp.cv)}`;
+      return `<b>utm_source=${p.name}</b><br>セッション <b>${fmtJP(p.value)}</b>`;}}),
+    series:[{type:'sunburst',radius:['22%','92%'],center:['50%','48%'],
+      nodeClick:false,sort:'desc',
+      itemStyle:{borderColor:'#0A1120',borderWidth:2,borderRadius:4},
+      label:{color:'#EAF3FC',fontSize:9.5,fontFamily:MONOF,minAngle:14,
+        formatter:p=>p.name.length>13?p.name.slice(0,13)+'…':p.name},
+      levels:[{},{r0:'22%',r:'52%',label:{rotate:'tangential',fontSize:10.5}},{r0:'52%',r:'92%',label:{rotate:'radial'}}],
+      data:U.tree.map(s=>({name:s.name,
+        itemStyle:{color:s.children[0]&&s.children[0].cp?s.children[0].cp.chColor:'#3A4556'},
+        children:s.children.map(c=>({name:c.name,value:c.value,cp:c.cp,
+          itemStyle:{color:c.cp?c.cp.chColor:'#3A4556'}}))}))}],
+    graphic:[{type:'text',left:'center',bottom:2,style:{
+      text:`広告セッションのUTM捕捉率 ${pct(U.tracked/U.paidSess,0)}（未捕捉 ${fmtJP(U.untracked)}）`,
+      fill:MUT,fontSize:10.5,fontFamily:FONT}}]
+  }),true);
+
+  /* 投資対効果バブル */
+  const cps=GA.campaigns(ST.range).filter(c=>c.spend>0);
+  const maxSess=Math.max(...cps.map(c=>c.sessions));
+  const labelSet=new Set([...cps].sort((a,b)=>b.sessions-a.sessions).slice(0,6).map(c=>c.id));
+  E('chBubble').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{formatter:p=>{
+      const c=p.data.cp;
+      return `<b>${c.name}</b><br>費用 ${yen(c.spend)} ／ CV <b>${CM(c.cv)}</b><br>CPA ${yen(c.cpa)} ／ ROAS ${c.roas.toFixed(1)}倍<br>セッション ${fmtJP(c.sessions)}`;}}),
+    grid:{left:8,right:46,top:30,bottom:8,containLabel:true},
+    xAxis:axY({name:'広告費用',nameTextStyle:{color:MUT,fontSize:10},axisLabel:{formatter:v=>yen(v),color:MUT,fontSize:10,fontFamily:MONOF},splitLine:{lineStyle:{color:LINE,type:[3,4]}}}),
+    yAxis:axY({name:'CV',nameTextStyle:{color:MUT,fontSize:10},axisLabel:{formatter:v=>fmtJP(v),color:MUT,fontSize:10,fontFamily:MONOF}}),
+    series:[{type:'scatter',
+      symbolSize:(val,params)=>8+Math.sqrt((params.data.cp.sessions)/maxSess)*42,
+      itemStyle:{opacity:.88,borderColor:'#0A1120',borderWidth:1.5},
+      data:cps.map(c=>({value:[Math.round(c.spend),Math.round(c.cv)],cp:c,itemStyle:{color:c.chColor},
+        label:{show:labelSet.has(c.id),position:'top',formatter:()=>c.name.length>11?c.name.slice(0,11)+'…':c.name,color:TX2,fontSize:9.5,fontFamily:FONT,distance:4}}))}]
+  }),true);
+
+  const best=[...cps].sort((a,b)=>b.roas-a.roas)[0];
+  const worst=[...cps].sort((a,b)=>a.roas-b.roas)[0];
+  $('#acqInsight').innerHTML=`<span class="it">INSIGHT — 集客・広告</span>
+    <p>費用対効果の首位は <span class="hl-g">${best.name}</span>（ROAS <b class="num">${best.roas.toFixed(1)}倍</b> ／ CPA <b class="num">${yen(best.cpa)}</b>）。ただし指名検索はもともと来る顧客を刈り取る性質のため、<span class="hl-b">増分評価では一般KW・SNS の伸びしろを見るべき</span>。</p>
+    <p>効率最下位は <span class="hl-r">${worst.name}</span>（CPA <b class="num">${yen(worst.cpa)}</b>）。認知目的の出稿なら「CV単価」でなく <span class="hl">車種ページ到達単価・検討ツール到達単価</span> をKPIに切り替えて評価するのが妥当。UTM捕捉率は <b class="num">${pct(U.tracked/U.paidSess,0)}</b> で、残りは計測設計タブの命名規約徹底で回収する。</p>`;
+}
+
+function renderCampaignTable(){
+  const cps=GA.campaigns(ST.range);
+  const {key,dir}=ST.campSort;
+  cps.sort((a,b)=>{
+    const av=a[key]??-1,bv=b[key]??-1;
+    return (av-bv)*dir;
+  });
+  const maxRoas=Math.max(...cps.map(c=>c.roas||0));
+  const cols=[['name','キャンペーン',0],['utm','トラッキングコード',0],['chName','媒体',0],
+    ['spend','費用',1],['sessions','セッション',1],['cv','CV',1],['cpa','CPA',1],['roas','ROAS',1]];
+  $('#campaignTable').innerHTML=`<thead><tr><th>#</th>${cols.map(([k,l,n])=>
+    `<th class="sortable ${n?'num':''}" data-k="${k}">${l}${key===k?`<span class="arrow">${dir<0?'▼':'▲'}</span>`:''}</th>`).join('')}<th>状態</th></tr></thead>
+  <tbody>${cps.map((c,i)=>`<tr>
+    <td>${i<3?`<span class="medal m${i+1}">${i+1}</span>`:`<span class="medal mx">${i+1}</span>`}</td>
+    <td><b>${c.name}</b>${c.model?`<div style="font-size:9.5px;color:var(--mut)">対象: ${GA.MODELS.find(m=>m.id===c.model).name}</div>`:''}</td>
+    <td><span class="utm">${c.src}/${c.med}<br>${c.utm}</span></td>
+    <td><span class="tag" style="color:${c.chColor};background:color-mix(in srgb,${c.chColor} 13%,transparent)">${c.chName}</span></td>
+    <td class="num">${c.spend>0?yen(c.spend):'<span style="color:var(--mut)">¥0（自社）</span>'}</td>
+    <td class="num">${fmtJP(c.sessions)}</td>
+    <td class="num">${CM(c.cv)}</td>
+    <td class="num">${c.spend>0?yen(c.cpa):'—'}</td>
+    <td class="num">${c.roas!=null?`<div class="tbar" style="min-width:110px"><div class="bg"><i style="width:${(c.roas/maxRoas*100).toFixed(0)}%;background:linear-gradient(90deg,var(--te),var(--cy))"></i></div><span>${c.roas.toFixed(1)}倍</span></div>`:'—'}</td>
+    <td>${c.active?'<span class="tag" style="color:var(--gn);background:color-mix(in srgb,var(--gn) 12%,transparent)">● 配信中</span>':'<span class="tag" style="color:var(--mut);background:rgba(255,255,255,.05)">終了</span>'}</td>
+  </tr>`).join('')}</tbody>`;
+  $$('#campaignTable th.sortable').forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k;
+    if(!['spend','sessions','cv','cpa','roas'].includes(k))return;
+    if(ST.campSort.key===k)ST.campSort.dir*=-1;else ST.campSort={key:k,dir:-1};
+    renderCampaignTable();
+  });
+}
+
+/* ==================================================
+   VIEW: オーディエンス
+   ================================================== */
+function renderAud(){
+  const A=GA.agg(ST.range,'all');
+  const AN=GA.agg(ST.range,'new'), AR=GA.agg(ST.range,'ret');
+
+  /* 新規×再訪 */
+  document.getElementById('chNewRet').style.minHeight='252px';
+  E('chNewRet').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{valueFormatter:v=>fmtJP(v)}),
+    legend:{bottom:0,textStyle:{color:TX2,fontSize:11},itemWidth:11,itemHeight:11,icon:'roundRect'},
+    series:[{type:'pie',radius:['50%','72%'],center:['50%','42%'],
+      itemStyle:{borderColor:'#0A1120',borderWidth:2,borderRadius:5},
+      label:{show:true,position:'inside',formatter:p=>pct(p.percent/100,0),color:'#04121C',fontWeight:800,fontSize:12,fontFamily:MONOF},
+      data:[{name:'新規',value:Math.round(AN.total.sessions),itemStyle:{color:CAT8[0]}},
+            {name:'再訪',value:Math.round(AR.total.sessions),itemStyle:{color:CAT8[1]}}]}],
+    graphic:[{type:'text',left:'center',top:'37%',style:{text:'CVRは再訪が',fill:MUT,fontSize:10,fontFamily:FONT}},
+      {type:'text',left:'center',top:'44%',style:{text:'×'+(AR.total.cv/AR.total.sessions/(AN.total.cv/AN.total.sessions)).toFixed(1),fill:TE,fontSize:17,fontWeight:800,fontFamily:MONOF}}]
+  }),true);
+
+  /* 再訪コンボ */
+  const combo=GA.comboData(ST.range);
+  const avg=A.total.cv/A.total.sessions;
+  const maxCvr=Math.max(...combo.map(b=>b.cvr));
+  $('#comboRow').innerHTML=combo.map((b,i)=>`
+    <div class="cbox ${i>=2?'hot':''}">
+      <div class="cx" style="color:${i>=2?'var(--te)':'var(--tx2)'}">COMBO ×${(b.cvr/combo[0].cvr).toFixed(1)}</div>
+      <div class="cn">${b.name}</div>
+      <div class="cv num" data-cu="${(b.cvr*100).toFixed(2)}" data-dec="2" data-suf="%">0</div>
+      <div class="cs">CVR ／ セッション ${fmtJP(b.sessions)}（${pct(b.share,0)}）</div>
+      <div class="cbar"><i style="width:${(b.cvr/maxCvr*100).toFixed(0)}%"></i></div>
+    </div>`).join('')+`
+    <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--mut);border-top:1px dashed var(--line);padding-top:9px;flex-wrap:wrap">
+      <span>倍率＝初訪問CVR比。全体平均CVRは <b class="num" style="color:var(--tx2)">${pct(avg,2)}</b></span>
+      <span style="margin-left:auto">10回以上訪問層だけで全CVの <span class="hl num">${pct(combo[3].cv/A.total.cv,0)}</span> を占める</span>
+    </div>`;
+
+  /* アフィニティ：シェア＋CVR指数（2グリッド） */
+  const aff=GA.affinityAgg(ST.range,ST.seg==='all'?'all':ST.seg);
+  const names=aff.map(a=>a.name);
+  E('chAffinity').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{formatter:p=>{
+      const a=aff[p.dataIndex];
+      return `<b>${a.name}</b><br>セッションシェア ${pct(a.share,1)}<br>CVR ${pct(a.cvr,2)}（指数 <b>${a.idx.toFixed(0)}</b> / 全体=100）`;}}),
+    grid:[{left:8,right:'56%',top:30,bottom:6,containLabel:true},
+          {left:'50%',right:30,top:30,bottom:6,containLabel:true}],
+    title:[{text:'セッションシェア',left:'12%',top:0,textStyle:{color:TX2,fontSize:11,fontWeight:700,fontFamily:FONT}},
+           {text:'CVR指数（全体=100）',left:'62%',top:0,textStyle:{color:TX2,fontSize:11,fontWeight:700,fontFamily:FONT}}],
+    xAxis:[Object.assign(axY(),{gridIndex:0,axisLabel:{formatter:v=>Math.round(v*100)+'%',color:MUT,fontSize:9.5,fontFamily:MONOF}}),
+           Object.assign(axY(),{gridIndex:1,min:-45,max:45,axisLabel:{formatter:v=>String(100+v),color:MUT,fontSize:9.5,fontFamily:MONOF}}),],
+    yAxis:[Object.assign(axX({type:'category'}),{gridIndex:0,data:names.slice().reverse(),axisLabel:{color:TX2,fontSize:10.5,fontFamily:FONT}}),
+           Object.assign(axX({type:'category'}),{gridIndex:1,data:names.slice().reverse(),axisLabel:{show:false}})],
+    series:[
+      {type:'bar',xAxisIndex:0,yAxisIndex:0,barWidth:12,
+        itemStyle:{color:CAT8[0],borderRadius:[0,4,4,0]},
+        label:{show:true,position:'right',formatter:p=>pct(p.value,0),color:TX2,fontSize:9.5,fontFamily:MONOF},
+        data:aff.map(a=>+a.share.toFixed(4)).reverse()},
+      {type:'bar',xAxisIndex:1,yAxisIndex:1,barWidth:12,
+        itemStyle:{color:p=>p.value>=0?'#199E70':'#E66767',borderRadius:4},
+        label:{show:true,position:p=>p.value>=0?'right':'left',formatter:p=>(100+p.value).toFixed(0),color:TX2,fontSize:9.5,fontFamily:MONOF},
+        markLine:{symbol:'none',silent:true,data:[{xAxis:0}],lineStyle:{color:'#8FA3B8',type:[4,3]},label:{show:false}},
+        data:aff.map(a=>+(a.idx-100).toFixed(1)).reverse()},
+    ]
+  }),true);
+
+  /* RFヒート */
+  const rf=GA.rfMatrix(ST.range);
+  const freqLbl=['2〜3回','4〜9回','10回以上'];
+  const rfData=[]; rf.forEach((row,ri)=>row.forEach((v,fi)=>rfData.push([fi,ri,Math.round(v)])));
+  const rfMax=Math.max(...rfData.map(d=>d[2]));
+  E('chRf').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{formatter:p=>`最終訪問 <b>${GA.RECENCY[p.value[1]]}</b> × 累計 <b>${freqLbl[p.value[0]]}</b><br>${fmtJP(p.value[2])} セッション`}),
+    grid:{left:8,right:14,top:8,bottom:40,containLabel:true},
+    xAxis:axX({data:freqLbl,position:'top',axisLabel:{color:TX2,fontSize:11,fontFamily:FONT}}),
+    yAxis:axX({type:'category',data:GA.RECENCY,inverse:true,axisLabel:{color:TX2,fontSize:10.5,fontFamily:FONT}}),
+    visualMap:{min:0,max:rfMax,orient:'horizontal',left:'center',bottom:0,itemHeight:80,itemWidth:10,
+      textStyle:{color:MUT,fontSize:9.5},inRange:{color:[SEQ(.06),SEQ(.55),SEQ(1)]},formatter:v=>fmtJP(v)},
+    series:[{type:'heatmap',data:rfData,
+      label:{show:true,formatter:p=>fmtJP(p.value[2]),color:'#EAF3FC',fontSize:10,fontFamily:MONOF},
+      itemStyle:{borderColor:'#0A1120',borderWidth:2,borderRadius:5}}]
+  }),true);
+
+  /* 年齢×性別 ミラーバー */
+  const D=GA.demoAgg(ST.range);
+  const totD=D.male.reduce((a,b)=>a+b,0)+D.female.reduce((a,b)=>a+b,0);
+  E('chDemo').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{formatter:p=>{
+      const v=Math.abs(p.value);
+      return `<b>${p.seriesName} ${p.name}</b><br>${fmtJP(v)} セッション（${pct(v/totD,1)}）`;}}),
+    legend:{top:0,textStyle:{color:TX2,fontSize:11},itemWidth:11,itemHeight:11,icon:'roundRect'},
+    grid:{left:8,right:16,top:30,bottom:4,containLabel:true},
+    xAxis:axY({axisLabel:{formatter:v=>fmtJP(Math.abs(v)),color:MUT,fontSize:9.5,fontFamily:MONOF}}),
+    yAxis:axX({type:'category',data:D.ages,axisLabel:{color:TX2,fontSize:10.5,fontFamily:MONOF}}),
+    series:[
+      {name:'男性',type:'bar',stack:'d',barWidth:15,itemStyle:{color:CAT8[0],borderRadius:[4,0,0,4]},data:D.male.map(v=>-Math.round(v))},
+      {name:'女性',type:'bar',stack:'d',barWidth:15,itemStyle:{color:CAT8[4],borderRadius:[0,4,4,0]},data:D.female.map(v=>Math.round(v))},
+    ]
+  }),true);
+
+  /* 会員ランク */
+  const mem=GA.memberData(ST.range);
+  E('chMember').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{formatter:p=>{
+      const r=mem[p.dataIndex];
+      return `<b>${r.name}</b><br>CVR <b>${pct(r.cvr,2)}</b><br>セッション ${fmtJP(r.sessions)}（${pct(r.share,0)}）`;}}),
+    grid:{left:8,right:40,top:8,bottom:6,containLabel:true},
+    xAxis:axY({axisLabel:{formatter:v=>v+'%',color:MUT,fontSize:10,fontFamily:MONOF}}),
+    yAxis:axX({type:'category',data:mem.map(r=>r.name).reverse(),axisLabel:{color:TX2,fontSize:11,fontFamily:FONT}}),
+    series:[{type:'bar',barWidth:17,
+      itemStyle:{borderRadius:[0,5,5,0],color:p=>[['#3A4556'],[SEQ(.45)],[SEQ(.75)],[GD]][p.dataIndex][0]},
+      label:{show:true,position:'right',formatter:p=>p.value.toFixed(2)+'%',color:TX,fontSize:10.5,fontWeight:700,fontFamily:MONOF},
+      data:mem.map(r=>+(r.cvr*100).toFixed(2)).reverse()}]
+  }),true);
+
+  /* デバイス */
+  const dev=GA.deviceAgg(ST.range,ST.seg);
+  E('chDevice').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{valueFormatter:v=>fmtJP(v)}),
+    legend:{bottom:0,textStyle:{color:TX2,fontSize:10.5},itemWidth:11,itemHeight:11,icon:'roundRect'},
+    series:[{type:'pie',radius:['48%','70%'],center:['50%','42%'],
+      itemStyle:{borderColor:'#0A1120',borderWidth:2,borderRadius:5},
+      label:{show:true,position:'inside',formatter:p=>p.percent>=8?pct(p.percent/100,0):'',color:'#04121C',fontWeight:800,fontSize:11,fontFamily:MONOF},
+      data:dev.map((d,i)=>({name:d.name,value:Math.round(d.sessions),itemStyle:{color:CAT8[i]}}))}]
+  }),true);
+
+  /* エリア */
+  const areas=GA.areaAgg(ST.range);
+  E('chArea').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{valueFormatter:v=>fmtJP(v)+' セッション'}),
+    grid:{left:8,right:14,top:14,bottom:6,containLabel:true},
+    xAxis:axX({data:areas.map(a=>a.name),axisLabel:{color:TX2,fontSize:10.5,fontFamily:FONT,interval:0}}),
+    yAxis:axY({axisLabel:{formatter:v=>fmtJP(v),color:MUT,fontSize:10,fontFamily:MONOF}}),
+    series:[{type:'bar',barWidth:34,
+      itemStyle:{borderRadius:[5,5,0,0],color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:CY},{offset:1,color:'#1D5F8F'}]}},
+      label:{show:true,position:'top',formatter:p=>fmtJP(p.value),color:TX2,fontSize:9.5,fontFamily:MONOF},
+      data:areas.map(a=>Math.round(a.sessions))}]
+  }),true);
+
+  const topAff=[...aff].sort((a,b)=>b.idx-a.idx)[0];
+  const combo4=combo[3];
+  $('#audInsight').innerHTML=`<span class="it">INSIGHT — オーディエンス</span>
+    <p>CVR指数の首位アフィニティは <span class="hl">${topAff.name}（指数 ${topAff.idx.toFixed(0)}）</span>。シェア上位セグメントとは一致せず、<span class="hl-b">量を運ぶ層（ファミリー）と決める層（クルマ好き）が別</span>という構図。広告のオーディエンス設計では前者に認知、後者に指名・リタゲを当てるのが定石。</p>
+    <p><span class="hl-g">10回以上訪問のコンボ層は全体CVRの約${(combo4.cvr/avg).toFixed(1)}倍</span>。この層の多くが価格・グレードページを反復閲覧しており、値引き・納期の情報更新が再訪トリガーになっている。RFヒートで「8〜30日前×4〜9回」の塊が大きいのは、検討長期化のシグナル。</p>`;
+
+  runCountUps($('section[data-view="aud"]'));
+}
+
+/* ==================================================
+   VIEW: クロス分析ラボ
+   ================================================== */
+const LAB_PRESETS=[
+  {n:'車種 × チャネル',row:'model',col:'channel',metric:'sessions'},
+  {n:'車種 × アフィニティ',row:'model',col:'affinity',metric:'cvr'},
+  {n:'商材 × チャネル',row:'goods',col:'channel',metric:'cv'},
+  {n:'ステージ × チャネル',row:'stage',col:'channel',metric:'sessions'},
+  {n:'エリア × 車種',row:'area',col:'model',metric:'sessions'},
+  {n:'アフィニティ × 商材',row:'affinity',col:'goods',metric:'cvr'},
+];
+const METRICS={sessions:'セッション',cv:'CV',cvr:'CVR',newRate:'新規率'};
+function renderLab(){
+  /* コントロール構築（初回のみ） */
+  if(!$('#labRow').dataset.built){
+    const dims=Object.entries(GA.DIMS);
+    $('#labRow').innerHTML=dims.map(([k,d])=>`<span class="chip ${k===ST.lab.row?'on':''}" data-lr="${k}">${d.name}</span>`).join('');
+    $('#labCol').innerHTML=dims.map(([k,d])=>`<span class="chip ${k===ST.lab.col?'on':''}" data-lc="${k}">${d.name}</span>`).join('');
+    $('#labMetric').innerHTML=Object.entries(METRICS).map(([k,n])=>`<span class="chip ${k===ST.lab.metric?'on':''}" data-lm="${k}">${n}</span>`).join('');
+    $('#labPresets').innerHTML=LAB_PRESETS.map((p,i)=>`<span class="chip" data-lp="${i}">★ ${p.n}</span>`).join('');
+    $('#labRow').dataset.built='1';
+    const upd=()=>{
+      $$('#labRow .chip').forEach(c=>c.classList.toggle('on',c.dataset.lr===ST.lab.row));
+      $$('#labCol .chip').forEach(c=>c.classList.toggle('on',c.dataset.lc===ST.lab.col));
+      $$('#labMetric .chip').forEach(c=>c.classList.toggle('on',c.dataset.lm===ST.lab.metric));
+      drawLab();
+    };
+    $('#labRow').onclick=e=>{const c=e.target.closest('[data-lr]');if(!c)return;
+      ST.lab.row=c.dataset.lr; if(ST.lab.row===ST.lab.col)ST.lab.col=Object.keys(GA.DIMS).find(k=>k!==ST.lab.row); upd()};
+    $('#labCol').onclick=e=>{const c=e.target.closest('[data-lc]');if(!c)return;
+      ST.lab.col=c.dataset.lc; if(ST.lab.row===ST.lab.col)ST.lab.row=Object.keys(GA.DIMS).find(k=>k!==ST.lab.col); upd()};
+    $('#labMetric').onclick=e=>{const c=e.target.closest('[data-lm]');if(!c)return;ST.lab.metric=c.dataset.lm;upd()};
+    $('#labPresets').onclick=e=>{const c=e.target.closest('[data-lp]');if(!c)return;
+      const p=LAB_PRESETS[+c.dataset.lp];ST.lab={row:p.row,col:p.col,metric:p.metric};upd()};
+  }
+  drawLab();
+  renderVs();
+}
+function drawLab(){
+  const {row,col,metric}=ST.lab;
+  const M=GA.pairMatrix(row,col,metric,ST.range,ST.seg);
+  const isRate=metric==='cvr'||metric==='newRate';
+  const flat=M.val.flat();
+  const vmax=Math.max(...flat), vmin=Math.min(...flat);
+  const data=[];
+  M.val.forEach((r,ri)=>r.forEach((v,ci)=>data.push([ci,ri,isRate?+(v*100).toFixed(2):Math.round(v)])));
+  const fmtV=v=> isRate? v.toFixed(metric==='cvr'?2:0)+'%' : fmtJP(v);
+  E('chLab').setOption(baseOpt({
+    tooltip:Object.assign({},TIP,{formatter:p=>{
+      const s=M.sess[p.value[1]][p.value[0]], c=M.cv[p.value[1]][p.value[0]];
+      return `<b>${M.rows[p.value[1]]}</b> × <b>${M.cols[p.value[0]]}</b><br>
+        ${METRICS[metric]}: <b>${fmtV(p.value[2])}</b><br>
+        <span style="color:${TX2};font-size:11px">セッション ${fmtJP(s)} ／ CV ${CM(c)} ／ CVR ${pct(c/Math.max(1,s),2)}</span>`;}}),
+    grid:{left:8,right:14,top:34,bottom:44,containLabel:true},
+    xAxis:axX({data:M.cols,position:'top',axisLabel:{color:TX2,fontSize:10.5,fontFamily:FONT,interval:0,rotate:M.cols.length>8?28:0}}),
+    yAxis:axX({type:'category',data:M.rows,inverse:true,axisLabel:{color:TX2,fontSize:10.5,fontFamily:FONT}}),
+    visualMap:{min:isRate?vmin*100:0,max:isRate?vmax*100:vmax,orient:'horizontal',left:'center',bottom:2,itemHeight:110,itemWidth:11,
+      textStyle:{color:MUT,fontSize:10,fontFamily:MONOF},inRange:{color:[SEQ(.05),SEQ(.35),SEQ(.68),SEQ(1)]},
+      formatter:v=>isRate?(+v).toFixed(1)+'%':fmtJP(v)},
+    series:[{type:'heatmap',data,
+      label:{show:M.rows.length*M.cols.length<=140,formatter:p=>fmtV(p.value[2]),color:'#EAF3FC',fontSize:9,fontFamily:MONOF},
+      itemStyle:{borderColor:'#0A1120',borderWidth:2,borderRadius:4},
+      emphasis:{itemStyle:{shadowBlur:10,shadowColor:'rgba(56,189,248,.55)'}}}]
+  }),true);
+
+  /* 自動インサイト */
+  let bi=0,bj=0,si=0,sj=0;
+  M.val.forEach((r,ri)=>r.forEach((v,ci)=>{if(v>M.val[bi][bj]){bi=ri;bj=ci}if(v<M.val[si][sj]){si=ri;sj=ci}}));
+  $('#labInsight').innerHTML=`<span class="it">AUTO INSIGHT — ${GA.DIMS[row].name} × ${GA.DIMS[col].name}（${METRICS[metric]}）</span>
+    <p>最大セルは <span class="hl">${M.rows[bi]} × ${M.cols[bj]}</span>（${fmtV(isRate?M.val[bi][bj]*100:M.val[bi][bj])}）、最小セルは <span class="hl-r">${M.rows[si]} × ${M.cols[sj]}</span>（${fmtV(isRate?M.val[si][sj]*100:M.val[si][sj])}）。${isRate?'率の高低はセッション量と独立に見ること（分母が小さいセルは変動が大きい）。':'絶対量のクロスなので、率で見たい場合は指標をCVRに切り替える。'}</p>`;
+}
+
+/* ---- VS モード ---- */
+function renderVs(){
+  const A=GA.agg(ST.range,ST.seg);
+  const selA=$('#vsA'), selB=$('#vsB');
+  if(!selA.dataset.built){
+    const opts=GA.MODELS.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+    selA.innerHTML=opts; selB.innerHTML=opts;
+    selA.value=ST.vs.a; selB.value=ST.vs.b;
+    selA.onchange=()=>{ST.vs.a=selA.value;renderVs()};
+    selB.onchange=()=>{ST.vs.b=selB.value;renderVs()};
+    selA.dataset.built='1';
+  }
+  const a=A.models.find(m=>m.id===ST.vs.a), b=A.models.find(m=>m.id===ST.vs.b);
+  const rows=[
+    ['セッション',m=>m.sessions,v=>fmtJP(v)],
+    ['前期間比',m=>m.sessions/m.prevSessions-1,v=>(v>0?'+':'')+(v*100).toFixed(1)+'%'],
+    ['CVR',m=>m.cvr,v=>pct(v,2)],
+    ['CV件数',m=>m.cv,v=>CM(v)],
+    ['試乗予約',m=>m.cvGoal.testdrive,v=>CM(v)],
+    ['再訪率',m=>m.retShare,v=>pct(v,0)],
+    ['ページ/セッション',m=>m.pps,v=>v.toFixed(1)],
+    ['広告依存度（低いほど強い）',m=>-m.adShare,v=>pct(-v,0)],
+  ];
+  const col=(m,o)=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px">${carSvg(m.icon)}
+      <div><b style="font-size:15px">${m.name}</b><div style="font-size:10px;color:var(--mut)">${m.cat} ／ ${m.price}</div></div>
+      <div class="hex sm ${m.tier}" style="margin-left:auto">${m.tier}</div></div>
+    ${rows.map(([l,f,fmt])=>{
+      const mv=f(m),ov=f(o),win=mv>ov;
+      return `<div class="vsrow ${win?'win':''}"><span>${l}${win?' 🏆':''}</span><span class="vv num">${fmt(mv)}</span></div>`;
+    }).join('')}`;
+  $('#vsColA').innerHTML=col(a,b);
+  $('#vsColB').innerHTML=col(b,a);
+
+  /* レーダー */
+  const mx={sess:Math.max(...A.models.map(m=>m.sessions)),cvr:Math.max(...A.models.map(m=>m.cvr)),
+    ret:Math.max(...A.models.map(m=>m.retShare)),pps:Math.max(...A.models.map(m=>m.pps)),
+    tool:Math.max(...A.models.map(m=>m.toolSessions/m.sessions))};
+  const vec=m=>[m.sessions/mx.sess,m.cvr/mx.cvr,m.retShare/mx.ret,m.pps/mx.pps,(m.toolSessions/m.sessions)/mx.tool].map(v=>+(v*100).toFixed(1));
+  E('chVsRadar').setOption(baseOpt({
+    tooltip:Object.assign({},TIP),
+    legend:{bottom:0,textStyle:{color:TX2,fontSize:11},itemWidth:12,itemHeight:8},
+    radar:{indicator:[{name:'集客力',max:100},{name:'転換力',max:100},{name:'再訪力',max:100},{name:'回遊力',max:100},{name:'検討熱量',max:100}],
+      radius:'68%',center:['50%','48%'],
+      axisName:{color:TX2,fontSize:11,fontFamily:FONT},
+      splitArea:{areaStyle:{color:['rgba(56,189,248,.03)','rgba(56,189,248,.06)']}},
+      splitLine:{lineStyle:{color:LINE2}},axisLine:{lineStyle:{color:LINE2}}},
+    series:[{type:'radar',symbolSize:4,
+      data:[{name:a.name,value:vec(a),lineStyle:{color:CAT8[0],width:2.4},itemStyle:{color:CAT8[0]},areaStyle:{color:CAT8[0]+'33'}},
+            {name:b.name,value:vec(b),lineStyle:{color:CAT8[1],width:2.4},itemStyle:{color:CAT8[1]},areaStyle:{color:CAT8[1]+'2C'}}]}]
+  }),true);
+}
+
+/* ==================================================
+   VIEW: 計測設計
+   ================================================== */
+function renderDict(){
+  const A=GA.agg(ST.range,'all');
+  /* カスタムディメンション台帳 */
+  $('#cdTable').innerHTML=`<thead><tr><th>スコープ</th><th>表示名</th><th>パラメータ名</th><th class="num">取得率</th><th>主な値</th><th>メモ</th></tr></thead>
+  <tbody>${GA.CUSTOM_DIMS.map(d=>{
+    const warn=d.fill<.8;
+    return `<tr>
+      <td><span class="tag" style="color:${d.scope==='User'?'var(--pu)':'var(--cy)'};background:color-mix(in srgb,${d.scope==='User'?'var(--pu)':'var(--cy)'} 12%,transparent)">${d.scope}</span></td>
+      <td><b>${d.disp}</b></td>
+      <td><span class="utm">${d.param}</span></td>
+      <td class="num"><div class="tbar"><div class="bg"><i style="width:${(d.fill*100).toFixed(0)}%;background:${warn?'linear-gradient(90deg,var(--am),var(--rd))':'linear-gradient(90deg,var(--cy),var(--te))'}"></i></div><span style="${warn?'color:var(--am)':''}">${pct(d.fill,0)}${warn?' ⚠':''}</span></div></td>
+      <td class="mono">${d.vals}</td>
+      <td style="font-size:11px;color:var(--tx2)">${d.note}</td>
+    </tr>`}).join('')}</tbody>`;
+
+  /* イベント辞書 */
+  const F=GA.funnel(ST.range,'all');
+  const evCount=e=>{
+    if(e.goal) return A.total.cvByGoal[e.goal];
+    switch(e.scale){
+      case 'pv':return A.total.pv;
+      case 'modelSessions':return A.total.modelSessions;
+      case 'grade':return F[2].v*1.65;
+      case 'simStart':return F[2].v*.62;
+      case 'dealer':return F[3].v;
+      case 'fav':return A.total.modelSessions*.021;
+      default:return 0;}
+  };
+  const evs=GA.EVENTS_DICT.map(e=>({...e,n:evCount(e)}));
+  const evMax=Math.max(...evs.map(e=>e.n));
+  $('#evTable').innerHTML=`<thead><tr><th>イベント名</th><th>内容</th><th class="num">発生数</th><th class="num">規模</th></tr></thead>
+  <tbody>${evs.map(e=>`<tr>
+    <td><span class="utm">${e.ev}</span>${e.goal?' <span class="tag" style="color:var(--gd);background:color-mix(in srgb,var(--gd) 12%,transparent)">CV</span>':''}</td>
+    <td>${e.disp}</td>
+    <td class="num">${fmtJP(e.n)}</td>
+    <td class="num"><div class="tbar" style="min-width:90px"><div class="bg"><i style="width:${Math.max(1.2,Math.pow(e.n/evMax,.4)*100).toFixed(0)}%;background:${e.goal?'linear-gradient(90deg,#E4A900,var(--gd))':'linear-gradient(90deg,var(--cy),var(--te))'}"></i></div></div></td>
+  </tr>`).join('')}</tbody>`;
+
+  /* UTM規約 */
+  $('#utmRules').innerHTML=`
+    <p style="color:var(--tx2)">形式：<span class="utm">{施策}_{車種/商材}_{yyyymm}</span></p>
+    <p><b>utm_source</b>：<span class="mono">google / yahoo / meta / line / x / youtube / tver / dv360 / crm</span></p>
+    <p><b>utm_medium</b>：<span class="mono">cpc / display / video / paid_social / email</span></p>
+    <p><b>utm_campaign</b> 例：<span class="utm">bz4x_summer_202608</span>　<span class="utm">alphard_mc_202607</span></p>
+    <p style="font-size:11px;color:var(--mut)">・大文字/日本語/スペース禁止（表記ゆれは自動でチャネル不明に落ちる）<br>・社内リンクにUTMを付けない（セッション断絶の原因）。サイト内バナーは <span class="utm">padid</span> を使用</p>`;
+
+  const low=GA.CUSTOM_DIMS.filter(d=>d.fill<.8).sort((a,b)=>a.fill-b.fill);
+  $('#dictInsight').innerHTML=`<span class="it">CHECK — 計測負債</span>
+    <p>取得率80%未満のカスタムディメンションが <span class="hl-r">${low.length}本</span>：${low.map(d=>`<b>${d.disp}</b>（<span class="num">${pct(d.fill,0)}</span>）`).join('、')}。特に <span class="hl">保有車種と来訪目的</span> はオーディエンス分析・サービス送客の精度に直結するため、ログイン導線でのプロフィール補完キャンペーンを推奨。</p>
+    <p>UTM捕捉率は広告セッションの <b class="num">${pct(GA.utmTree(ST.range).tracked/GA.utmTree(ST.range).paidSess,0)}</b>【検証済み：選択期間の有料チャネル対象】。未捕捉分は媒体側の自動タグ（gclid等）で補完されるが、命名規約の徹底が第一。</p>`;
+}
+
+</script>
+<script>
+/* ============ アプリ制御：ナビ・フィルタ・⌘K・トースト ============ */
+const RENDERERS={hq:renderHQ,garage:renderGarage,goods:renderGoods,flow:renderFlow,acq:renderAcq,aud:renderAud,lab:renderLab,dict:renderDict};
+const VIEW_LABELS={hq:'総合HQ',garage:'車種ガレージ',goods:'商材・CV',flow:'動線マップ',acq:'集客・広告',aud:'オーディエンス',lab:'クロス分析ラボ',dict:'計測設計'};
+const rendered={};
+
+function renderView(v){
+  RENDERERS[v]();
+  rendered[v]=true;
+  ST.dirty[v]=false;
+  requestAnimationFrame(()=>{
+    Object.values(charts).forEach(c=>{try{c.resize()}catch(e){}});
+    revealScan();
+  });
+}
+function showView(v){
+  ST.view=v;
+  $$('.view').forEach(s=>s.classList.toggle('on',s.dataset.view===v));
+  $$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+  $('#crumbView').textContent=VIEW_LABELS[v];
+  if(!rendered[v]||ST.dirty[v]) renderView(v);
+  else requestAnimationFrame(()=>{Object.values(charts).forEach(c=>{try{c.resize()}catch(e){}});revealScan()});
+  window.scrollTo({top:0,behavior:REDUCED?'auto':'smooth'});
+}
+function markAllDirty(){Object.keys(RENDERERS).forEach(v=>ST.dirty[v]=true)}
+
+/* ---- ナビ ---- */
+$('#nav').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-view]');
+  if(b) showView(b.dataset.view);
+});
+$('#menubtn')?.addEventListener('click',()=>{
+  const s=$('.side'); s.style.display=s.style.display==='flex'?'none':'flex';
+  s.style.position='fixed'; s.style.zIndex='80'; s.style.width='240px';
+});
+
+/* ---- 期間・セグメント ---- */
+$('#rngCtl').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-r]'); if(!b)return;
+  ST.range=+b.dataset.r;
+  $$('#rngCtl button').forEach(x=>x.classList.toggle('on',x===b));
+  markAllDirty(); updatePeriod(); renderView(ST.view);
+});
+$('#segCtl').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-s]'); if(!b)return;
+  ST.seg=b.dataset.s;
+  $$('#segCtl button').forEach(x=>x.classList.toggle('on',x===b));
+  markAllDirty(); updatePeriod(); renderView(ST.view);
+});
+function updatePeriod(){
+  const A=GA.agg(ST.range,ST.seg);
+  $('#periodLbl').textContent=`${A.from.replace(/-/g,'/')} 〜 ${A.to.replace(/-/g,'/')}　·　${SEGLBL[ST.seg]}`;
+}
+
+/* ---- トレンド切替チップ ---- */
+$$('[data-tr]').forEach(c=>c.onclick=()=>{
+  ST.trendMode=c.dataset.tr;
+  $$('[data-tr]').forEach(x=>x.classList.toggle('on',x===c));
+  renderHQ();
+});
+
+/* ---- ガレージのソート/カテゴリ ---- */
+$('#garageCtl').addEventListener('click',e=>{
+  const s=e.target.closest('[data-sort]'), c=e.target.closest('[data-cat]');
+  if(s){ST.garage.sort=s.dataset.sort;$$('#garageCtl [data-sort]').forEach(x=>x.classList.toggle('on',x===s))}
+  if(c){ST.garage.cat=c.dataset.cat;$$('#garageCtl [data-cat]').forEach(x=>x.classList.toggle('on',x===c))}
+  if(s||c) renderGarage();
+});
+
+/* ---- モーダル ---- */
+$('#modelModal').addEventListener('click',e=>{if(e.target.id==='modelModal')closeModal()});
+addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();ckClose()}});
+
+/* ---- ⌘K コマンドパレット ---- */
+let ckItems=[],ckSel=0;
+function buildCk(){
+  ckItems=[
+    ...Object.entries(VIEW_LABELS).map(([v,l])=>({t:l,k:'ビュー',act:()=>showView(v)})),
+    ...GA.MODELS.map(m=>({t:m.name,k:'車種 → 詳細カルテ',act:()=>{showView('garage');setTimeout(()=>openModelModal(m.id),80)}})),
+    ...GA.campaigns(90).map(c=>({t:c.name,k:'キャンペーン → 広告リーグ',act:()=>showView('acq')})),
+    {t:'クロス：車種×アフィニティ（CVR）',k:'ラボ',act:()=>{ST.lab={row:'model',col:'affinity',metric:'cvr'};$('#labRow').dataset.built='';showView('lab');ST.dirty.lab=true;renderView('lab')}},
+  ];
+}
+function ckOpen(){
+  if(!ckItems.length)buildCk();
+  $('#cmdk').classList.add('on');
+  const inp=$('#ckInput'); inp.value=''; inp.focus(); ckSel=0; ckFilter('');
+}
+function ckClose(){$('#cmdk').classList.remove('on')}
+function ckFilter(q){
+  const list=ckItems.filter(i=>i.t.toLowerCase().includes(q.toLowerCase())).slice(0,12);
+  $('#ckList').innerHTML=list.map((i,ix)=>`<div class="ckitem ${ix===ckSel?'sel':''}" data-ix="${ix}">${i.t}<span class="k">${i.k}</span></div>`).join('')||'<div class="ckitem">該当なし</div>';
+  $$('#ckList .ckitem').forEach(el=>el.onclick=()=>{const it=list[+el.dataset.ix];if(it){ckClose();it.act()}});
+  return list;
+}
+$('#kbtn').onclick=ckOpen;
+$('#cmdk').addEventListener('click',e=>{if(e.target.id==='cmdk')ckClose()});
+$('#ckInput').addEventListener('input',e=>{ckSel=0;ckFilter(e.target.value)});
+$('#ckInput').addEventListener('keydown',e=>{
+  const list=ckFilter($('#ckInput').value);
+  if(e.key==='ArrowDown'){ckSel=Math.min(list.length-1,ckSel+1);ckFilter($('#ckInput').value)}
+  if(e.key==='ArrowUp'){ckSel=Math.max(0,ckSel-1);ckFilter($('#ckInput').value)}
+  if(e.key==='Enter'&&list[ckSel]){ckClose();list[ckSel].act()}
+});
+addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();ckOpen()}
+});
+
+/* ---- トースト ---- */
+function toast(html,cls='',dur=6500){
+  const el=document.createElement('div');
+  el.className='toast '+cls; el.innerHTML=html;
+  $('#toasts').appendChild(el);
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),450)},dur);
+}
+
+/* ---- ライブカウンター（デモ） ---- */
+function liveTick(){
+  const h=new Date().getHours()+new Date().getMinutes()/60;
+  const curve=Math.max(.22,Math.sin((h-3)/24*Math.PI*2)*.5+.62);
+  const n=Math.round(9200*curve*(1+Math.sin(Date.now()/9000)*.05+(Math.random()-.5)*.04));
+  $('#liveN').textContent=n.toLocaleString('ja-JP');
+}
+
+/* ---- リビール（描画時ステガー・確実表示） ---- */
+function revealScan(){
+  $$('.view.on .reveal:not(.in)').forEach((el,i)=>{
+    el.style.transitionDelay=(Math.min(i,8)*70)+'ms';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{el.classList.add('in');
+      setTimeout(()=>{el.style.transitionDelay=''},900)}));
+  });
+}
+
+/* ---- リサイズ ---- */
+let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>Object.values(charts).forEach(c=>{try{c.resize()}catch(e){}}),160)});
+
+/* ---- 起動 ---- */
+(function init(){
+  updatePeriod();
+  renderView('hq');
+  liveTick(); setInterval(liveTick,3200);
+  const SC=GA.score();
+  setTimeout(()=>{
+    const behind=SC.missions.find(m=>m.status==='behind');
+    const ahead=[...SC.missions].sort((a,b)=>b.vsPace-a.vsPace)[0];
+    toast(`<b>ミッション更新</b>：「${ahead.name}」が目標ペース <b>+${((ahead.vsPace-1)*100).toFixed(0)}%</b> で進行中`);
+    if(behind)setTimeout(()=>toast(`<b>要注意</b>：「${behind.name}」がペース <b>${((behind.vsPace-1)*100).toFixed(0)}%</b>。集客・広告タブで新規向け配信を確認`,'warn',8000),1700);
+    setTimeout(()=>toast(`<b>⌘K</b>（Ctrl+K）で車種・キャンペーンを横断検索できます`,'',7000),3600);
+  },1200);
+})();
+
+</script>
+</body>
+</html>
