@@ -18,6 +18,9 @@
       <button data-view="aud"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c.7-3.6 3.3-5.5 6.5-5.5S14.8 16.4 15.5 20"/><circle cx="17" cy="9" r="2.6"/><path d="M16.4 14.6c2.8.2 4.6 1.9 5.1 4.9"/></svg>オーディエンス</button>
       <button data-view="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v6L4 19a2 2 0 0 0 1.8 3h12.4A2 2 0 0 0 20 19L15 9V3"/><path d="M7 3h10"/><path d="M7.5 14h9"/></svg>クロス分析ラボ</button>
       <button data-view="dict"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/><path d="M9 7h7M9 11h5"/></svg>計測設計</button>
+      <div class="navsep"><span class="odot"></span>OWNED OPS ─ 実測</div>
+      <button data-view="ops" class="owned"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v6a4 4 0 0 0 4 4h12"/><path d="M16 10l4 4-4 4"/><path d="M4 20h6"/></svg>JP導線実績<span class="lv gold" id="navOpsCV">1</span></button>
+      <button data-view="sns" class="owned"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l16-6v14L3 13z"/><path d="M11 13.5V17a2 2 0 0 0 2 2h1"/><path d="M21 9a3 3 0 0 1 0 4"/></svg>SNS資産</button>
     </nav>
     <div class="sfoot">
       データ最終日 <span class="num">2026-08-18</span><br>
@@ -268,6 +271,18 @@
       </div>
     </section>
 
+    <!-- ==== VIEW: JP導線実績（OWNED / 実測） ==== -->
+    <section class="view" data-view="ops">
+      <div class="vhead"><span class="sector" style="color:var(--gd)">SECTOR 08 · OWNED OPS</span><h1>JP導線実績</h1><span class="desc">リクエスト完了ページ コネクティッド／au・UQ導線 — GA4実測 7/7〜8/5（レポート#007）</span></div>
+      <div class="grid" id="opsRoot"></div>
+    </section>
+
+    <!-- ==== VIEW: SNS資産（OWNED / 実測） ==== -->
+    <section class="view" data-view="sns">
+      <div class="vhead"><span class="sector" style="color:var(--gd)">SECTOR 09 · OWNED OPS</span><h1>SNS資産</h1><span class="desc">公式SNS実測クロール 2026-08-19 ＋ メディア資産価値ロジック（年換算）</span></div>
+      <div class="grid" id="snsRoot"></div>
+    </section>
+
     <footer class="foot">
       <div>本ボードは <b>合成デモデータ</b> で動作しています。GA4 Data API（<span class="num">runReport</span>）接続時は、チャネル＝<a href="https://support.google.com/analytics/answer/9756891?hl=ja" target="_blank" rel="noopener">デフォルトチャネルグループ</a>、アフィニティ＝<a href="https://support.google.com/analytics/answer/2819950?hl=ja" target="_blank" rel="noopener">Googleシグナルのアフィニティカテゴリ</a>、車種・商材・ステージ＝<a href="https://support.google.com/analytics/answer/14240153?hl=ja" target="_blank" rel="noopener">カスタムディメンション</a>にそのまま置き換わる設計です。</div>
       <div class="src">出典・定義：<a href="https://developers.google.com/analytics/devguides/reporting/data/v1?hl=ja" target="_blank" rel="noopener">GA4 Data API</a> ／ <a href="https://support.google.com/analytics/answer/9143382?hl=ja" target="_blank" rel="noopener">GA4 ディメンションと指標</a> ／ 姉妹ボード：<a href="https://ketrketr2.github.io/toyota-geo-board/" target="_blank" rel="noopener">AI Visibility KPI Board（GEO）</a> ／ ソースコード：<a href="https://github.com/ketrketr2/toyota-ga-board" target="_blank" rel="noopener">GitHub</a></div>
@@ -277,5 +292,6 @@
 
 <!-- モーダル・パレット・トースト -->
 <div class="modal" id="modelModal"><div class="mbox" id="modelModalBox"></div></div>
+<div class="modal" id="sisakuModal"><div class="mbox sbox" id="sisakuModalBox"></div></div>
 <div class="cmdk" id="cmdk"><div class="ckbox"><input id="ckInput" placeholder="ビュー・車種・キャンペーンを検索…（Esc で閉じる）"><div class="cklist" id="ckList"></div></div></div>
 <div class="toasts" id="toasts"></div>

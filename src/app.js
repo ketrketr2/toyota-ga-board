@@ -1,6 +1,7 @@
 /* ============ アプリ制御：ナビ・フィルタ・⌘K・トースト ============ */
-const RENDERERS={hq:renderHQ,garage:renderGarage,goods:renderGoods,flow:renderFlow,acq:renderAcq,aud:renderAud,lab:renderLab,dict:renderDict};
-const VIEW_LABELS={hq:'総合HQ',garage:'車種ガレージ',goods:'商材・CV',flow:'動線マップ',acq:'集客・広告',aud:'オーディエンス',lab:'クロス分析ラボ',dict:'計測設計'};
+const RENDERERS={hq:renderHQ,garage:renderGarage,goods:renderGoods,flow:renderFlow,acq:renderAcq,aud:renderAud,lab:renderLab,dict:renderDict,ops:renderOps,sns:renderSNS};
+const VIEW_LABELS={hq:'総合HQ',garage:'車種ガレージ',goods:'商材・CV',flow:'動線マップ',acq:'集客・広告',aud:'オーディエンス',lab:'クロス分析ラボ',dict:'計測設計',ops:'JP導線実績（実測）',sns:'SNS資産（実測）'};
+const OWNED_VIEWS=['ops','sns'];
 const rendered={};
 
 function renderView(v){
@@ -17,6 +18,9 @@ function showView(v){
   $$('.view').forEach(s=>s.classList.toggle('on',s.dataset.view===v));
   $$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
   $('#crumbView').textContent=VIEW_LABELS[v];
+  const owned=OWNED_VIEWS.includes(v);
+  const dm=$('.dm'); dm.textContent=owned?'LIVE · 実測データ':'DEMO DATA'; dm.classList.toggle('live',owned);
+  dm.title=owned?'公式SNSクロール実測＋GA4実測レポート#007に基づく実データ':'実データ接続前の合成デモデータで動作中';
   if(!rendered[v]||ST.dirty[v]) renderView(v);
   else requestAnimationFrame(()=>{Object.values(charts).forEach(c=>{try{c.resize()}catch(e){}});revealScan()});
   window.scrollTo({top:0,behavior:REDUCED?'auto':'smooth'});
@@ -68,7 +72,8 @@ $('#garageCtl').addEventListener('click',e=>{
 
 /* ---- モーダル ---- */
 $('#modelModal').addEventListener('click',e=>{if(e.target.id==='modelModal')closeModal()});
-addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();ckClose()}});
+$('#sisakuModal').addEventListener('click',e=>{if(e.target.id==='sisakuModal')$('#sisakuModal').classList.remove('on')});
+addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();ckClose();$('#sisakuModal').classList.remove('on')}});
 
 /* ---- ⌘K コマンドパレット ---- */
 let ckItems=[],ckSel=0;
@@ -140,6 +145,7 @@ let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>Obje
   liveTick(); setInterval(liveTick,3200);
   const SC=GA.score();
   setTimeout(()=>{
+    if(OWNED_VIEWS.includes(ST.view))return; // 実測ビュー閲覧中はデモ用トーストを出さない
     const behind=SC.missions.find(m=>m.status==='behind');
     const ahead=[...SC.missions].sort((a,b)=>b.vsPace-a.vsPace)[0];
     toast(`<b>ミッション更新</b>：「${ahead.name}」が目標ペース <b>+${((ahead.vsPace-1)*100).toFixed(0)}%</b> で進行中`);

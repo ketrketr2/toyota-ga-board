@@ -751,3 +751,190 @@ const GA = (() => {
     agg,pairMatrix,sankey,funnel,comboData,rfMatrix,affinityAgg,campaigns,utmTree,missions,score,
     memberData,deviceAgg,demoAgg,areaAgg,affShare,goodsShare,areaShare};
 })();
+
+
+/* ============ OWNED OPS：オウンドチーム実績データ（実測・2026-08-19 JST 取得） ============ */
+const OWNED = {
+  asof: '2026-08-19',
+  crawledAt: '2026-08-19 16:55-17:05 JST',
+
+  /* ---------- SECTOR 08: JP導線実績（出典: 導線価値レポート#007 = GA4実測 7/7〜8/5 ＋ 完了ページ実機検証 8/5） ---------- */
+  junction: {
+    heroCV: 1,                       // 来店予約 step1 到達（成果第1号・7/30深夜セッション）
+    lines: [
+      {id:'tconnect', name:'T-Connect（コネクティッド）', state:'live', since:'7/27〜',
+       url:'https://toyota.jp/tconnectservice/?padid=from_service_request_done_260727',
+       padid:'from_service_request_done_260727',
+       desc:'リクエスト（試乗予約等）完了ページ下部トピックスからT-Connectサービスへ', kpi:'滞在1分50秒（通常45秒）'},
+      {id:'auuq', name:'au / UQ mobile', state:'live', since:'8/4〜',
+       url:'https://toyota.jp/service/request/done/', padid:'au/UQ枠 8/4追加',
+       desc:'クルマもスマホもトヨタのお店でまとめてサポート訴求', kpi:'第1号ユーザーはTコネ機能ページへ回遊'},
+      {id:'ug', name:'用品UG（アップグレードファクトリー）', state:'ext', since:'稼働中',
+       url:'https://toyota.jp/', padid:'外部サイト',
+       desc:'純正装備の後付け訴求。遷移先が別サイト（KINTO側）のため toyota.jp のGA4では効果計測不可', kpi:'計測は先方GA4連携待ち'}
+    ],
+    // 群比較（GA4実測）
+    group: {
+      line:{s:7, pv:32, pvps:4.6, stay:687, eng:1.0,   evps:13.6},
+      ctrl:{s:2351, pv:29803, u:2199, pvps:12.7, stay:1091, eng:0.9668, evps:42.6}
+    },
+    addStay: 687,             // 追加滞在 11分27秒/件（予約完了後に純増で得た時間）
+    step1Rate: .167,          // 来店予約step1到達 16.7%
+    // 同一ページ滞在の差（秒）: 導線経由 vs 通常完了者
+    lift: [
+      {p:'店舗検索', a:111, b:68,  d:'+63%',  hot:1},
+      {p:'地図検索', a:161, b:110, d:'+46%',  hot:1},
+      {p:'T-Connect関連平均', a:94, b:45, d:'×2.1', hot:1},
+      {p:'ページ内イベント数', a:15, b:4, d:'×3.8', hot:1, unit:'件'},
+      {p:'ラインアップ', a:22, b:50, d:'−56%', hot:0},
+      {p:'車種ページ', a:31, b:136, d:'−77%', hot:0}
+    ],
+    liftNote: '車種ページが短い＝車種は決定済み。次の関心は「どの店に行くか」— 導線が来店行動の直前に位置する証拠',
+    // 年間価値シナリオ（分母=完了ページ 79.3S/日 → 28,961件/年 実測）
+    scenarios: [
+      {k:'現状',  r:.87, n:253,  h:48,  v:200,  req:'—'},
+      {k:'Step1', r:2,   n:579,  h:110, v:460,  req:'完了文直下へ配置＋3本全表示'},
+      {k:'Step2', r:3,   n:869,  h:166, v:720,  req:'＋見出し・コピーの具体化'},
+      {k:'Step3', r:5,   n:1448, h:276, v:1200, req:'＋ボタン化・車種パーソナライズ'}
+    ],
+    denom: {perDay:79.3, perYear:28961},
+    // 7/30 深夜の第1号タイムライン
+    timeline: [
+      {t:'0:42:05', e:'導線をクリックしてT-Connectに着地', s:'深夜0時台・予約完了直後'},
+      {t:'0:42:45', e:'店舗検索へ移動（計1分51秒）', s:'「どの店に行くか」を探し始める'},
+      {t:'0:42:52', e:'スクロール・リンククリック', s:'検索結果を絞り込む'},
+      {t:'0:43:15', e:'ラインアップ（全ボディタイプ）を展開', s:'SUV等を順にスクロール'},
+      {t:'0:45:44', e:'クラウン（エステート）を選択', s:'車種選択で具体名を指定（31秒閲覧）'},
+      {t:'0:46:07', e:'オンライン来店予約 step1 に到達', s:'さらに来店予約フローへ進入 ← 成果第1号'},
+      {t:'0:46:48', e:'リンククリックで終了', s:'4分43秒・20ページ・37イベント＝7.6秒に1アクション'}
+    ],
+    sessions4: [
+      {d:'7/27', path:'WEBカタログ（ビジネスカー）→ ダイナカーゴ2t → 販売店詳細', stay:'カタログ関連9イベント', want:'商用車の詳細スペック（カタログ比較段階）'},
+      {d:'7/30', path:'店舗検索 → ラインアップ → クラウンエステート → 来店予約step1', stay:'店舗検索 1分51秒', want:'どの店に行くか／次に見る車種'},
+      {d:'8/1',  path:'T-Connect動画 → 地図で店舗検索 → My TOYOTAメッセージ', stay:'地図検索 2分41秒', want:'サービスの中身（動画）と行ける店の位置'},
+      {d:'8/4',  path:'auショップ → リモートエアコン機能 → 対応車種リスト', stay:'機能ページ 1分45秒', want:'具体的な機能と自分の車で使えるか'}
+    ],
+    tconnect: [
+      {p:'/tconnectservice/（トップ）', stay:'1分50秒', read:'サービス全体像。12イベント＝スクロールしながら読破'},
+      {p:'紹介動画の再生（video_start→progress×3）', stay:'完走傾向', read:'テキストで足りず映像で理解'},
+      {p:'/service/remote_aircon.html', stay:'1分45秒', read:'特定機能の使い方。真夏の試乗前に最も想像しやすい便益'},
+      {p:'「対応車種リスト」クリック', stay:'—', read:'自分の候補車で使えるかの確認＝購入後の自分を想像'}
+    ],
+    improve: [
+      {t:'配置', now:'完了文→連絡先→「トピックス」横送りカルーセル（2枚目以降は要スワイプ）', to:'「試乗当日までに、できること」3本を縦積み・全表示'},
+      {t:'T-Connectコピー', now:'24時間365日、クルマが通信で…（抽象）', to:'「乗る前にスマホでエアコンON。当日ぜひお試しください →対応車種を見る」'},
+      {t:'用品UGコピー', now:'純正装備を後付け', to:'「試乗車と同じ純正アイテムを見る（トヨタ純正／別サイトへ）」'},
+      {t:'au/UQコピー', now:'クルマもスマホも、トヨタのお店でまとめてサポート！', to:'「来店のついでに、スマホもまとめて相談」を主見出しへ'},
+      {t:'次の一手', now:'—', to:'店舗情報の併置／予約車種名の差し込み／CTAボタン化／商用車の出し分け／季節連動（夏=リモートエアコン）'}
+    ]
+  },
+
+  /* ---------- SECTOR 09: SNS資産（実測クロール 8/19 ＋ 単価・活性ロジック 7/29版） ---------- */
+  sns: {
+    value: {total:46.5, stock:9.8, flow:36.7, floor:24.0, q:1.0, base:540,
+      formula:'資産価値 = (STOCK + FLOW) × Q ／ STOCK = アクティブ基盤 × 獲得単価 ／ FLOW = 年間露出 × 広告単価 ／ Q = 自社ER÷業界平均ER（今回1.0）',
+      floorNote:'全単価を下限 × 露出・配信半減でも 24.0億円'},
+    channels: [
+      {id:'jp',  name:'toyota.jp', icon:'JP', stock:0,    flow:28.6, unit:'検索経由50% × 加重CPC60円', basis:'年9,525万UU（GA・進捗95%）', active:null},
+      {id:'yt',  name:'YouTube 3ch合算', icon:'YT', stock:1.74, flow:2.79, unit:'CPF200円 / CPV7円×自然分50%', basis:'86.8万人（124.1万×70%）・年7,975万再生', active:.70},
+      {id:'mail',name:'メルマガ', icon:'ML', stock:2.70, flow:1.46, unit:'リスト200円 / 号外5円/通', basis:'135万件（150万×有効90%）・年2,700万通＋JP誘導9.5万件', active:.90},
+      {id:'line',name:'LINE', icon:'LN', stock:1.91, flow:1.08, unit:'友だち150円 / 従量3円/通', basis:'127.5万人（150万×非ブロック85%）・年3,600万通', active:.85},
+      {id:'ig',  name:'Instagram', icon:'IG', stock:1.19, flow:1.03, unit:'CPF200円 / CPM2,200円', basis:'59.4万人（85万×70%）・年4,075万imp', active:.70},
+      {id:'tt',  name:'TikTok', icon:'TT', stock:0.96, flow:1.17, unit:'CPF150円 / CPM1,000円・ER4%', basis:'64.3万人（80.4万×80%）・年3,088万再生', active:.80},
+      {id:'x',   name:'X', icon:'X',  stock:0.58, flow:0.56, unit:'CPF150円 / CPM700円・ER0.45%', basis:'38.8万人（64.7万×60%）・年7,600万imp', active:.60},
+      {id:'fb',  name:'Facebook', icon:'FB', stock:0.70, flow:0.06, unit:'CPF250円 / CPM800円', basis:'28.0万人（56万×50%）・年430万リーチ', active:.50}
+    ],
+    accounts: [
+      {id:'x',  sns:'X', name:'@TOYOTA_PR', url:'https://x.com/TOYOTA_PR',
+       f:647000, fPrev:647000, posts:'7.5万ポスト', asof:'8/19実測', col:'#8A96A8',
+       note:'2011年3月開設・101フォロー中', val:1.14},
+      {id:'ig', sns:'Instagram', name:'@toyota_jp', url:'https://www.instagram.com/toyota_jp/',
+       f:851000, fPrev:849000, posts:'3,213投稿', asof:'8/19実測', col:'#D55181',
+       note:'#トヨタグラム 写真募集企画を常設', val:2.22},
+      {id:'tt', sns:'TikTok', name:'@toyota_pr_japan', url:'https://www.tiktok.com/@toyota_pr_japan',
+       f:804000, fPrev:804000, posts:'累計いいね630万', asof:'7/29実測', col:'#00E5C7',
+       note:'8/19はクロール不可（アクセス制限）→ 7/29公開値', val:2.14},
+      {id:'fb', sns:'Facebook', name:'TOYOTA / トヨタ自動車株式会社', url:'https://www.facebook.com/ToyotaMotorCorporation',
+       f:560000, fPrev:560000, posts:'since 2011/4/20', asof:'8/19実測', col:'#3987E5',
+       note:'レビュー515件・74%がおすすめ', val:0.76},
+      {id:'ytsr', sns:'YouTube', name:'トヨタ YouTubeショールーム', url:'https://www.youtube.com/@toyotajpchannel',
+       f:291000, fPrev:291000, posts:'427本・総再生4.20億回', asof:'8/19実測', col:'#E66767',
+       note:'2011年開設。商品紹介・TVCM置き場', val:null},
+      {id:'yttm', sns:'YouTube', name:'トヨタイムズ', url:'https://www.youtube.com/@toyotatimes',
+       f:905000, fPrev:867000, posts:'871本・総再生1.83億回', asof:'8/19実測', col:'#E66767',
+       note:'3週間で +3.8万人（新体制報道・ウーブンシティ効果）', val:null},
+      {id:'ytdr', sns:'YouTube', name:'トヨタドライバーズチャンネル', url:'https://www.youtube.com/@toyotadriverschannel',
+       f:83000, fPrev:82500, posts:'322本・総再生1.18億回', asof:'8/19実測', col:'#E66767',
+       note:'2022年開設。精霊馬バズの受け皿に', val:null}
+    ],
+    ytTotal:{f:1279000, fPrev:1240500, val:4.53},
+    posts: [
+      {sns:'IG', title:'お盆の帰省ラッシュ。もしご先祖様も渋滞に巻き込まれていたら？（精霊馬・CV:ファイルーズあい）', d:'8/13',
+       main:89000, mainL:'いいね', sub:'コメント463・シェア4,802', url:'https://www.instagram.com/p/Db83dLLgc-i/', tag:'バズ', tagc:'#FFD84D'},
+      {sns:'YT', title:'【福祉】あなたを愛してくれた人が困っているかも（ショールーム）', d:'8月上旬',
+       main:7050000, mainL:'回視聴', sub:'通常投稿の約700倍 → 広告配信併用と推定', url:'https://www.youtube.com/@toyotajpchannel/videos', tag:'広告ブースト', tagc:'#9085E9'},
+      {sns:'YT', title:'【前代未聞】帰省ラッシュで精霊馬が大渋滞（ドライバーズch・CV:ファイルーズあい）', d:'8/13',
+       main:300000, mainL:'回視聴', sub:'ch通常比 約600倍。IG版と同時展開', url:'https://www.youtube.com/@toyotadriverschannel/videos', tag:'バズ', tagc:'#FFD84D'},
+      {sns:'X', title:'＼モット！トヨタオス！／ エンジンブレーキ篇（8/12カギ音篇を引用）', d:'8/17',
+       main:52000, mainL:'imp', sub:'いいね133・RP12・返信6', url:'https://x.com/TOYOTA_PR', tag:'シリーズ', tagc:'#38BDF8'},
+      {sns:'X', title:'ｶｯｶｯｶｯ…バッテリー上がりの打音【本当にあったヤバい兆し】', d:'8/14',
+       main:57000, mainL:'imp', sub:'いいね152・RP18・返信8', url:'https://x.com/TOYOTA_PR', tag:'シリーズ', tagc:'#38BDF8'},
+      {sns:'X', title:'福島県三春町 水素ワークショップ（SAMURAI BLUE クラウンFCEV）', d:'8/16',
+       main:32000, mainL:'imp', sub:'いいね210・RP21・返信3', url:'https://x.com/TOYOTA_PR', tag:'活動報告', tagc:'#199E70'},
+      {sns:'IG', title:'トヨタオス道場「カギ音の正体」篇', d:'8/13',
+       main:1240, mainL:'いいね', sub:'リール・コメントに質問系が発生', url:'https://www.instagram.com/p/Db7JyBRFISK/', tag:'シリーズ', tagc:'#38BDF8'},
+      {sns:'IG', title:'トヨタオス道場「エンジンブレーキ」篇', d:'8/18',
+       main:1038, mainL:'いいね', sub:'コメントでHV機構の技術議論が発生', url:'https://www.instagram.com/p/DcIBp7lkhOX/', tag:'シリーズ', tagc:'#38BDF8'},
+      {sns:'IG', title:'ゾッとする前に。バッテリー打音篇【本当にあったヤバい兆し】', d:'8/15',
+       main:978, mainL:'いいね', sub:'X版5.7万impと同時展開', url:'https://www.instagram.com/p/DcATpx-AhoP/', tag:'シリーズ', tagc:'#38BDF8'},
+      {sns:'FB', title:'三春町 水素ワークショップ（とびchan.）', d:'8/17',
+       main:492, mainL:'いいね', sub:'コメント3・シェア9', url:'https://www.facebook.com/ToyotaMotorCorporation', tag:'活動報告', tagc:'#199E70'},
+      {sns:'YT', title:'【新体制】豊田大輔SVP帰任｜月イチ！ウーブン・シティ#6（トヨタイムズ）', d:'8/17',
+       main:20000, mainL:'回視聴', sub:'登録者は3週で+3.8万人', url:'https://www.youtube.com/@toyotatimes/videos', tag:'ニュース', tagc:'#C98500'}
+    ],
+    units: [
+      {m:'X',        cpf:'150', cpfR:'100〜200', cpm:'700', cpmR:'400〜1,500', cpe:'70', cpeR:'40〜100'},
+      {m:'Instagram',cpf:'200', cpfR:'100〜500', cpm:'2,200', cpmR:'2,000〜3,000', cpe:'100', cpeR:'50〜150'},
+      {m:'TikTok',   cpf:'150', cpfR:'100〜300', cpm:'1,000', cpmR:'800〜1,500', cpe:'80', cpeR:'50〜120'},
+      {m:'Facebook', cpf:'250', cpfR:'100〜500', cpm:'800', cpmR:'500〜1,500', cpe:'80', cpeR:'50〜150'}
+    ],
+    power: [
+      {m:'X（会話・拡散型）', col:'#8A96A8', blocks:[['基礎エンゲージ率',25,'加重ER 6.0で満点'],['会話成立',20,'返信率30%'],['能動アクション',20,'プロフC等 1.0%'],['動画視聴',15,'50%視聴 30%'],['初速',10,'2h imp÷24h 50%'],['健全性',10,'月次純増減']]},
+      {m:'Instagram（シェア・保存型）', col:'#D55181', blocks:[['基礎エンゲージ',15,'加重 5.0'],['シェア(×4)',25,'0.8%で満点'],['保存(×3)',15,'1.5%'],['リール視聴',20,'保持50%'],['リーチ',15,'フォロワー比30%'],['新規率',10,'非フォロワー40%']]},
+      {m:'TikTok（完視聴型)', col:'#00E5C7', blocks:[['エンゲージ密度',30,'5.0%で満点'],['完視聴率',35,'30%（70%=拡散閾値）'],['平均視聴時間',15,'保持50%'],['おすすめ流入',10,'70%'],['再視聴率',10,'10%']]},
+      {m:'Facebook（交流の質型）', col:'#3987E5', blocks:[['シェア(×30)',30,'0.5%で満点'],['コメ・いいね',15,'加重5.0'],['反応内訳',10,'超いいね0.5%'],['リーチ',35,'フォロワー比10%'],['ネガFB',10,'月次純増減']]},
+      {m:'YouTube（視聴維持型）', col:'#E66767', blocks:[['基礎エンゲージ',15,'4.0%で満点'],['クリック率',20,'CTR5%'],['視聴維持率',25,'40%'],['ブラウズ流入',15,'50%'],['満足度',15,'高評価95%'],['登録転換',10,'0.1%']]}
+    ],
+    powerNote: 'ロジック出典: X=公式GitHub公開コード(2023) / IG=公式Ranking Explained / TikTok=内部文書「Algo 101」報道 / FB=Facebook Papers / YT=Google推薦論文+How YouTube Works。基準値は Rival IQ・Socialinsider ベンチマーク。まず配点＝伸びしろ地図として使い、管理画面データが届き次第スコア化',
+    insights: {
+      win: [
+        {t:'キャラ×季節文脈×声優の三段掛け', d:'精霊馬×お盆×CV:ファイルーズあい は IG 8.9万いいね・シェア4,802・YT30万回。通常投稿の約70倍。「日本のお盆らしさ」への共感コメントが海外からも発生', m:'IG精霊馬 8.9万いいね'},
+        {t:'ホラー演出の実用啓発（ヤバい兆し）', d:'点検啓発を怪談仕立てにした瞬間、X 5.7万imp・保存性の高い実用ネタに。「怖くない話」というツッコミコメントまで含めて会話が回る', m:'X 5.7万imp'},
+        {t:'道場シリーズの会話誘発力', d:'トヨタオス道場はいいね数こそ通常帯だが、コメント欄に「HVでもエンブレ効く？」等の技術質問が集まり会話成立率が高い。Xのアルゴリズムはリプライを最重視（加重13.5倍）', m:'質問コメント多発'},
+        {t:'クロスプラットフォーム同時展開', d:'精霊馬は IG リール＋YT ドライバーズch＋X で同時展開し、プラットフォーム別の伸びを比較可能にした。最大反応は IG（シェア4,802が拡散を牽引）', m:'3面同時展開'}
+      ],
+      lose: [
+        {t:'商品紹介の単発置き', d:'SIENTA商品紹介・機能訴求シリーズは1,841〜1.8万回視聴に留まる。カタログ的な網羅投稿はストック価値はあるがフロー拡散なし', m:'YT 数千回帯'},
+        {t:'イベント告知の事前投稿', d:'TOYOTA SOCIAL FES 告知は922〜1,398回。開催後の「体験レポート型」（三春町WSはX 3.2万imp）の方が数字も会話も出る', m:'YT 922回'},
+        {t:'海外向け転載の国内投下', d:'Life with a COROLLA 各国篇は3,925〜6,214回。国内文脈（納期・維持費・車中泊等）への翻訳がないと伸びない', m:'YT 4千回帯'}
+      ],
+      boost: 'ALPHARD PHEV 3本（650〜769万回）と【福祉】篇（705万回）はオーガニック比 約100〜700倍 → 広告配信の併用と推定。資産価値のFLOW計算では自然分のみ50%換算で保守化済み'
+    },
+    captures: [
+      {img:'assets/sns/ig_viral.jpg', t:'IG 精霊馬の帰省ラッシュ — 8.9万いいね・シェア4,802', u:'https://www.instagram.com/p/Db83dLLgc-i/'},
+      {img:'assets/sns/x_profile.jpg', t:'X @TOYOTA_PR — フォロワー64.7万', u:'https://x.com/TOYOTA_PR'},
+      {img:'assets/sns/ig_profile.jpg', t:'IG @toyota_jp — フォロワー85.1万・3,213投稿', u:'https://www.instagram.com/toyota_jp/'},
+      {img:'assets/sns/ig_reel.jpg', t:'IG トヨタオス道場 エンジンブレーキ篇 — 1,038いいね', u:'https://www.instagram.com/p/DcIBp7lkhOX/'},
+      {img:'assets/sns/x_post_h2.jpg', t:'X 三春町 水素WS（SAMURAI BLUE クラウンFCEV）— 3.2万imp', u:'https://x.com/TOYOTA_PR'},
+      {img:'assets/sns/fb_post.jpg', t:'FB 水素WS投稿 — いいね492・シェア9', u:'https://www.facebook.com/ToyotaMotorCorporation'},
+      {img:'assets/sns/yt_sr.jpg', t:'YT ショールーム — 登録29.1万・427本', u:'https://www.youtube.com/@toyotajpchannel'},
+      {img:'assets/sns/fb_page.jpg', t:'FB公式ページ — フォロワー56万・74%がおすすめ', u:'https://www.facebook.com/ToyotaMotorCorporation'}
+    ],
+    sources: [
+      ['各SNS実測クロール（2026-08-19 16:55-17:05 JST・Mac mini Chrome）','https://x.com/TOYOTA_PR'],
+      ['単価・アクティブ率・資産ロジック（オウンドKPI共有資料 2026-07-30版）',''],
+      ['導線価値レポート#007（GA4実測 7/7〜8/5）','']
+    ]
+  }
+};
+const SISAKU_INIT = [{"id":"I-08-01","prod":"T-connect","ch":"toyota.jp","type":"LP制作","name":"車種別コネクティッドベネフィット訴求LPの作成（既存車種ページのコネクティッドサービスページ見直し含む）","st":"再提案準備中","kbn":"","tgt":"宣伝部TQP","own":"中井"},{"id":"I-08-02","prod":"T-connect","ch":"SNS","type":"SNS","name":"スマホ向けコネナビ無料CP訴求","st":"再提案準備中","kbn":"","tgt":"宣伝部TQP","own":"中井"},{"id":"I-08-03","prod":"T-connect","ch":"toyota.jp","type":"サイト改修","name":"リクエスト完了ページでのコネクティッドサービス訴求","st":"初動報告","kbn":"本命","tgt":"宣伝部TQP","own":"中井"},{"id":"I-08-04","prod":"T-connect","ch":"toyota.jp/メルマガ","type":"サイト改修","name":"オーナーズボイスマニュアルへの導線強化","st":"保留","kbn":"本命","tgt":"宣伝部TQP","own":"中井"},{"id":"I-08-05","prod":"T-connect","ch":"toyota.jp/メルマガ/MyTOYOTA+","type":"LP制作","name":"季節別おすすめ機能訴求LP（制作＋誘導）","st":"保留","kbn":"本命","tgt":"宣伝部TQP","own":"中井"},{"id":"I-08-06","prod":"T-connect","ch":"メルマガ/MyTOYOTA+","type":"メルマガ","name":"購入直後のオンボーディング施策","st":"保留","kbn":"本命","tgt":"宣伝部TQP","own":"中井"},{"id":"I-08-07","prod":"T-connect","ch":"SNS","type":"SNS","name":"盗難プロvsマイカーセキュリティ ホコタテ対決","st":"再提案準備中","kbn":"チャレンジ","tgt":"宣伝部TQP","own":"中井"},{"id":"I-08-08","prod":"T-connect","ch":"toyota.jp","type":"サイト改修","name":"既存ページのGEO対策（AIが引用しやすい構造に改修）","st":"保留","kbn":"チャレンジ","tgt":"宣伝部TQP","own":"中井"},{"id":"I-08-09","prod":"T-connect","ch":"toyota.jp","type":"サイト改修","name":"t-connect.jpとtoyota.jpの統合","st":"保留","kbn":"","tgt":"対象外 代理店TQP","own":"—"},{"id":"I-08-10","prod":"T-connect","ch":"SNS","type":"SNS","name":"SNSカーライフコンテンツ（トヨタオス）でのリモートスタート機能訴求","st":"初動報告","kbn":"本命","tgt":"宣伝部TQP","own":"中井"},{"id":"I-19-01","prod":"水素","ch":"toyota.jp","type":"コンテンツ制作","name":"車種ページ（FCバス、FCタクシー、FCトラック）","st":"合意済","kbn":"","tgt":"宣伝部TQP","own":"矢田"},{"id":"I-19-02","prod":"水素","ch":"toyota.jp","type":"コンテンツ制作","name":"防災価値ページ","st":"合意済","kbn":"","tgt":"宣伝部TQP","own":"矢田"},{"id":"I-19-03","prod":"水素","ch":"toyota.jp","type":"コンテンツ制作","name":"自治体補助金一覧ページ","st":"合意済","kbn":"","tgt":"宣伝部TQP","own":"矢田"},{"id":"I-19-04","prod":"水素","ch":"toyota.jp","type":"コンテンツ制作","name":"自治体・公共団体タイアップページ H2 Tokyo等","st":"提案済み（返答待ち）","kbn":"","tgt":"対象外 代理店TQP","own":"矢田"},{"id":"I-19-05","prod":"水素","ch":"toyota.jp","type":"コンテンツ制作","name":"水素社会実現へ向けた機運醸成ページ （国策としての水素）","st":"提案済み（返答待ち）","kbn":"","tgt":"対象外 代理店TQP","own":"矢田"},{"id":"I-09-01","prod":"通信","ch":"toyota.jp","type":"サイト改修","name":"リクエスト完了ページでの通信訴求","st":"初動報告","kbn":"","tgt":"宣伝部TQP","own":"渡邉"},{"id":"I-27-01","prod":"用品","ch":"SNS","type":"PR","name":"インフルエンサーを活用したPR","st":"見送り","kbn":"","tgt":"宣伝部TQP","own":"高橋"},{"id":"I-27-02","prod":"用品","ch":"SNS","type":"SNS","name":"ショート動画を用いた用品訴求 優先度①","st":"保留","kbn":"","tgt":"宣伝部TQP","own":"高橋"},{"id":"I-27-03","prod":"用品","ch":"toyota.jp","type":"サイト改修","name":"トヨタアップグレードファクトリーサイトとtoyota.jpの統合","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"—"},{"id":"I-27-04","prod":"用品","ch":"広告","type":"その他","name":"膨大な低リテラシー層へのリーチ創出 優先度①？","st":"合意済","kbn":"","tgt":"対象外 代理店TQP","own":"高橋"},{"id":"I-27-05","prod":"用品","ch":"メルマガ/LINE","type":"メルマガ","name":"定期CR・入庫誘致時の気づき喚起","st":"見送り","kbn":"","tgt":"宣伝部TQP","own":"高橋"},{"id":"I-27-06","prod":"用品","ch":"新規サイト","type":"その他","name":"トヨタ公式用品メディアの組成","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"高橋"},{"id":"I-27-07","prod":"用品","ch":"Gazoo中古車/JP-U","type":"LP制作","name":"中古車サイトへのUG掲載に合わせ、用品プラスオンの選択肢を周知開始 優先度②？","st":"合意済","kbn":"","tgt":"対象外 代理店TQP","own":"高橋"},{"id":"I-27-08","prod":"用品","ch":"toyota.jp","type":"サイト改修","name":"自メイク仕入強化への貢献(トヨタのクルマ買取改修)","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"高橋"},{"id":"I-27-09","prod":"用品","ch":"toyota.jp","type":"サイト改修","name":"下取SIM等の代替予備軍に対する用品想起 手離れ予定客への用品メリット想起 優先度③？","st":"合意済","kbn":"","tgt":"対象外 代理店TQP","own":"高橋"},{"id":"I-27-10","prod":"用品","ch":"toyota.jp","type":"サイト改修","name":"見積SIM棄却者への選択肢提示","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"高橋"},{"id":"I-27-11","prod":"用品","ch":"toyota.jp","type":"サイト改修","name":"アクセサリーページ改修","st":"見送り","kbn":"","tgt":"宣伝部TQP","own":"高橋"},{"id":"I-27-12","prod":"用品","ch":"用品適合WEB","type":"サイト改修","name":"用品適合WEB改修 優先度②","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"高橋"},{"id":"I-27-13","prod":"用品","ch":"toyota.jp","type":"サイト改修","name":"toyota.jp側からのCV導線強化 優先度② 用品適合WEB 導線","st":"合意済","kbn":"","tgt":"宣伝部TQP","own":"高橋"},{"id":"I-27-14","prod":"用品","ch":"toyota.jp","type":"サイト改修","name":"納車前コミュニケーション","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"高橋"},{"id":"I-27-15","prod":"用品","ch":"toyota.jp","type":"サイト改修","name":"リクエスト完了ページでの用品訴求","st":"初動報告","kbn":"","tgt":"宣伝部TQP","own":"高橋"},{"id":"I-33-01","prod":"マリン","ch":"マリンサイト","type":"サイト改修","name":"Google品質チェックでの指摘事項対応","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"渡邉"},{"id":"I-33-02","prod":"マリン","ch":"マリンサイト","type":"サイト改修","name":"製品カタログのPDFダウンロード対応","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"渡邉"},{"id":"I-33-03","prod":"マリン","ch":"マリンサイト","type":"サイト改修","name":"購入までの導線設計見直し","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"渡邉"},{"id":"I-33-04","prod":"マリン","ch":"マリンサイト","type":"サイト改修","name":"トップページの情報設計見直し","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"渡邉"},{"id":"I-33-05","prod":"マリン","ch":"マリンサイト","type":"サイト改修","name":"操船技術の訴求コンテンツ見直し","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"渡邉"},{"id":"I-33-06","prod":"マリン","ch":"マリンサイト","type":"サイト改修","name":"商品ページの1ページ統合","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"渡邉"},{"id":"I-33-07","prod":"マリン","ch":"マリンサイト","type":"サイト改修","name":"販売店一覧ページの見直し","st":"見送り","kbn":"","tgt":"対象外 代理店TQP","own":"渡邉"},{"id":"I-33-08","prod":"マリン","ch":"マリンサイト/マリンSNS","type":"サイト改修","name":"初心者向けコンテンツの企画・制作","st":"保留","kbn":"","tgt":"対象外 代理店TQP","own":"渡邉"},{"id":"I-33-09","prod":"マリン","ch":"マリンサイト/マリンSNS","type":"サイト改修","name":"定期的な情報発信の仕組みづくり","st":"保留","kbn":"","tgt":"対象外 代理店TQP","own":"渡邉"},{"id":"I-33-10","prod":"マリン","ch":"SNS","type":"SNS","name":"トヨタ公式SNSでのマリン事業訴求","st":"制作中","kbn":"","tgt":"宣伝部TQP","own":"岩本・岸上"}];
