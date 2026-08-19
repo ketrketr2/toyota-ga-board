@@ -1,7 +1,7 @@
 /* ============ アプリ制御：ナビ・フィルタ・⌘K・トースト ============ */
-const RENDERERS={hq:renderHQ,garage:renderGarage,goods:renderGoods,flow:renderFlow,acq:renderAcq,aud:renderAud,lab:renderLab,dict:renderDict,ops:renderOps,sns:renderSNS};
-const VIEW_LABELS={hq:'総合HQ',garage:'車種ガレージ',goods:'商材・CV',flow:'動線マップ',acq:'集客・広告',aud:'オーディエンス',lab:'クロス分析ラボ',dict:'計測設計',ops:'JP導線実績（実測）',sns:'SNS資産（実測）'};
-const OWNED_VIEWS=['ops','sns'];
+const RENDERERS={hq:renderHQ,garage:renderGarage,goods:renderGoods,flow:renderFlow,acq:renderAcq,aud:renderAud,lab:renderLab,dict:renderDict,assets:renderAssets,ops:renderOps,sns:renderSNS};
+const VIEW_LABELS={hq:'総合HQ',garage:'車種ガレージ',goods:'商材・CV',flow:'動線マップ',acq:'集客・広告',aud:'オーディエンス',lab:'クロス分析ラボ',dict:'計測設計',assets:'オウンド資産（実測）',ops:'JP活用実績（実測）',sns:'SNSパフォーマンス（実測）'};
+const OWNED_VIEWS=['assets','ops','sns'];
 const rendered={};
 
 function renderView(v){
@@ -72,8 +72,8 @@ $('#garageCtl').addEventListener('click',e=>{
 
 /* ---- モーダル ---- */
 $('#modelModal').addEventListener('click',e=>{if(e.target.id==='modelModal')closeModal()});
-$('#sisakuModal').addEventListener('click',e=>{if(e.target.id==='sisakuModal')$('#sisakuModal').classList.remove('on')});
-addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();ckClose();$('#sisakuModal').classList.remove('on')}});
+['sisakuModal','logicModal','capModal'].forEach(id=>$('#'+id).addEventListener('click',e=>{if(e.target.id===id)$('#'+id).classList.remove('on')}));
+addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();ckClose();['sisakuModal','logicModal','capModal'].forEach(id=>$('#'+id).classList.remove('on'))}});
 
 /* ---- ⌘K コマンドパレット ---- */
 let ckItems=[],ckSel=0;

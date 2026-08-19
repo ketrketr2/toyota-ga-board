@@ -476,3 +476,69 @@ select.sel:focus{outline:1px solid var(--cy)}
 .wlIt .t .m{font-family:var(--mono);font-size:10px;color:var(--te);white-space:nowrap}
 .wlIt.lose .t .m{color:var(--rd)}
 .wlIt .d{font-size:11.4px;color:var(--tx2);line-height:1.8;margin-top:4px}
+
+/* ============ OWNED 改修（オウンド資産／JP活用実績／SNSパフォーマンス） ============ */
+/* ロジックモーダル */
+.lbox{max-width:720px;padding:24px 28px}
+.lbox h3{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.lbox h3 .v{margin-left:auto;font-family:var(--mono);font-weight:800;font-size:22px;color:var(--gd)}
+.lbox .lsub{font-size:11px;color:var(--mut);margin-bottom:14px}
+.lrow{display:grid;grid-template-columns:92px 1fr;gap:12px;padding:11px 0;border-top:1px dashed var(--line)}
+.lrow .lk{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--te);padding-top:2px}
+.lrow.gold .lk{color:var(--gd)}
+.lrow .lf{font-size:12.6px;line-height:1.9;color:var(--tx)}
+.lrow .lf .num{color:var(--cy)}
+.lrow .lf small{display:block;color:var(--mut);font-size:10.8px;margin-top:3px;line-height:1.7}
+.leq{font-family:var(--mono);font-size:12.5px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:4px 0;overflow-x:auto;white-space:nowrap}
+.lbox .lsrc{font-size:10px;color:var(--mut);margin-top:12px;line-height:1.8}
+.clickHint{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-family:var(--mono);color:var(--gd);letter-spacing:.1em}
+.card.clickable{cursor:pointer}
+.card.clickable:hover{border-color:color-mix(in srgb,var(--gd) 45%,transparent)}
+
+/* キャプチャモーダル */
+.cbox{max-width:840px;padding:18px}
+.cbox img{width:100%;border-radius:10px;border:1px solid var(--line2);display:block}
+.cbox .ct2{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:12px 4px 2px;font-size:12.5px;color:var(--tx)}
+.cbox .ct2 a{color:var(--cy);text-decoration:none;font-size:11.5px;white-space:nowrap}
+.cbox .cm2{font-size:10.5px;color:var(--mut);margin:4px 4px 0}
+
+/* D/W/M トグル */
+.dwm{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden}
+.dwm button{background:var(--card);border:none;color:var(--tx2);font-size:10.5px;font-family:var(--mono);padding:4px 12px;cursor:pointer}
+.dwm button.on{background:color-mix(in srgb,var(--gd) 16%,transparent);color:var(--gd);font-weight:700}
+
+/* 資産チャネル行（クリック可能リスト） */
+.achRow{display:grid;grid-template-columns:34px 150px 1fr auto auto;gap:12px;align-items:center;padding:10px 8px;border-bottom:1px dashed var(--line);cursor:pointer;transition:.15s;border-radius:8px}
+.achRow:hover{background:color-mix(in srgb,var(--gd) 6%,transparent)}
+.achRow .ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9.5px;font-weight:800}
+.achRow .anm{font-size:12.6px;font-weight:700;color:var(--tx)}
+.achRow .anm small{display:block;font-weight:400;font-size:10px;color:var(--mut);margin-top:1px}
+.achRow .abar{height:14px;border-radius:5px;background:var(--bg2);overflow:hidden;display:flex}
+.achRow .abar i{height:100%}
+.achRow .aval{font-family:var(--mono);font-weight:800;font-size:14px;color:var(--tx);text-align:right;min-width:74px}
+.achRow .aval small{display:block;font-weight:400;font-size:9px;color:var(--mut)}
+.achRow .aopen{font-family:var(--mono);font-size:9px;color:var(--gd);white-space:nowrap}
+
+/* ボリュームカード（JP活用） */
+.volGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media(max-width:1100px){.volGrid{grid-template-columns:repeat(2,1fr)}}
+.volCard{background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:15px 16px;position:relative;overflow:hidden}
+.volCard::after{content:'';position:absolute;right:-22px;top:-22px;width:74px;height:74px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--vc,#38BDF8) 16%,transparent),transparent 70%)}
+.volCard .vk{font-size:10.5px;color:var(--mut);margin-bottom:6px}
+.volCard .vv{font-family:var(--mono);font-weight:800;font-size:25px;color:var(--tx);line-height:1}
+.volCard .vv small{font-size:11px;color:var(--tx2);font-weight:500}
+.volCard .vs{font-size:10.2px;color:var(--mut);margin-top:7px;line-height:1.65}
+.volCard .vs b{color:var(--vc,#38BDF8)}
+.stepLbl{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:var(--bg);font-weight:800;border-radius:6px;padding:3px 11px;margin-bottom:10px}
+
+/* 媒体タブ */
+.mtab{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.mtab .chip .sw{border-radius:50%}
+
+/* 投稿行クリック可能 */
+.postR{cursor:pointer}
+.postR .hasCap{display:inline-block;font-size:8.5px;font-family:var(--mono);color:var(--gd);border:1px solid color-mix(in srgb,var(--gd) 40%,transparent);border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:1.5px}
+
+/* JPキャプチャ対比 */
+.jpcap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+@media(max-width:1100px){.jpcap{grid-template-columns:1fr}}

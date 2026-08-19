@@ -130,7 +130,7 @@ const SEGLBL={all:'全体',new:'新規ユーザー',ret:'再訪ユーザー'};
    ================================================== */
 function renderHQ(){
   const A=GA.agg(ST.range,ST.seg), SC=GA.score();
-  $('#navScore').textContent='Lv.'+Math.round(SC.score);
+  $('#navScore').textContent=Math.round(SC.score)+'点';
 
   /* --- ヒーロー --- */
   const ringR=62, circ=2*Math.PI*ringR, prog=SC.score/100;
@@ -151,11 +151,11 @@ function renderHQ(){
       </div>
       <div class="hmeta">
         <div class="hrow1"><h2>toyota.jp デジタル戦況</h2>${deltaPill(A.total.sessions,A.prevTotal.sessions)}</div>
-        <div class="lvl"><span class="lvn">Lv.${Math.round(SC.score)}</span><div class="xp"><i style="width:${(SC.score%10)*10}%"></i></div>
-          <span class="mono">次のLvまで ${(10-SC.score%10).toFixed(1)}pt</span></div>
+        <div class="lvl"><span class="lvn">総合スコア ${SC.score.toFixed(1)}</span><div class="xp"><i style="width:${SC.score}%"></i></div>
+          <span class="mono">100点満点・ミッション加重平均</span></div>
         <p class="hnote">選択期間のセッションは <span class="hl-b num">${fmtJP(A.total.sessions)}</span>（前期間比 <b class="num">${((A.total.sessions/A.prevTotal.sessions-1)*100).toFixed(1)}%</b>）、
         コンバージョンは <span class="hl num">${fmtJP(A.total.cv)}件</span>。
-        スコアは8月ミッション4本の達成ペースの加重平均。<span class="hl-r">新規ユーザー獲得だけがペース未達</span>で、Sティア昇格の残り条件になっている。</p>
+        スコアは8月ミッション4本の達成ペースの加重平均。<span class="hl-r">新規ユーザー獲得だけがペース未達</span>で、これが総合評価を下げている唯一の要因。</p>
         <div class="qlog"><div class="qhead">イベントログ — 発表・キャンペーン</div>
           ${GA.EVENTS.slice(-4).reverse().map(e=>`<div class="qrow"><span class="qd num">${e.date.slice(5).replace('-','/')}</span><span>${e.label}</span><span class="qeff num" title="流入押上げ係数">×${e.amp.toFixed(1)}</span></div>`).join('')}
         </div>

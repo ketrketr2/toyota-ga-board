@@ -19,8 +19,9 @@
       <button data-view="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v6L4 19a2 2 0 0 0 1.8 3h12.4A2 2 0 0 0 20 19L15 9V3"/><path d="M7 3h10"/><path d="M7.5 14h9"/></svg>クロス分析ラボ</button>
       <button data-view="dict"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/><path d="M9 7h7M9 11h5"/></svg>計測設計</button>
       <div class="navsep"><span class="odot"></span>OWNED OPS ─ 実測</div>
-      <button data-view="ops" class="owned"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v6a4 4 0 0 0 4 4h12"/><path d="M16 10l4 4-4 4"/><path d="M4 20h6"/></svg>JP導線実績<span class="lv gold" id="navOpsCV">1</span></button>
-      <button data-view="sns" class="owned"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l16-6v14L3 13z"/><path d="M11 13.5V17a2 2 0 0 0 2 2h1"/><path d="M21 9a3 3 0 0 1 0 4"/></svg>SNS資産</button>
+      <button data-view="assets" class="owned"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8.5 9.5h7M8.5 12.5h7M12 6.5v11M15.5 9.5c0-1.6-1.6-3-3.5-3s-3.5 1.4-3.5 3 1.6 3 3.5 3 3.5 1.4 3.5 3-1.6 3-3.5 3-3.5-1.4-3.5-3"/></svg>オウンド資産</button>
+      <button data-view="ops" class="owned"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v6a4 4 0 0 0 4 4h12"/><path d="M16 10l4 4-4 4"/><path d="M4 20h6"/></svg>JP活用実績<span class="lv gold" id="navOpsCV">1</span></button>
+      <button data-view="sns" class="owned"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l16-6v14L3 13z"/><path d="M11 13.5V17a2 2 0 0 0 2 2h1"/><path d="M21 9a3 3 0 0 1 0 4"/></svg>SNSパフォーマンス</button>
     </nav>
     <div class="sfoot">
       データ最終日 <span class="num">2026-08-18</span><br>
@@ -271,15 +272,21 @@
       </div>
     </section>
 
-    <!-- ==== VIEW: JP導線実績（OWNED / 実測） ==== -->
+    <!-- ==== VIEW: オウンド資産（OWNED / 実測） ==== -->
+    <section class="view" data-view="assets">
+      <div class="vhead"><span class="sector" style="color:var(--gd)">SECTOR 08 · OWNED OPS</span><h1>オウンド資産</h1><span class="desc">JP・SNS・メルマガ・LINEの金額換算 — 計算式は各カードをクリックで確認</span></div>
+      <div class="grid" id="assetsRoot"></div>
+    </section>
+
+    <!-- ==== VIEW: JP活用実績（OWNED / 実測） ==== -->
     <section class="view" data-view="ops">
-      <div class="vhead"><span class="sector" style="color:var(--gd)">SECTOR 08 · OWNED OPS</span><h1>JP導線実績</h1><span class="desc">リクエスト完了ページ コネクティッド／au・UQ導線 — GA4実測 7/7〜8/5（レポート#007）</span></div>
+      <div class="vhead"><span class="sector" style="color:var(--gd)">SECTOR 09 · OWNED OPS</span><h1>JP活用実績</h1><span class="desc">活動が生んだ活用 → ボリューム → 質 → 効果 — toyota.jp GA4実測</span></div>
       <div class="grid" id="opsRoot"></div>
     </section>
 
-    <!-- ==== VIEW: SNS資産（OWNED / 実測） ==== -->
+    <!-- ==== VIEW: SNSパフォーマンス（OWNED / 実測） ==== -->
     <section class="view" data-view="sns">
-      <div class="vhead"><span class="sector" style="color:var(--gd)">SECTOR 09 · OWNED OPS</span><h1>SNS資産</h1><span class="desc">公式SNS実測クロール 2026-08-19 ＋ メディア資産価値ロジック（年換算）</span></div>
+      <div class="vhead"><span class="sector" style="color:var(--gd)">SECTOR 10 · OWNED OPS</span><h1>SNSパフォーマンス</h1><span class="desc">公式SNS実測クロール — 投稿をクリックすると実画面キャプチャを表示</span></div>
       <div class="grid" id="snsRoot"></div>
     </section>
 
@@ -293,5 +300,7 @@
 <!-- モーダル・パレット・トースト -->
 <div class="modal" id="modelModal"><div class="mbox" id="modelModalBox"></div></div>
 <div class="modal" id="sisakuModal"><div class="mbox sbox" id="sisakuModalBox"></div></div>
+<div class="modal" id="logicModal"><div class="mbox lbox" id="logicModalBox"></div></div>
+<div class="modal" id="capModal"><div class="mbox cbox" id="capModalBox"></div></div>
 <div class="cmdk" id="cmdk"><div class="ckbox"><input id="ckInput" placeholder="ビュー・車種・キャンペーンを検索…（Esc で閉じる）"><div class="cklist" id="ckList"></div></div></div>
 <div class="toasts" id="toasts"></div>
