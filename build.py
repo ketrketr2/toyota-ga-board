@@ -9,6 +9,7 @@ body = (src/"body.html").read_text()
 data = (src/"data.js").read_text()
 r1 = (src/"render1.js").read_text()
 r2 = (src/"render2.js").read_text()
+r3 = (src/"render3.js").read_text()
 app = (src/"app.js").read_text()
 
 html = f"""<!DOCTYPE html>
@@ -40,6 +41,9 @@ html = f"""<!DOCTYPE html>
 </script>
 <script>
 {r2}
+</script>
+<script>
+{r3}
 </script>
 <script>
 {app}
