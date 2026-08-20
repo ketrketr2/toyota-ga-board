@@ -18,7 +18,7 @@ html = f"""<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TOYOTA GA4 COMMAND — toyota.jp デジタル計測ボード</title>
-<meta name="description" content="トヨタ toyota.jp の GA4 データを車種×商材×動線×オーディエンス×広告でクロス分析するゲームUIダッシュボード（デモデータ）">
+<meta name="description" content="トヨタ toyota.jp の GA4 データを車種×商材×動線×オーディエンス×広告でクロス分析するゲームUIダッシュボード（GA4実測キャリブレーション済み）">
 <meta property="og:title" content="TOYOTA GA4 COMMAND">
 <meta property="og:description" content="車種・商材・動線・再訪・アフィニティ・広告トラッキングを1画面でクロス分析">
 <link rel="preconnect" href="https://fonts.googleapis.com">
