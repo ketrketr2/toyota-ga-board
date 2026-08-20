@@ -569,6 +569,17 @@ select.sel:focus{outline:1px solid var(--cy)}
 #snsTable th.sortable:hover{color:var(--cy)}
 #snsTable th .arrow{color:var(--gd);margin-left:3px;font-size:9px}
 
+/* ============ v4: 祝い演出・非公開ヒント ============ */
+.naHint{border-bottom:1px dotted var(--mut);cursor:help}
+.buzzRibbon{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:800;letter-spacing:.14em;
+  color:#1A1200;background:linear-gradient(110deg,#FFE98A 0%,#FFD84D 38%,#F7C948 62%,#FFE98A 100%);background-size:200% 100%;
+  border-radius:999px;padding:4px 14px;box-shadow:0 0 18px rgba(255,216,77,.4);animation:buzzShine 2.6s linear infinite}
+@keyframes buzzShine{0%{background-position:0% 0}100%{background-position:200% 0}}
+.buzzCard{position:relative;overflow:hidden}
+.buzzCard::after{content:'';position:absolute;top:-60%;left:-30%;width:36%;height:220%;transform:rotate(22deg);pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,232,138,.075),transparent);animation:buzzSweep 4.2s ease-in-out infinite}
+@keyframes buzzSweep{0%,100%{left:-36%}55%{left:110%}60%{left:110%}}
+
 </style>
 </head>
 <body>
@@ -628,7 +639,7 @@ select.sel:focus{outline:1px solid var(--cy)}
       <div class="grid">
         <div class="card glow s7 reveal" id="heroCard"></div>
         <div class="card glow s5 reveal">
-          <div class="ct"><span class="bar"></span><h3>8月ミッションボード</h3><span class="sub">月間目標 × 18日経過時点</span></div>
+          <div class="ct"><span class="bar"></span><h3>8月ミッションボード</h3><span class="sub">月間目標 × 18日経過時点 — 目標の根拠は行クリック</span></div>
           <div class="mission" id="missionBox"></div>
         </div>
         <div id="kpiRow" style="display:contents"></div>
@@ -638,8 +649,9 @@ select.sel:focus{outline:1px solid var(--cy)}
           <div class="chart" id="chTrend"></div>
         </div>
         <div class="card glow s4 reveal">
-          <div class="ct"><span class="bar"></span><h3>チャネル構成</h3><span class="sub">セッションシェア</span></div>
+          <div class="ct"><span class="bar"></span><h3>チャネル構成</h3><span class="sub">セッションシェア ＋ 日次トレンド（積み上げ）</span></div>
           <div class="chart" id="chChannelDonut"></div>
+          <div class="chart" id="chChannelTrend" style="min-height:150px;margin-top:2px"></div>
         </div>
         <div class="card s12 reveal"><div class="insight" id="hqInsight"></div></div>
       </div>
@@ -702,6 +714,11 @@ select.sel:focus{outline:1px solid var(--cy)}
         <div class="card glow s6 reveal">
           <div class="ct"><span class="bar"></span><h3>車種 × 主要CV</h3><span class="sub">見積り・試乗・KINTOの獲得マップ</span></div>
           <div class="chart" id="chModelGoal"></div>
+        </div>
+        <div class="card s12 reveal" style="border-color:color-mix(in srgb,#FFD84D 26%,var(--line))">
+          <div class="ct"><span class="bar" style="background:#FFD84D;box-shadow:0 0 8px rgba(255,216,77,.5)"></span><h3>キーイベント実測分解 — 新車・その他CVの細分化</h3><span class="sub">GA4実測 7/22〜8/18（28日間）· 事業部レンズつき</span></div>
+          <div class="twrap"><table id="cvRealTable"></table></div>
+          <div style="font-size:10.4px;color:var(--mut);margin-top:8px">出典：GA4キーイベント実測（Windsor.ai経由 2026-08-19取得）。catalog_request_dealer_complete は28日間0件＝イベント定義の変更可能性があり要確認（表から除外）。事業部別の独立ページは、この分類を軸に施策リストの商材単位で増設していく設計。</div>
         </div>
         <div class="card s12 reveal"><div class="insight" id="goodsInsight"></div></div>
       </div>
@@ -1558,7 +1575,47 @@ const GA = (() => {
     const w=[.32,.28,.16,.24];
     const s=ms.reduce((a,m,i)=>a+w[i]*Math.min(1.15,m.vsPace),0)/1.15*100;
     const tier= s>=90?'S': s>=72?'A': s>=58?'B':'C';
-    return {score:s, tier, missions:ms};
+    return {score:s, tier, missions:ms, weights:w};
+  }
+  /* スコアの日次推移（8/1〜最終日: 各日時点のMTDペースで再計算） */
+  function scoreTrend(){
+    const a=IDX['2026-08-01'], b=IDX['2026-08-18'];
+    const w=[.32,.28,.16,.24];
+    const out=[];
+    const mtd={estimate:0,testdrive:0,kinto:0,newSessions:0};
+    const targets=[190000,31500,9200,15000000];
+    for(let d=a;d<=b;d++){
+      for(let mi=0;mi<NM;mi++){
+        const m=MODELS[mi];
+        for(let c=0;c<NC;c++){
+          const sv=S[d][mi][c];
+          mtd.newSessions+=sv*CHANNELS[c].newShare;
+          for(const gid of ['estimate','testdrive','kinto']){
+            const g=GOALS.find(x=>x.id===gid);
+            mtd[gid]+=sv*m.cvr*g.mult*(GOAL_CH[gid][CHANNELS[c].id]||1)*DN[gid][d];
+          }
+        }
+      }
+      for(let c=0;c<NC;c++)mtd.newSessions+=OTHER[d][c]*CHANNELS[c].newShare;
+      const pace=(d-a+1)/31;
+      const acts=[mtd.estimate,mtd.testdrive,mtd.kinto,mtd.newSessions/1.06];
+      const sc=acts.reduce((acc,v,i)=>acc+w[i]*Math.min(1.15,(v/targets[i])/pace),0)/1.15*100;
+      out.push({date:DATES[d], score:sc});
+    }
+    return out;
+  }
+  /* イベントの実測影響：期間平均セッション vs 直前同日数平均 */
+  function eventImpact(){
+    const dayTotal=d=>{let t=0;for(let mi=0;mi<NM;mi++)for(let c=0;c<NC;c++)t+=S[d][mi][c];for(let c=0;c<NC;c++)t+=OTHER[d][c];return t};
+    return EVENTS.map(ev=>{
+      const s0=IDX[ev.date]; if(s0==null)return {...ev,impact:null};
+      const len=Math.min(ev.dur,3);  // 初動3日の押し上げで評価
+      let cur=0,prev=0,n=0;
+      for(let i=0;i<len;i++){ if(s0+i<NDAYS){cur+=dayTotal(s0+i);n++} }
+      for(let i=1;i<=n;i++){ if(s0-i>=0)prev+=dayTotal(s0-i) }
+      const ratio= prev>0? (cur/n)/(prev/n) : null;
+      return {...ev, impact:ratio};
+    });
   }
 
   /* ---------- カスタムディメンション辞書 ---------- */
@@ -1632,7 +1689,7 @@ const GA = (() => {
 
   return {DATES,CHANNELS,MODELS,GOODS,GOALS,AFFINITY,STAGES,AREAS,BUCKETS,RECENCY,DEVICES,AGES,EVENTS,
     CUSTOM_DIMS,EVENTS_DICT,DIMS,STAGE_LOGIN,
-    agg,pairMatrix,sankey,funnel,comboData,rfMatrix,affinityAgg,campaigns,utmTree,missions,score,
+    agg,pairMatrix,sankey,funnel,comboData,rfMatrix,affinityAgg,campaigns,utmTree,missions,score,scoreTrend,eventImpact,
     memberData,deviceAgg,demoAgg,areaAgg,affShare,goodsShare,areaShare};
 })();
 
@@ -1940,6 +1997,89 @@ OWNED.sns.media = [
    note:'自然リーチが構造的に低い媒体（想定リーチ率8%）だが、活動報告のストック置き場として機能。シェア×30の重み付けを持つFBアルゴに対し、地域・共催者のシェアを誘発する「タグ付け設計」が最小工数の改善'}
 ];
 
+/* ============ OWNED v4（2026-08-19）：目的起点KPI・効果額積み上げ・CV実測分解・媒体別直近5件 ============ */
+/* JP実測ベースの導線シナリオ再計算（分母=完了 年換算31,663件・1件あたり価値7,905円=レポート#007の 200万円÷253件 から逆算） */
+OWNED.junction.perClickYen = 7905;
+OWNED.junction.scenarios = [
+  {k:'実測ペース', r:.28, n:92,   h:18,  v:73,   req:'現状の配置のまま（クリック7件/29日 実測）'},
+  {k:'Step1',     r:2,   n:633,  h:121, v:500,  req:'完了文直下へ配置＋3本全表示'},
+  {k:'Step2',     r:3,   n:950,  h:181, v:751,  req:'＋見出し・コピーの具体化'},
+  {k:'Step3',     r:5,   n:1583, h:302, v:1251, req:'＋ボタン化・車種パーソナライズ'}
+];
+OWNED.junction.denom.perYear = 31663;
+/* 活動 v2：目的 → 目的から設計したKPI → 効果額 */
+OWNED.junction.activities[0].purpose = 'CVが起きた直後のHOTなユーザーに、コネクティッド（T-Connect）を知ってもらう';
+OWNED.junction.activities[0].kpis = [
+  {k:'表示（露出）', v:'2,516', u:'件/29日', s:'完了ページ表示＝試乗予約完了数（GA4実測）'},
+  {k:'クリック', v:'7', u:'件', s:'padid実測（7/7〜8/5）'},
+  {k:'クリック率', v:'0.28', u:'%', s:'7 ÷ 2,516'},
+  {k:'クリック後 滞在', v:'11:27', u:'/件', s:'予約完了後の純増接触時間'},
+  {k:'クリック後 回遊', v:'×2.1', u:'', s:'T-Connect滞在 1分34秒 vs 通常45秒'}
+];
+OWNED.junction.activities[0].money = {now:73, pot:1251, note:'年92件（実測ペース0.28%×分母31,663件）× 7,905円/件。改修後5%なら1,251万円'};
+OWNED.junction.activities[1].purpose = '同じHOTなユーザーに「トヨタのお店でスマホもまとめて相談できる」ことを知ってもらう';
+OWNED.junction.activities[1].kpis = [
+  {k:'表示（露出）', v:'2,516', u:'件/29日', s:'同・完了ページ'},
+  {k:'クリック', v:'計測1件〜', u:'', s:'8/4 第1号を実測（稼働2週間・蓄積中）'},
+  {k:'クリック率', v:'集計中', u:'', s:'次回GA4集計で確定'},
+  {k:'クリック後 回遊', v:'1:45', u:'', s:'第1号はリモートエアコン機能ページを読了'}
+];
+OWNED.junction.activities[1].money = {now:null, pot:null, note:'クリック蓄積後にA-01と同ロジックで算出（自動で積み上がる建て付け）'};
+OWNED.junction.activities[2].purpose = '同ユーザーに純正アップグレード用品を知ってもらう（遷移先が外部サイト）';
+OWNED.junction.activities[2].kpis = [
+  {k:'表示（露出）', v:'2,516', u:'件/29日', s:'同・完了ページ'},
+  {k:'クリック', v:'計測不可', u:'', s:'toyota.jp側GA4では遷移後を追えない'}
+];
+OWNED.junction.activities[2].money = {now:null, pot:null, note:'KINTO側GA4との連携合意後に計測開始'};
+
+/* 商材・CV：キーイベント実測分解（GA4・7/22〜8/18） */
+OWNED.tjCV = [
+  {ev:'estimate_simulation_complete', name:'見積りシミュレーション完了', n:393556, biz:'販売・宣伝'},
+  {ev:'maker_estimate_complete',      name:'メーカー見積り完了',        n:328160, biz:'販売・宣伝'},
+  {ev:'sign_up',                      name:'会員登録（TOYOTAアカウント）', n:161185, biz:'CRM・オウンド'},
+  {ev:'dealer_search',                name:'販売店検索',                n:79579,  biz:'販売店送客'},
+  {ev:'tel',                          name:'電話タップ',                n:7559,   biz:'販売店送客'},
+  {ev:'jp_improvement_cv_no_tell',    name:'JP改善CV（電話除く）',       n:5104,   biz:'オウンド'},
+  {ev:'lead_complete',                name:'リード獲得 完了',            n:3209,   biz:'CRM'},
+  {ev:'purchase',                     name:'purchase（EC系）',          n:2960,   biz:'EC・用品'},
+  {ev:'test_drive_normal_reserve',    name:'試乗予約（通常）',           n:2194,   biz:'販売店送客', hot:1},
+  {ev:'purchase_consultation',        name:'購入相談 完了',              n:775,    biz:'販売店送客'},
+  {ev:'test_drive_instant_reserve',   name:'試乗予約（即時）',           n:235,    biz:'販売店送客', hot:1}
+];
+
+/* SNS 媒体別 直近5件（実測クロール 8/19。※印＝投稿から間もない時点の値） */
+OWNED.sns.media[0].last5 = [
+  {d:'8/19', t:'トヨタの改善で畜産（トヨタイムズ引用）', exp:'1.8万', likes:55, rt:'RP3', com:'—', note:'※投稿4時間時点'},
+  {d:'8/17', t:'トヨタオス道場 エンジンブレーキ篇', exp:'5.2万', likes:133, rt:'RP12', com:'返信6'},
+  {d:'8/16', t:'三春町 水素ワークショップ', exp:'3.2万', likes:210, rt:'RP21', com:'返信3'},
+  {d:'8/14', t:'バッテリー打音【ヤバい兆し】', exp:'5.7万', likes:152, rt:'RP18', com:'返信8'},
+  {d:'8/12', t:'カギ音の正体（トヨタオス）', exp:'未取得', likes:null, rt:'—', com:'—', na:1}
+];
+OWNED.sns.media[1].last5 = [
+  {d:'8/18', t:'トヨタオス道場 エンジンブレーキ篇', exp:'非公開', likes:1038, rt:'—', com:'コメ10', naExp:1},
+  {d:'8/15', t:'バッテリー打音篇【ヤバい兆し】', exp:'非公開', likes:978, rt:'RP20', com:'コメ9', naExp:1},
+  {d:'8/13', t:'精霊馬の帰省ラッシュ 🎉', exp:'非公開', likes:89000, rt:'シェア4,802', com:'コメ463', naExp:1, buzz:1},
+  {d:'8/13', t:'カギ音の正体（トヨタオス）', exp:'非公開', likes:1241, rt:'RP15', com:'コメ4', naExp:1},
+  {d:'8/11頃', t:'エアコン篇【ヤバい兆し】', exp:'未取得', likes:null, rt:'—', com:'—', na:1}
+];
+OWNED.sns.media[2].last5 = [
+  {d:'8/17', t:'ウーブン・シティ#6（トヨタイムズ）', exp:'2万回', likes:null, rt:'—', com:'—', naRea:1},
+  {d:'8/13', t:'精霊馬が大渋滞（ドライバーズch）🎉', exp:'30万回', likes:null, rt:'ch通常比600倍', com:'—', naRea:1, buzz:1},
+  {d:'8月上旬', t:'【福祉】愛してくれた人が困っているかも（SR）', exp:'705万回', likes:null, rt:'広告併用と推定', com:'—', naRea:1},
+  {d:'2週間前', t:'SIENTA 商品紹介 乗降性/居住性（SR）', exp:'6,227回', likes:null, rt:'—', com:'—', naRea:1},
+  {d:'2週間前', t:'TOYOTA SOCIAL FES!! 旭川（SR）', exp:'1,398回', likes:null, rt:'—', com:'—', naRea:1}
+];
+OWNED.sns.media[3].last5 = [
+  {d:'8/17', t:'三春町 水素ワークショップ（とびchan.）', exp:'非公開', likes:492, rt:'シェア9', com:'コメ3', naExp:1},
+  {d:'—', t:'過去投稿は次回クロールで蓄積', exp:'', likes:null, rt:'', com:'', na:1}
+];
+OWNED.sns.naHints = {
+  igReach:'Instagramインサイト（管理画面）の閲覧権限共有、または Meta Business Suite 連携で取得できるようになります',
+  ytRea:'YouTube Studio の閲覧権限共有（またはAPI連携）で高評価・コメント・CTR・視聴維持率まで取得できるようになります',
+  fbReach:'Meta Business Suite 連携で投稿別リーチ・リアクション内訳が取得できるようになります',
+  notYet:'次回定例クロール（または該当投稿の個別クロール）で取得予定です'
+};
+
 </script>
 <script>
 /* ============ 描画エンジン 1/2：ヘルパー・HQ・ガレージ・商材・動線 ============ */
@@ -2095,13 +2235,14 @@ function renderHQ(){
       </div>
       <div class="hmeta">
         <div class="hrow1"><h2>toyota.jp デジタル戦況</h2>${deltaPill(A.total.sessions,A.prevTotal.sessions)}</div>
-        <div class="lvl"><span class="lvn">総合スコア ${SC.score.toFixed(1)}</span><div class="xp"><i style="width:${SC.score}%"></i></div>
-          <span class="mono">100点満点・ミッション加重平均</span></div>
+        <div class="lvl"><span class="lvn" id="scoreBtn" style="cursor:pointer" title="クリックで採点ロジックを表示">総合スコア ${SC.score.toFixed(1)} <span style="font-family:var(--mono);font-size:9px;color:var(--gd);letter-spacing:.08em">式 ▸</span></span><div class="xp"><i style="width:${SC.score}%"></i></div>
+          <span class="mono">100点満点・ミッション加重平均</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;margin-left:10px">${spark(GA.scoreTrend().map(p=>p.score),'#FFD84D',110,24)}<span style="font-size:9px;color:var(--mut);font-family:var(--mono)">8月推移</span></span></div>
         <p class="hnote">選択期間のセッションは <span class="hl-b num">${fmtJP(A.total.sessions)}</span>（前期間比 <b class="num">${((A.total.sessions/A.prevTotal.sessions-1)*100).toFixed(1)}%</b>）、
         コンバージョンは <span class="hl num">${fmtJP(A.total.cv)}件</span>。
         スコアは8月ミッション4本の達成ペースの加重平均。<span class="hl-r">新規ユーザー獲得だけがペース未達</span>で、これが総合評価を下げている唯一の要因。</p>
         <div class="qlog"><div class="qhead">イベントログ — 発表・キャンペーン</div>
-          ${GA.EVENTS.slice(-4).reverse().map(e=>`<div class="qrow"><span class="qd num">${e.date.slice(5).replace('-','/')}</span><span>${e.label}</span><span class="qeff num" title="流入押上げ係数">×${e.amp.toFixed(1)}</span></div>`).join('')}
+          ${GA.eventImpact().slice(-4).reverse().map(e=>`<div class="qrow"><span class="qd num">${e.date.slice(5).replace('-','/')}</span><span>${e.label}</span><span class="qeff num" title="実測影響＝発表後3日の平均セッション ÷ 直前3日平均" style="color:${e.impact&&e.impact>=1.05?'var(--gn)':'var(--tx2)'}">${e.impact?('アクセス '+(e.impact>=1?'+':'')+((e.impact-1)*100).toFixed(0)+'%'):'—'}</span></div>`).join('')}
         </div>
       </div>
     </div>`;
@@ -2109,8 +2250,8 @@ function renderHQ(){
   /* --- ミッション --- */
   const STLBL={ahead:'ペース超過',ontrack:'目標ペース',behind:'ペース遅れ'};
   const STMK={ahead:'▲',ontrack:'●',behind:'▼'};
-  $('#missionBox').innerHTML=SC.missions.map(m=>`
-    <div class="mrow">
+  $('#missionBox').innerHTML=SC.missions.map((m,mi)=>`
+    <div class="mrow" data-mi="${mi}" style="cursor:pointer" title="クリックで目標の根拠を表示">
       <div class="mic">${ICONS[m.icon]}</div>
       <div class="mm">
         <div class="mt"><b>${m.name}</b>
@@ -2195,7 +2336,46 @@ function renderHQ(){
     <p>成長ドライバーは <span class="hl-b">${grow.name}</span>（前期間比 <b class="num">+${((grow.sessions/grow.prevSessions-1)*100).toFixed(1)}%</b>）。車種では <span class="hl">${topM.name}</span> が <b class="num">+${((topM.sessions/topM.prevSessions-1)*100).toFixed(1)}%</b> と最も伸びており、発表・キャンペーンの寄与が読み取れる。</p>
     <p>一方 <span class="hl-r">${shrink.name}</span> は <b class="num">${((shrink.sessions/shrink.prevSessions-1)*100).toFixed(1)}%</b>。CVR は全体 <b class="num">${pct(A.total.cv/A.total.sessions,2)}</b> で、${ST.seg==='ret'?'再訪セグメントは新規の約3倍の転換力を持つ。':'再訪セグメント（ヘッダで切替）は新規の約3倍の転換力を持つ。'}</p>`;
 
+  /* スコア・ミッションのロジックモーダル配線 */
+  $('#scoreBtn').onclick=()=>logicOpen(scoreLogicHTML(SC));
+  $$('#missionBox .mrow').forEach(el=>el.onclick=()=>logicOpen(missionLogicHTML(SC.missions[+el.dataset.mi])));
+  /* チャネル別トレンド（積み上げ） */
+  if(document.getElementById('chChannelTrend')){
+    E('chChannelTrend').setOption(baseOpt({
+      grid:{left:8,right:12,top:8,bottom:4,containLabel:true},
+      tooltip:Object.assign({},TIP,{trigger:'axis',valueFormatter:v=>fmtJP(v)}),
+      xAxis:axX({data:A.dates.map(d=>d.slice(5).replace('-','/')),boundaryGap:false,axisLabel:{color:MUT,fontSize:9,fontFamily:MONOF,interval:Math.floor(A.dates.length/6)}}),
+      yAxis:axY({axisLabel:{formatter:v=>fmtJP(v),color:MUT,fontSize:9,fontFamily:MONOF}}),
+      series:GA.CHANNELS.map((c,ci)=>({name:c.name,type:'line',stack:'ch',symbol:'none',
+        lineStyle:{width:0},areaStyle:{color:c.color,opacity:.82},
+        data:A.dailyByChannel[ci].map(v=>Math.round(v))}))
+    }),true);
+  }
+
   runCountUps($('section[data-view="hq"]'));
+}
+
+
+/* ---- 総合スコア・ミッションのロジック ---- */
+function scoreLogicHTML(SC){
+  const W=[32,28,16,24];
+  return `<h3>総合スコアの採点ロジック<span class="v">${SC.score.toFixed(1)}点</span></h3>
+  <div class="lsub">100点満点。8月ミッション4本の「目標ペース比」の加重平均</div>
+  <div class="lrow gold"><div class="lk">式</div><div class="lf"><div class="leq">スコア = Σ( 重み × min(1.15, ペース比) ) ÷ 1.15 × 100</div>ペース比 = 実績 ÷ 目標 ÷ 経過率（18日/31日 = 58%）。上振れは+15%でキャップ（1本の爆発で満点にならない設計）<small>ティア: S = 90点以上 ／ A = 72以上 ／ B = 58以上 ／ C = それ未満</small></div></div>
+  ${SC.missions.map((m,i)=>`<div class="lrow"><div class="lk">${W[i]}%</div><div class="lf"><b>${m.name}</b>　実績 ${fmtJP(m.actual)} ÷ 目標 ${fmtJP(m.target)}${m.unit} ÷ 経過58% ＝ ペース比 <b class="num" style="color:${m.vsPace>=1?'var(--gn)':'var(--rd)'}">${(m.vsPace*100).toFixed(0)}%</b></div></div>`).join('')}
+  <div class="lrow"><div class="lk">推移</div><div class="lf">${spark(GA.scoreTrend().map(p=>p.score),'#FFD84D',300,40)}<small>8/1〜8/18の日次スコア（各日時点のMTDペースで再計算）。月初はデータが少なくペース比が振れやすい</small></div></div>
+  <div class="lsrc">注：本セクター（SECTOR 00〜07）の実績・目標は合成デモ。GA4実測では 見積りSIM完了 39.4万件/28日・試乗予約 2,429件/28日 — 目標確定値の受領後、マガジン板と同方式で実測にキャリブレーション可能。</div>`;
+}
+function missionLogicHTML(m){
+  const SRC={'見積りシミュレーション完了':'年間目標（現行シート・デモ仮置き）を月次配分した8月分。GA4実測は39.4万件/28日で、目標の実測化は確定値の受領待ち',
+    '試乗予約':'同・月次配分のデモ仮置き。GA4実測は2,429件/28日（通常2,194＋即時235）',
+    'KINTO 申込・見積り':'KINTO側KPIからの参考値（デモ仮置き）。実測はKINTO側GA4連携後',
+    '新規ユーザー獲得':'年間新規ユーザー目標の月次配分（デモ仮置き）。GA4実測の新規ユーザーは349万人/28日'};
+  return `<h3>${m.name}<span class="v" style="font-size:16px">${fmtJP(m.actual)} / ${fmtJP(m.target)}${m.unit}</span></h3>
+  <div class="lsub">8月ミッション — 目標の根拠と現在ペース</div>
+  <div class="lrow gold"><div class="lk">目標の出典</div><div class="lf">${SRC[m.name]||'月次目標（デモ仮置き）'}</div></div>
+  <div class="lrow"><div class="lk">ペース</div><div class="lf"><div class="leq">進捗 ${(m.prog*100).toFixed(1)}% ÷ 経過 ${(m.pace*100).toFixed(0)}% ＝ ペース比 ${(m.vsPace*100).toFixed(0)}%</div>${m.status==='ahead'?'目標ペースを上回って推移':m.status==='ontrack'?'ほぼ目標ペース':'目標ペース未達 — 集客・広告タブで配信状況を確認'}</div></div>
+  <div class="lsrc">実績はデモテンソルからのMTD集計（8/1〜8/18）。確定目標・実測CVへの置換はGA4キーイベントで対応可能。</div>`;
 }
 
 /* ==================================================
@@ -2263,15 +2443,20 @@ function renderGarage(){
   }),true);
 
   /* 伸び率 */
-  const gr=[...A.models].map(m=>({name:m.name,g:(m.sessions/m.prevSessions-1)*100})).sort((a,b)=>a.g-b.g);
+  const evAll=GA.eventImpact();
+  const gr=[...A.models].map(m=>{
+    const reasons=evAll.filter(e=>e.model===m.id).map(e=>`${e.date.slice(5).replace('-','/')} ${e.label}${e.impact?`（実測 +${((e.impact-1)*100).toFixed(0)}%）`:''}`);
+    return {name:m.name,g:(m.sessions/m.prevSessions-1)*100,reason:reasons.join('・')};
+  }).sort((a,b)=>a.g-b.g);
   E('chGrowth').setOption(baseOpt({
-    tooltip:Object.assign({},TIP,{valueFormatter:v=>(v>0?'+':'')+(+v).toFixed(1)+'%'}),
+    tooltip:Object.assign({},TIP,{formatter:p=>{const it=gr[p.dataIndex];
+      return `<b>${it.name}</b>　${(it.g>0?'+':'')+it.g.toFixed(1)}%`+(it.reason?`<br><span style="color:#FFD84D;font-size:10.5px">理由: ${it.reason}</span>`:`<br><span style="color:#A5B6CE;font-size:10.5px">対応する発表・CPなし（ベースライン変動）</span>`)}}),
     grid:{left:8,right:44,top:8,bottom:6,containLabel:true},
     xAxis:axY({axisLabel:{formatter:v=>v+'%',color:MUT,fontSize:10,fontFamily:MONOF}}),
     yAxis:axX({type:'category',data:gr.map(x=>x.name),axisLabel:{color:TX2,fontSize:11,fontFamily:FONT}}),
     series:[{name:'前期間比',type:'bar',barWidth:13,
       itemStyle:{borderRadius:[0,4,4,0],color:p=>p.value>=0?'#199E70':'#E66767'},
-      label:{show:true,position:'right',formatter:p=>(p.value>0?'+':'')+p.value.toFixed(1)+'%',color:TX2,fontSize:10,fontFamily:MONOF},
+      label:{show:true,position:'right',formatter:p=>(p.value>0?'+':'')+p.value.toFixed(1)+'%'+(gr[p.dataIndex].reason?' ◆':''),color:TX2,fontSize:10,fontFamily:MONOF},
       data:gr.map(x=>+x.g.toFixed(1))}]
   }),true);
 
@@ -2361,14 +2546,27 @@ function openModelModal(id){
     series:[{type:'bar',barWidth:11,itemStyle:{borderRadius:[0,4,4,0],color:TE},
       label:{show:true,position:'right',formatter:p=>CM(p.value),color:TX2,fontSize:9.5,fontFamily:MONOF},
       data:GA.GOALS.map(g=>Math.round(m.cvGoal[g.id])).reverse()}]}));
-  const aff=Object.entries(GA.affShare(GA.MODELS[m.mi])).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  /* アフィニティ: 全体平均比つき */
+  const avgAff={};
+  GA.MODELS.forEach(mm=>{const sh=GA.affShare(mm);for(const k in sh)avgAff[k]=(avgAff[k]||0)+sh[k]/GA.MODELS.length});
+  const affAll=Object.entries(GA.affShare(GA.MODELS[m.mi])).sort((a,b)=>b[1]-a[1]);
+  const aff=affAll.slice(0,3).map(([k,v])=>({k,v,ratio:v/Math.max(1e-9,avgAff[k])}));
   const affN=Object.fromEntries(GA.AFFINITY.map(a=>[a.id,a.name]));
   const ar=Object.entries(GA.areaShare?GA.areaShare(GA.MODELS[m.mi]):{}).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const affMax=aff[0]?aff[0].v:1;
+  /* 傾向コメント（規則生成） */
+  const t1=aff[0]?`<b>${affN[aff[0].k]}</b>層に全体平均の<b class="num" style="color:var(--te)">${aff[0].ratio.toFixed(1)}倍</b>刺さる`:'';
+  const t2=m.retShare>.5?'再訪率が高く指名・比較検討型':'新規流入が主で認知拡大フェーズ';
+  const t3=m.adShare>.42?'広告依存が高く、出稿変動の影響を受けやすい':m.adShare<.25?'自然流入で強く、広告効率よりコンテンツ強化が効く':'広告と自然のバランス型';
   $('#mdAff').innerHTML=`
-    <div>強いアフィニティ：${aff.map(([k,v],i)=>`<span class="${i===0?'hl':'hl-b'}">${affN[k]} ${pct(v,0)}</span>`).join('　')}</div>
-    <div>強いエリア：${ar.map(([k,v])=>{const a=GA.AREAS.find(x=>x.id===k);return `<b>${a?a.name:k}</b> <span class="num">${pct(v,0)}</span>`}).join('　')}</div>
+    ${aff.map((a,i)=>`<div style="display:grid;grid-template-columns:110px 1fr 84px;gap:8px;align-items:center;margin-bottom:4px">
+      <span style="font-size:11px;${i===0?'color:var(--tx);font-weight:700':'color:var(--tx2)'}">${affN[a.k]}</span>
+      <div style="height:11px;background:var(--bg2);border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${(a.v/affMax*100).toFixed(0)}%;background:${i===0?'linear-gradient(90deg,var(--cy),var(--te))':'#31415C'}"></i></div>
+      <span class="num" style="font-size:10.5px;text-align:right;color:${a.ratio>=1.3?'var(--te)':a.ratio<=0.8?'var(--rd)':'var(--tx2)'}">${pct(a.v,0)}・平均比×${a.ratio.toFixed(1)}</span></div>`).join('')}
+    <div style="margin-top:7px">強いエリア：${ar.map(([k,v])=>{const a=GA.AREAS.find(x=>x.id===k);return `<b>${a?a.name:k}</b> <span class="num">${pct(v,0)}</span>`}).join('　')}</div>
     <div style="color:var(--tx2)">再訪率 <b class="num" style="color:var(--tx)">${pct(m.retShare,0)}</b> ／ 広告依存度 <b class="num" style="color:${m.adShare>.42?'var(--am)':'var(--tx)'}">${pct(m.adShare,0)}</b> ／ 検討ツール到達 <b class="num" style="color:var(--tx)">${fmtJP(m.toolSessions)}</b></div>
-    <div style="font-size:10.5px;color:var(--mut)">※ アフィニティ＝Googleシグナル由来の興味関心セグメント（デモ値）</div>`;
+    <div class="insight" style="margin-top:8px;padding:9px 13px;font-size:11.3px;line-height:1.85"><span class="it" style="margin-bottom:2px">傾向</span>${t1}。${t2}。${t3}。</div>
+    <div style="font-size:10.5px;color:var(--mut)">※ アフィニティ＝Googleシグナル由来の興味関心セグメント（デモ値）・平均比＝全14車種平均に対する倍率</div>`;
 }
 function closeModal(){
   $('#modelModal').classList.remove('on');
@@ -2466,7 +2664,20 @@ function renderGoods(){
   }),true);
 
   const kg=A.goods.find(g=>g.id==='kinto'), sg=A.goods.find(g=>g.id==='service');
-  $('#goodsInsight').innerHTML=`<span class="it">INSIGHT — 商材</span>
+  /* --- キーイベント実測分解（GA4・OWNED.tjCV） --- */
+  if(typeof OWNED!=='undefined' && document.getElementById('cvRealTable')){
+    const BIZC={'販売・宣伝':'#38BDF8','CRM・オウンド':'#00E5C7','販売店送客':'#FFD84D','オウンド':'#00E5C7','CRM':'#9085E9','EC・用品':'#D55181'};
+    const mx=Math.max(...OWNED.tjCV.map(x=>x.n));
+    $('#cvRealTable').innerHTML=`<thead><tr><th>キーイベント</th><th>内容</th><th>事業部レンズ</th><th class="num">28日実測</th><th class="num">日平均</th><th class="num">規模</th></tr></thead>
+    <tbody>${OWNED.tjCV.map(x=>`<tr${x.hot?' style="background:color-mix(in srgb,#FFD84D 5%,transparent)"':''}>
+      <td><span class="utm">${x.ev}</span>${x.hot?' <span class="tag" style="color:var(--gd);background:color-mix(in srgb,var(--gd) 13%,transparent)">JP活用実績の露出面</span>':''}</td>
+      <td style="font-size:12px"><b>${x.name}</b></td>
+      <td><span class="tag" style="color:${BIZC[x.biz]};background:color-mix(in srgb,${BIZC[x.biz]} 12%,transparent)">${x.biz}</span></td>
+      <td class="num">${CM(x.n)}</td><td class="num" style="color:var(--tx2)">${CM(Math.round(x.n/28))}</td>
+      <td class="num"><div class="tbar" style="min-width:110px"><div class="bg"><i style="width:${Math.max(1.5,Math.pow(x.n/mx,.4)*100).toFixed(0)}%;background:linear-gradient(90deg,var(--cy),var(--te))"></i></div></div></td>
+    </tr>`).join('')}</tbody>`;
+  }
+    $('#goodsInsight').innerHTML=`<span class="it">INSIGHT — 商材</span>
     <p>CVの主戦場は新車系（見積り・試乗・来店・カタログ）で全体の <b class="num">${pct(A.goods[0].cv/A.total.cv,0)}</b>。<span class="hl-g">KINTO は前期間比 ${(kg.cv/kg.prev-1)>=0?'+':''}${((kg.cv/kg.prev-1)*100).toFixed(1)}%</span> と Meta 広告キャンペーンの寄与が明確。</p>
     <p><span class="hl">点検・サービス予約はメール・LINE 経由が圧倒的</span>（商材×チャネルの帯を参照）。保有顧客のCRM動線は広告に頼らず安定してCVを供給しており、費用対効果の面で最も効率的な「静かな主力」。</p>`;
 
@@ -3283,7 +3494,7 @@ function renderOps(){
         <div class="cap">OWNED ACTIVITY — 実装済みの活動</div>
         <div class="n" data-cu="${live}">0</div>
         <div class="u">件<span style="color:var(--mut)">　＝ リクエスト完了ページの <b class="hl">2つのバナー</b></span></div>
-        <div style="font-size:10.5px;color:var(--mut);margin-top:7px">T-Connect（7/27〜）／ au・UQ（8/4〜）。<br>下の台帳の行をクリック → <b style="color:var(--gd)">何が変わったか</b>を表示。<br>活動が増えるたびにこの数字と行が増える。</div>
+        <div style="font-size:10.5px;color:var(--mut);margin-top:7px">T-Connect（7/27〜）／ au・UQ（8/4〜）。<br>各活動カードに<b style="color:var(--gd)">目的とKPI</b>を明記。<br>「詳細」で何が変わったかを表示。活動が増えるたびカードと効果額が積み上がる。</div>
       </div>
       <div>
         <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:var(--gd);margin-bottom:8px">EFFECT — この2件が生んだ効果（GA4実測）</div>
@@ -3298,31 +3509,61 @@ function renderOps(){
     </div>
   </div>
 
-  <!-- 活動台帳 -->
-  <div class="card s12 reveal">
-    <div class="ct"><span class="bar" style="background:var(--gd);box-shadow:0 0 8px rgba(255,216,77,.5)"></span><h3>活動台帳 — 何をして、どれだけ見られ、何を生んだか</h3><span class="sub">行をクリック → 変更内容・数値詳細・次の一手</span></div>
-    <div class="twrap"><table class="actTbl">
-      <thead><tr><th>ID</th><th>活動</th><th>状態</th><th>アクセスボリューム</th><th>生んだ効果</th><th class="op"></th></tr></thead>
-      <tbody>${ACTS.map((a,i)=>`<tr class="actRow" data-act="${i}">
-        <td class="num" style="color:var(--mut);font-size:10.5px">${a.id}</td>
-        <td style="min-width:220px"><b style="font-size:12.8px">${a.name}</b><div style="font-size:10.3px;color:var(--mut);margin-top:2px">${a.target}</div></td>
-        <td><span class="st ${a.state}" style="display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9.5px;padding:2.5px 9px;border-radius:999px;${a.state==='live'?'color:var(--gn);background:color-mix(in srgb,var(--gn) 12%,transparent)':'color:var(--am);background:color-mix(in srgb,var(--am) 12%,transparent)'}">${a.state==='live'?'● LIVE':'◪ 外部計測'}</span><div style="font-family:var(--mono);font-size:9.5px;color:var(--mut);margin-top:3px">${a.since}</div></td>
-        <td style="font-size:11.3px;line-height:1.75;min-width:200px"><b class="num" style="color:var(--cy)">${a.vol.clicks}</b><div style="color:var(--mut);font-size:10.3px">${a.vol.exposure}</div></td>
-        <td style="font-size:11.3px;line-height:1.8;min-width:240px">${a.fx.slice(0,2).map(f=>`<div><span style="color:var(--gd);font-family:var(--mono);font-size:9px">${f[0]}</span>　${f[1].split('—')[0].split('（')[0]}</div>`).join('')}</td>
-        <td class="op" style="white-space:nowrap"><span style="font-family:var(--mono);font-size:10px;color:var(--gd)">詳細 ▸</span></td>
-      </tr>`).join('')}</tbody></table></div>
-    <div style="font-size:10.5px;color:var(--mut);margin-top:8px">露出面（分母）＝試乗予約 完了 <b class="num">2,429件/28日</b>（GA4実測・日平均86.8件）。この面に立つバナーが上の2件。</div>
+  <!-- 活動カード（目的 → KPI → 効果額） -->
+  ${ACTS.map((a,i)=>{
+    const kpiChips=(a.kpis||[]).map((kp,ki)=>`
+      ${ki>0?'<span style="color:var(--line2);font-size:14px;align-self:center">▶</span>':''}
+      <div style="background:var(--bg2);border:1px solid ${ki<=1?'color-mix(in srgb,var(--cy) 35%,var(--line))':'var(--line)'};border-radius:10px;padding:8px 13px;min-width:108px" title="${kp.s||''}">
+        <div style="font-size:9px;color:var(--mut);letter-spacing:.06em">${kp.k}</div>
+        <div class="num" style="font-size:17px;font-weight:800;color:${kp.v==='集計中'||kp.v==='計測不可'?'var(--mut)':ki<=2?'var(--cy)':'var(--te)'}">${kp.v}<small style="font-size:9.5px;color:var(--tx2);font-weight:400"> ${kp.u||''}</small></div>
+        ${kp.s?`<div style="font-size:8.5px;color:var(--mut);margin-top:1px;max-width:150px;line-height:1.5">${kp.s}</div>`:''}
+      </div>`).join('');
+    return `
+  <div class="card s12 reveal" style="border-left:3px solid ${a.state==='live'?'var(--gd)':'var(--am)'}">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px">
+      <span class="num" style="font-size:10px;color:var(--mut)">${a.id}</span>
+      <b style="font-size:15.5px">${a.name}</b>
+      <span style="font-family:var(--mono);font-size:9.5px;padding:2.5px 10px;border-radius:999px;${a.state==='live'?'color:var(--gn);background:color-mix(in srgb,var(--gn) 12%,transparent)':'color:var(--am);background:color-mix(in srgb,var(--am) 12%,transparent)'}">${a.state==='live'?'● LIVE '+a.since+'〜':'◪ 外部計測'}</span>
+      <span style="margin-left:auto"><button class="btnQ actBtn" data-act="${i}" style="font-size:11px">何が変わったか・詳細 ▸</button></span>
+    </div>
+    <div style="font-size:12.3px;color:var(--tx2);margin-bottom:11px"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--gd)">PURPOSE</span>　${a.purpose}</div>
+    <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:stretch">${kpiChips}
+      <div style="margin-left:auto;background:color-mix(in srgb,var(--gd) 7%,var(--card2));border:1px solid color-mix(in srgb,var(--gd) 34%,transparent);border-radius:10px;padding:8px 15px;min-width:150px" title="${a.money.note}">
+        <div style="font-size:9px;color:var(--gd);letter-spacing:.08em">効果額（年換算）</div>
+        <div class="num" style="font-size:19px;font-weight:800;color:${a.money.now!=null?'var(--gd)':'var(--mut)'}">${a.money.now!=null?a.money.now+'<small style=\'font-size:10px\'>万円</small>':'集計中'}</div>
+        ${a.money.pot?`<div style="font-size:8.5px;color:var(--mut)">改修後ポテンシャル ${CM(a.money.pot)}万円</div>`:`<div style="font-size:8.5px;color:var(--mut)">${a.money.note.slice(0,26)}…</div>`}
+      </div>
+    </div>
+  </div>`}).join('')}
+
+  <!-- 効果額の積み上げ -->
+  <div class="card s12 reveal" style="padding:15px 20px">
+    <div class="ct" style="margin-bottom:9px"><span class="bar" style="background:var(--gd)"></span><h3>活動が生んだ効果額 — 積み上げ</h3><span class="sub">活動が増えるたびにここに積み上がる（年換算・実測ベース）</span></div>
+    <div style="display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center">
+      <div class="num" style="font-size:24px;font-weight:800;color:var(--gd)">73<small style="font-size:11px;color:var(--tx2)">万円/年〜</small></div>
+      <div style="height:22px;background:var(--bg2);border-radius:7px;overflow:hidden;display:flex;position:relative" title="実測 73万円（A-01）／薄い帯＝改修後ポテンシャル 1,251万円">
+        <i style="width:5.8%;background:linear-gradient(90deg,#FFE98A,#C98500)" title="A-01 T-Connect 実測ペース 73万円"></i>
+        <i style="width:94.2%;background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--gd) 13%,transparent) 0 8px,transparent 8px 16px)" title="改修後ポテンシャル 1,251万円（Step3）"></i>
+        <span style="position:absolute;right:9px;top:1px;font-family:var(--mono);font-size:10px;color:var(--mut)">ポテンシャル 1,251万円</span>
+      </div>
+      <div style="font-size:10px;color:var(--mut);max-width:230px;line-height:1.6">A-02は クリック蓄積後に自動加算・A-03は計測連携後。1件あたり価値 ${CM(OWNED.junction.perClickYen)}円（レポート#007から逆算）</div>
+    </div>
   </div>
 
-  <!-- 効果の根拠 -->
-  <div class="card s7 reveal">
-    <div class="ct"><span class="bar"></span><h3>効果の根拠 — クリックした人 vs しなかった人</h3><span class="sub">同一ページ滞在の実測差（GA4・秒）</span></div>
-    <div id="opsLift"></div>
-  </div>
-  <div class="card s5 reveal">
-    <div class="ct"><span class="bar"></span><h3>この効果を量産すると</h3><span class="sub">到達率シナリオ（分母=完了 年換算31,663件 実測）</span></div>
-    <div class="chart" id="chOpsScenario" style="height:238px"></div>
-    <div style="font-size:10.8px;color:var(--tx2);line-height:1.8;margin-top:8px">現状0.87%＝年253クリック・約200万円。<b class="hl">配置と文言の改修のみで 2〜5%＝460万〜1,200万円/年</b>（レポート#007前提）。</div>
+  <!-- ◤ A-01 深掘り -->
+  <div class="s12" style="border-left:3px solid color-mix(in srgb,var(--gd) 55%,transparent);padding-left:13px;margin-top:2px">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--gd);margin-bottom:10px">◤ A-01 T-Connect バナーの深掘り — なぜ効果があると言えるか</div>
+    <div class="grid">
+      <div class="card s7 reveal">
+        <div class="ct"><span class="bar"></span><h3>クリックした人 vs しなかった人</h3><span class="sub">同一ページ滞在の実測差（GA4・秒）</span></div>
+        <div id="opsLift"></div>
+      </div>
+      <div class="card s5 reveal">
+        <div class="ct"><span class="bar"></span><h3>クリック率を上げると（量産シナリオ）</h3><span class="sub">分母=完了 年換算${CM(J.denom.perYear)}件 実測</span></div>
+        <div class="chart" id="chOpsScenario" style="height:238px"></div>
+        <div style="font-size:10.8px;color:var(--tx2);line-height:1.8;margin-top:8px">実測ペース0.28%＝年92件・73万円。<b class="hl">配置と文言の改修のみで 2〜5%＝500万〜1,251万円/年</b>。</div>
+      </div>
+    </div>
   </div>
 
   <!-- 母数（参考・小さく） -->
@@ -3358,7 +3599,7 @@ function renderOps(){
   drawOpsScenario(J);
   drawSisaku();
   $('#goAssets2').onclick=()=>showView('assets');
-  $$('#opsRoot .actRow').forEach(r=>r.onclick=()=>actOpen(+r.dataset.act));
+  $$('#opsRoot .actBtn').forEach(b=>b.onclick=()=>actOpen(+b.dataset.act));
   runCountUps(root);
 }
 
@@ -3508,12 +3749,14 @@ function renderSNS(){
 
   root.innerHTML=`
   <!-- バズ・ヒーロー -->
-  <div class="card glow s12 reveal" style="border-color:color-mix(in srgb,var(--gd) 34%,transparent)">
+  <div class="card glow s12 reveal buzzCard" style="border-color:color-mix(in srgb,var(--gd) 40%,transparent)">
     <div style="display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:20px;align-items:center">
       <a href="javascript:void(0)" id="buzzCap" style="display:block;border-radius:12px;overflow:hidden;border:1px solid color-mix(in srgb,var(--gd) 40%,transparent)">
         <img src="${buzz.cap}" alt="精霊馬" style="width:100%;display:block"></a>
       <div>
-        <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.24em;color:var(--gd);margin-bottom:6px">BUZZ OF THE WEEK — 通常帯の80倍</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
+          <span class="buzzRibbon">🎉 BUZZ ACHIEVED</span>
+          <span style="font-family:var(--mono);font-size:9.5px;letter-spacing:.24em;color:var(--gd)">通常帯の80倍 — おめでとうございます！</span></div>
         <div style="font-size:16.5px;font-weight:800;line-height:1.6">お盆の帰省ラッシュ。もしご先祖様も渋滞に巻き込まれていたら？<span style="font-size:11px;color:var(--mut);font-weight:400">（精霊馬・CV:ファイルーズあい・8/13）</span></div>
         <div style="display:flex;gap:22px;flex-wrap:wrap;margin:13px 0 10px">
           <div><div style="font-size:10px;color:var(--mut)">いいね（IG）</div><div class="num" style="font-size:27px;font-weight:800;color:var(--gd)"><span data-cu="8.9" data-dec="1">0</span>万</div><div style="font-size:9.5px;color:var(--gn)">通常帯1,100の <b>81倍</b></div></div>
@@ -3535,12 +3778,21 @@ function renderSNS(){
           <span style="font-family:var(--mono);font-weight:800;font-size:12px;color:${md.col}">${md.id}　<span style="color:var(--tx);font-family:inherit;font-weight:700">${md.name}</span></span>
           <span class="num" style="font-size:13px;color:var(--tx)">${md.f}<span style="font-size:9px;color:var(--mut)"> ${md.id==='YT'?'登録':'フォロワー'}・${md.asof}</span></span>
         </div>
-        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:9px">
-          <div style="font-size:9.5px;color:var(--mut);font-family:var(--mono);letter-spacing:.12em;margin-bottom:3px">LATEST POST ・ ${md.latest.d}</div>
-          <div style="font-size:12px;font-weight:700;line-height:1.55">${md.latest.t}</div>
-          <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-family:var(--mono);font-size:10.5px;color:var(--tx2)">
-            <span>${md.latest.exp}</span>${md.latest.likes!=null?`<span>♥ ${CM(md.latest.likes)}</span>`:''}<span>${md.latest.rts}</span><span>${md.latest.com}</span>
-          </div>
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:7px 10px;margin-bottom:9px" onclick="event.stopPropagation()">
+          <div style="font-size:9.5px;color:var(--mut);font-family:var(--mono);letter-spacing:.12em;margin:2px 0 5px">RECENT POSTS ・ 直近${md.last5.length}件</div>
+          <table style="min-width:0;width:100%;font-size:10.5px;border-collapse:collapse">
+            <thead><tr style="color:var(--mut);font-family:var(--mono);font-size:8.5px"><th style="text-align:left;padding:2px 4px;border-bottom:1px solid var(--line)">日付</th><th style="text-align:left;padding:2px 4px;border-bottom:1px solid var(--line)">投稿</th><th style="text-align:right;padding:2px 4px;border-bottom:1px solid var(--line)">露出</th><th style="text-align:right;padding:2px 4px;border-bottom:1px solid var(--line)">♥</th><th style="text-align:right;padding:2px 4px;border-bottom:1px solid var(--line)">RP/シェア</th><th style="text-align:right;padding:2px 4px;border-bottom:1px solid var(--line)">コメ</th></tr></thead>
+            <tbody>${md.last5.map(p=>{
+              const hint = p.na?OWNED.sns.naHints.notYet : p.naExp?(md.id==='FB'?OWNED.sns.naHints.fbReach:OWNED.sns.naHints.igReach) : p.naRea?OWNED.sns.naHints.ytRea : '';
+              return `<tr style="${p.buzz?'background:color-mix(in srgb,var(--gd) 7%,transparent);':''}color:var(--tx2)">
+              <td class="num" style="padding:3.5px 4px;font-size:9.5px;color:var(--mut);white-space:nowrap;border-bottom:1px dashed var(--line)">${p.d}</td>
+              <td style="padding:3.5px 4px;line-height:1.45;border-bottom:1px dashed var(--line);${p.buzz?'color:var(--gd);font-weight:700':''}">${p.t}</td>
+              <td class="num" style="padding:3.5px 4px;text-align:right;white-space:nowrap;border-bottom:1px dashed var(--line)">${(p.exp==='非公開'||p.exp==='未取得')?`<span class="naHint" title="${hint}">${p.exp}</span>`:p.exp}</td>
+              <td class="num" style="padding:3.5px 4px;text-align:right;border-bottom:1px dashed var(--line)">${p.likes!=null?CM(p.likes):(p.naRea?`<span class="naHint" title="${OWNED.sns.naHints.ytRea}">—</span>`:'—')}</td>
+              <td class="num" style="padding:3.5px 4px;text-align:right;white-space:nowrap;border-bottom:1px dashed var(--line);font-size:9.5px">${p.rt||'—'}</td>
+              <td class="num" style="padding:3.5px 4px;text-align:right;white-space:nowrap;border-bottom:1px dashed var(--line);font-size:9.5px">${p.com||'—'}</td>
+            </tr>`}).join('')}</tbody>
+          </table>
         </div>
         <div style="font-size:11px;color:var(--tx2);line-height:1.8"><span style="font-family:var(--mono);font-size:9px;color:${md.col};letter-spacing:.14em">ANALYSIS</span><br>${md.note}</div>
       </div></div>`).join('')}
@@ -3552,7 +3804,7 @@ function renderSNS(){
     <div class="ct"><span class="bar"></span><h3>投稿パフォーマンス 一覧</h3><span class="sub">列見出しクリックでソート・行クリックで実画面／詳細 — 実測 8/19</span>
       <div class="r" id="snsCatFilter"></div></div>
     <div class="twrap"><table id="snsTable"></table></div>
-    <div style="font-size:10.3px;color:var(--mut);margin-top:7px">露出＝imp（X）／回視聴（YT）。IG・FBはリーチ非公開のため <b>倍率＝いいね基準の媒体内通常帯比</b>（代理指標）。倍率の基準値：X imp4.2万・いいね等170／IG 1,100／FB 450／YTはチャンネル別（SR 6千・TM 1.8万・DR 500）。</div>
+    <div style="font-size:10.3px;color:var(--mut);margin-top:7px">「非公開」「—」に<b>マウスを載せると取得方法</b>が表示されます。露出＝imp（X）／回視聴（YT）。IG・FBはリーチ非公開のため <b>倍率＝いいね基準の媒体内通常帯比</b>（代理指標）。倍率の基準値：X imp4.2万・いいね等170／IG 1,100／FB 450／YTはチャンネル別（SR 6千・TM 1.8万・DR 500）。</div>
   </div>
 
   <!-- 四象限 -->
@@ -3612,10 +3864,10 @@ function drawSnsTable(){
     <td><span class="pf" style="display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:7px;color:${PFC[p.sns]};background:color-mix(in srgb,${PFC[p.sns]} 13%,transparent)">${p.sns}</span></td>
     <td style="min-width:250px;font-size:12px;line-height:1.6">${p.buzz?'<span class="ptag" style="color:var(--gd);background:color-mix(in srgb,var(--gd) 14%,transparent);margin:0 6px 0 0">バズ</span>':''}${p.ad?'<span class="ptag" style="color:#9085E9;background:color-mix(in srgb,#9085E9 14%,transparent);margin:0 6px 0 0">広告併用</span>':''}${p.title}<div style="font-size:9.5px;color:var(--mut)"><span style="color:${CAT_COLORS[p.cat]}">■</span> ${p.cat} ・ ${p.ch}${p.cap?' ・ <span style="color:var(--gd)">実画面 ▸</span>':''}</div></td>
     <td class="num" style="font-size:10.5px;color:var(--mut)">${p.d}</td>
-    <td class="num">${p.exp!=null?fmtJP(p.exp):'<span style="color:var(--mut)">非公開</span>'}</td>
-    <td class="num">${p.likes!=null?CM(p.likes):'—'}</td>
-    <td class="num">${p.rts!=null?CM(p.rts):'—'}</td>
-    <td class="num">${p.com!=null?CM(p.com):'—'}</td>
+    <td class="num">${p.exp!=null?fmtJP(p.exp):`<span class="naHint" style="color:var(--mut)" title="${p.sns==='FB'?OWNED.sns.naHints.fbReach:OWNED.sns.naHints.igReach}">非公開</span>`}</td>
+    <td class="num">${p.likes!=null?CM(p.likes):(p.sns==='YT'?`<span class="naHint" title="${OWNED.sns.naHints.ytRea}">—</span>`:'—')}</td>
+    <td class="num">${p.rts!=null?CM(p.rts):(p.sns==='YT'?`<span class="naHint" title="${OWNED.sns.naHints.ytRea}">—</span>`:'—')}</td>
+    <td class="num">${p.com!=null?CM(p.com):(p.sns==='YT'?`<span class="naHint" title="${OWNED.sns.naHints.ytRea}">—</span>`:'—')}</td>
     <td class="num" style="color:${p.xm>=2?'var(--gd)':p.xm>=1?'var(--gn)':'var(--tx2)'};font-weight:700">×${p.xm>=10?Math.round(p.xm):p.xm.toFixed(2)}</td>
     <td class="num" style="color:${p.rm==null?'var(--mut)':p.rm>=2?'var(--gd)':p.rm>=1?'var(--gn)':'var(--tx2)'};font-weight:700">${p.rm!=null?'×'+(p.rm>=10?Math.round(p.rm):p.rm.toFixed(2)):'—'}</td>
   </tr>`).join('')}</tbody>`;
