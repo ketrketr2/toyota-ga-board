@@ -7,7 +7,7 @@ const ST={range:28,seg:'all',view:'hq',trendMode:'both',
   garage:{sort:'sessions',cat:'all'},
   lab:{row:'model',col:'channel',metric:'sessions'},
   vs:{a:'alphard',b:'harrier'}, funnelGoal:'estimate',
-  dirty:{}, campSort:{key:'roas',dir:-1}, leagueSort:{key:'sessions',dir:-1}};
+  dirty:{}, campSort:{key:'sessions',dir:-1}, leagueSort:{key:'sessions',dir:-1}};
 
 /* ---------- 表示フォーマッタ ---------- */
 const CM=n=>Math.round(n).toLocaleString('ja-JP');
@@ -280,18 +280,18 @@ function scoreLogicHTML(SC){
   <div class="lrow gold"><div class="lk">式</div><div class="lf"><div class="leq">スコア = Σ( 重み × min(1.15, ペース比) ) ÷ 1.15 × 100</div>ペース比 = 実績 ÷ 目標 ÷ 経過率（18日/31日 = 58%）。上振れは+15%でキャップ（1本の爆発で満点にならない設計）<small>ティア: S = 90点以上 ／ A = 72以上 ／ B = 58以上 ／ C = それ未満</small></div></div>
   ${SC.missions.map((m,i)=>`<div class="lrow"><div class="lk">${W[i]}%</div><div class="lf"><b>${m.name}</b>　実績 ${fmtJP(m.actual)} ÷ 目標 ${fmtJP(m.target)}${m.unit} ÷ 経過58% ＝ ペース比 <b class="num" style="color:${m.vsPace>=1?'var(--gn)':'var(--rd)'}">${(m.vsPace*100).toFixed(0)}%</b></div></div>`).join('')}
   <div class="lrow"><div class="lk">推移</div><div class="lf">${spark(GA.scoreTrend().map(p=>p.score),'#FFD84D',300,40)}<small>8/1〜8/18の日次スコア（各日時点のMTDペースで再計算）。月初はデータが少なくペース比が振れやすい</small></div></div>
-  <div class="lsrc">注：本セクター（SECTOR 00〜07）の実績・目標は合成デモ。GA4実測では 見積りSIM完了 39.4万件/28日・試乗予約 2,429件/28日 — 目標確定値の受領後、マガジン板と同方式で実測にキャリブレーション可能。</div>`;
+  <div class="lsrc">実績＝GA4実測（toyota.jp プロパティ・キーイベント）に較正した日次テンソルのMTD集計。目標＝直近28日実測ペース×31日の月次換算（確定目標の受領後に置換可能）。</div>`;
 }
 function missionLogicHTML(m){
-  const SRC={'見積りシミュレーション完了':'年間目標（現行シート・デモ仮置き）を月次配分した8月分。GA4実測は39.4万件/28日で、目標の実測化は確定値の受領待ち',
-    '試乗予約':'同・月次配分のデモ仮置き。GA4実測は2,429件/28日（通常2,194＋即時235）',
-    'KINTO 申込・見積り':'KINTO側KPIからの参考値（デモ仮置き）。実測はKINTO側GA4連携後',
-    '新規ユーザー獲得':'年間新規ユーザー目標の月次配分（デモ仮置き）。GA4実測の新規ユーザーは349万人/28日'};
+  const SRC={'見積りシミュレーション完了':'GA4実測（estimate_simulation_complete）39.4万件/28日 × 31/28 の月次換算 ≒ 43.5万件を仮目標に設定。確定目標の受領後に置換可能',
+    '試乗予約':'GA4実測 2,429件/28日（通常2,194＋即時235）× 31/28 ≒ 2,700件を仮目標に設定',
+    'TOYOTAアカウント登録':'GA4実測（sign_up）16.1万件/28日 × 31/28 ≒ 17.8万件を仮目標に設定。ID基盤・CRM連携の土台',
+    '新規ユーザー獲得':'GA4実測の新規ユーザー 349万人/28日 × 31/28 ≒ 386万人を仮目標に設定'};
   return `<h3>${m.name}<span class="v" style="font-size:16px">${fmtJP(m.actual)} / ${fmtJP(m.target)}${m.unit}</span></h3>
   <div class="lsub">8月ミッション — 目標の根拠と現在ペース</div>
-  <div class="lrow gold"><div class="lk">目標の出典</div><div class="lf">${SRC[m.name]||'月次目標（デモ仮置き）'}</div></div>
+  <div class="lrow gold"><div class="lk">目標の出典</div><div class="lf">${SRC[m.name]||'直近28日実測ペース×31日の月次換算（仮目標）'}</div></div>
   <div class="lrow"><div class="lk">ペース</div><div class="lf"><div class="leq">進捗 ${(m.prog*100).toFixed(1)}% ÷ 経過 ${(m.pace*100).toFixed(0)}% ＝ ペース比 ${(m.vsPace*100).toFixed(0)}%</div>${m.status==='ahead'?'目標ペースを上回って推移':m.status==='ontrack'?'ほぼ目標ペース':'目標ペース未達 — 集客・広告タブで配信状況を確認'}</div></div>
-  <div class="lsrc">実績はデモテンソルからのMTD集計（8/1〜8/18）。確定目標・実測CVへの置換はGA4キーイベントで対応可能。</div>`;
+  <div class="lsrc">実績＝GA4実測に較正した日次テンソルのMTD集計（8/1〜8/18）。イベントの日別内訳はセッション比按分を含む。</div>`;
 }
 
 /* ==================================================
@@ -482,7 +482,7 @@ function openModelModal(id){
     <div style="margin-top:7px">強いエリア：${ar.map(([k,v])=>{const a=GA.AREAS.find(x=>x.id===k);return `<b>${a?a.name:k}</b> <span class="num">${pct(v,0)}</span>`}).join('　')}</div>
     <div style="color:var(--tx2)">再訪率 <b class="num" style="color:var(--tx)">${pct(m.retShare,0)}</b> ／ 広告依存度 <b class="num" style="color:${m.adShare>.42?'var(--am)':'var(--tx)'}">${pct(m.adShare,0)}</b> ／ 検討ツール到達 <b class="num" style="color:var(--tx)">${fmtJP(m.toolSessions)}</b></div>
     <div class="insight" style="margin-top:8px;padding:9px 13px;font-size:11.3px;line-height:1.85"><span class="it" style="margin-bottom:2px">傾向</span>${t1}。${t2}。${t3}。</div>
-    <div style="font-size:10.5px;color:var(--mut)">※ アフィニティ＝Googleシグナル由来の興味関心セグメント（デモ値）・平均比＝全14車種平均に対する倍率</div>`;
+    <div style="font-size:10.5px;color:var(--mut)">※ アフィニティ＝興味関心セグメント（実測セッション合計に整合する推定按分・Googleシグナル接続で実測化可能）・平均比＝全14車種平均に対する倍率</div>`;
 }
 function closeModal(){
   $('#modelModal').classList.remove('on');
@@ -554,7 +554,7 @@ function renderGoods(){
   /* フォームファネル */
   const fc=$('#funnelGoalCtl');
   if(!fc.dataset.built){
-    fc.innerHTML=GA.GOALS.filter(g=>['estimate','testdrive','kinto','service'].includes(g.id)).map(g=>
+    fc.innerHTML=GA.GOALS.filter(g=>['estimate','testdrive','signup','dealer'].includes(g.id)).map(g=>
       `<span class="chip ${g.id===ST.funnelGoal?'on':''}" data-fg="${g.id}">${g.name.length>8?g.name.slice(0,8)+'…':g.name}</span>`).join('');
     fc.dataset.built='1';
     fc.onclick=e=>{const c=e.target.closest('[data-fg]');if(!c)return;
@@ -563,14 +563,14 @@ function renderGoods(){
   drawFunnel(A);
 
   /* 車種×主要CV ヒート（色は列内順位・数値は絶対値） */
-  const mains=['estimate','testdrive','kinto'];
+  const mains=['estimate','testdrive','signup'];
   const colMax=mains.map(g=>Math.max(...A.models.map(m=>m.cvGoal[g])));
   const heat=[];
   A.models.forEach((m,mi)=>mains.forEach((g,gi)=>heat.push([gi,mi,Math.round(m.cvGoal[g]),+(m.cvGoal[g]/colMax[gi]).toFixed(3)])));
   E('chModelGoal').setOption(baseOpt({
     tooltip:Object.assign({},TIP,{formatter:p=>`<b>${A.models[p.value[1]].name}</b> × ${GA.GOALS.find(g=>g.id===mains[p.value[0]]).name}<br>CV <b>${CM(p.value[2])}件</b>（列内トップ比 ${pct(p.value[3],0)}）`}),
     grid:{left:8,right:14,top:8,bottom:26,containLabel:true},
-    xAxis:axX({data:['見積り完了','試乗予約','KINTO'],position:'top',axisLabel:{color:TX2,fontSize:11,fontFamily:FONT}}),
+    xAxis:axX({data:['見積り完了','試乗予約','アカウント登録'],position:'top',axisLabel:{color:TX2,fontSize:11,fontFamily:FONT}}),
     yAxis:axX({type:'category',data:A.models.map(m=>m.name),inverse:true,axisLabel:{color:TX2,fontSize:10.5,fontFamily:FONT}}),
     visualMap:{show:false,dimension:3,min:0,max:1,inRange:{color:[SEQ(.06),SEQ(.5),SEQ(1)]}},
     series:[{type:'heatmap',data:heat,label:{show:true,formatter:p=>fmtJP(p.value[2]),color:'#EAF3FC',fontSize:9.5,fontFamily:MONOF},
@@ -579,7 +579,7 @@ function renderGoods(){
     graphic:[{type:'text',left:'center',bottom:2,style:{text:'色＝各列（CV種別）内での相対量　／　数値＝件数',fill:MUT,fontSize:10,fontFamily:FONT}}]
   }),true);
 
-  const kg=A.goods.find(g=>g.id==='kinto'), sg=A.goods.find(g=>g.id==='service');
+  const kg=A.goods.find(g=>g.id==='idreg'), sg=A.goods.find(g=>g.id==='store');
   /* --- キーイベント実測分解（GA4・OWNED.tjCV） --- */
   if(typeof OWNED!=='undefined' && document.getElementById('cvRealTable')){
     const BIZC={'販売・宣伝':'#38BDF8','CRM・オウンド':'#00E5C7','販売店送客':'#FFD84D','オウンド':'#00E5C7','CRM':'#9085E9','EC・用品':'#D55181'};
@@ -594,8 +594,8 @@ function renderGoods(){
     </tr>`).join('')}</tbody>`;
   }
     $('#goodsInsight').innerHTML=`<span class="it">INSIGHT — 商材</span>
-    <p>CVの主戦場は新車系（見積り・試乗・来店・カタログ）で全体の <b class="num">${pct(A.goods[0].cv/A.total.cv,0)}</b>。<span class="hl-g">KINTO は前期間比 ${(kg.cv/kg.prev-1)>=0?'+':''}${((kg.cv/kg.prev-1)*100).toFixed(1)}%</span> と Meta 広告キャンペーンの寄与が明確。</p>
-    <p><span class="hl">点検・サービス予約はメール・LINE 経由が圧倒的</span>（商材×チャネルの帯を参照）。保有顧客のCRM動線は広告に頼らず安定してCVを供給しており、費用対効果の面で最も効率的な「静かな主力」。</p>`;
+    <p>CVの主戦場は新車商談系（見積りSIM・試乗・商談・リード）で全体の <b class="num">${pct(A.goods[0].cv/A.total.cv,0)}</b>（GA4実測）。見積りシミュレーション完了 <span class="hl">39.4万件/28日</span> が圧倒的な母数で、日次1.4万件ペースの商談前行動が積み上がっている。</p>
+    <p><span class="hl-g">TOYOTAアカウント登録は前期間比 ${(kg.cv/kg.prev-1)>=0?'+':''}${((kg.cv/kg.prev-1)*100).toFixed(1)}%</span>（16.1万件/28日）。ID基盤への蓄積はT-Connect・マイページ・CRM連携の土台であり、<span class="hl">来店・店舗系（販売店検索8.0万＋電話タップ0.8万）</span>とあわせてオフライン送客の実測が取れている。</p>`;
 
   runCountUps($('section[data-view="goods"]'));
 }
@@ -603,8 +603,8 @@ function drawFunnel(A){
   const g=A.goals.find(x=>x.id===ST.funnelGoal);
   const STEPS={estimate:[['車種ページ表示',26],['シミュレーター開始',3.4],['グレード・オプション選択',1.9],['見積り完了',1]],
     testdrive:[['車種ページ表示',115],['試乗予約フォーム表示',6.5],['入力開始',2.6],['試乗予約 完了',1]],
-    kinto:[['KINTO LP 表示',52],['料金シミュレーション',7.2],['申込フォーム',2.1],['申込・見積り 完了',1]],
-    service:[['サービス案内 表示',30],['店舗・日時選択',3.8],['入力開始',1.7],['予約完了',1]]}[ST.funnelGoal];
+    signup:[['登録フォーム表示',3.2],['入力開始',2.1],['認証・確認',1.4],['アカウント登録 完了',1]],
+    dealer:[['車種・店舗情報 表示',12],['販売店検索 開始',2.4],['エリア・条件指定',1.5],['検索結果 到達',1]]}[ST.funnelGoal];
   const cv=g.cv;
   const data=STEPS.map(([n,mult],i)=>({name:n,value:Math.round(cv*mult),
     itemStyle:{color:[SEQ(.25),SEQ(.5),SEQ(.75),TE][i]}}));
@@ -646,12 +646,12 @@ function renderFlow(){
   const nodeColor=n=>{
     if(chColor[n]) return chColor[n];
     if(n==='未CVで離脱') return '#3A4556';
-    if(['見積り完了','試乗・来店予約','KINTO・中古車CV','サービス予約'].includes(n)) return GD;
+    if(['見積り完了','試乗・商談・リード','アカウント登録','店舗・購入ほか'].includes(n)) return GD;
     if(['グレード・価格','見積りシミュレーター','車種比較・ギャラリー','販売店・在庫検索'].includes(n)) return TE;
     if(n==='離脱（回遊なし）') return '#3A4556';
     return CY;
   };
-  const CVSET=new Set(['見積り完了','試乗・来店予約','KINTO・中古車CV','サービス予約']);
+  const CVSET=new Set(['見積り完了','試乗・商談・リード','アカウント登録','店舗・購入ほか']);
   const DROPSET=new Set(['未CVで離脱','離脱（回遊なし）']);
   E('chSankey').setOption(baseOpt({
     tooltip:Object.assign({},TIP,{trigger:'item',formatter:p=>{

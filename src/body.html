@@ -26,7 +26,7 @@
     <div class="sfoot">
       データ最終日 <span class="num">2026-08-18</span><br>
       GitHub Actions で日次更新（予定）<br>
-      <span id="footMode">DEMO MODE</span>
+      <span id="footMode" style="color:var(--gn)">LIVE · GA4実測</span>
     </div>
   </aside>
 
@@ -35,7 +35,7 @@
     <header class="top">
       <span class="menubtn" id="menubtn">☰ メニュー</span>
       <div class="crumb"><b>toyota.jp</b><span style="color:var(--mut)">／</span><span id="crumbView">総合HQ</span>
-        <span class="dm" title="実データ接続前の合成デモデータで動作中">DEMO DATA</span></div>
+        <span class="dm live" title="toyota.jp GA4実測（Windsor.ai経由）にキャリブレーション済み">LIVE · GA4実測</span></div>
       <div class="rng" id="rngCtl">
         <button data-r="7">7日</button><button data-r="28" class="on">28日</button><button data-r="90">90日</button>
       </div>
@@ -44,7 +44,7 @@
       </div>
       <span class="period" id="periodLbl">—</span>
       <div class="sp"></div>
-      <div class="live" title="現在サイトにいるユーザー（デモ値）"><span class="dot"></span><span class="n" id="liveN">—</span><span class="l">アクティブ</span></div>
+      <div class="live" title="推定同時アクティブ：実測28日（970万S×平均滞在265秒）から算出した平均水準に時間帯カーブを適用"><span class="dot"></span><span class="n" id="liveN">—</span><span class="l">アクティブ</span></div>
       <div class="kbtn" id="kbtn">検索・ジャンプ <b>⌘K</b></div>
     </header>
 
@@ -106,7 +106,7 @@
 
     <!-- ==== VIEW: 商材・CV ==== -->
     <section class="view" data-view="goods">
-      <div class="vhead"><span class="sector">SECTOR 02</span><h1>商材・CV</h1><span class="desc">新車・中古車・KINTO・サービス・アクセサリーの成果</span></div>
+      <div class="vhead"><span class="sector">SECTOR 02</span><h1>商材・CV</h1><span class="desc">見積り・試乗・商談・来店・会員・購入 — GA4キーイベント実測の成果</span></div>
       <div class="grid">
         <div id="goodsCards" style="display:contents"></div>
         <div class="card glow s7 reveal">
@@ -172,7 +172,7 @@
           <div class="twrap"><table id="channelTable"></table></div>
         </div>
         <div class="card s12 reveal">
-          <div class="ct"><span class="bar"></span><h3>キャンペーンリーグ</h3><span class="sub">ROAS順（商談価値換算）／ 列見出しクリックでソート</span></div>
+          <div class="ct"><span class="bar"></span><h3>キャンペーンリーグ</h3><span class="sub">GA4実測 utm_campaign 別セッション ／ 列見出しクリックでソート</span></div>
           <div class="twrap"><table id="campaignTable"></table></div>
         </div>
         <div class="card glow s5 reveal">
@@ -180,7 +180,7 @@
           <div class="chart" id="chUtm" style="min-height:380px"></div>
         </div>
         <div class="card glow s7 reveal">
-          <div class="ct"><span class="bar"></span><h3>投資対効果マップ</h3><span class="sub">横=広告費 ／ 縦=CV ／ 円=セッション量</span></div>
+          <div class="ct"><span class="bar"></span><h3>キャンペーン効果マップ</h3><span class="sub">横=セッション実測（log） ／ 縦=CV寄与推定 ／ 円=セッション量</span></div>
           <div class="chart" id="chBubble" style="min-height:380px"></div>
         </div>
         <div class="card s12 reveal"><div class="insight" id="acqInsight"></div></div>
@@ -263,7 +263,7 @@
       <div class="vhead"><span class="sector">SECTOR 07</span><h1>計測設計</h1><span class="desc">カスタムディメンション・イベント・UTM命名の管理台帳</span></div>
       <div class="grid">
         <div class="card s12 reveal">
-          <div class="ct"><span class="bar"></span><h3>カスタムディメンション台帳</h3><span class="sub">GA4 プロパティ設定と同期（デモ）</span></div>
+          <div class="ct"><span class="bar"></span><h3>カスタムディメンション台帳</h3><span class="sub">GA4 プロパティに実登録されている定義（Windsor.aiフィールド一覧より）</span></div>
           <div class="twrap"><table id="cdTable"></table></div>
         </div>
         <div class="card s7 reveal">
@@ -297,7 +297,7 @@
     </section>
 
     <footer class="foot">
-      <div>本ボードは <b>合成デモデータ</b> で動作しています。GA4 Data API（<span class="num">runReport</span>）接続時は、チャネル＝<a href="https://support.google.com/analytics/answer/9756891?hl=ja" target="_blank" rel="noopener">デフォルトチャネルグループ</a>、アフィニティ＝<a href="https://support.google.com/analytics/answer/2819950?hl=ja" target="_blank" rel="noopener">Googleシグナルのアフィニティカテゴリ</a>、車種・商材・ステージ＝<a href="https://support.google.com/analytics/answer/14240153?hl=ja" target="_blank" rel="noopener">カスタムディメンション</a>にそのまま置き換わる設計です。</div>
+      <div>本ボードの日次トラフィック・チャネル構成・車種別ボリューム・CVイベント・デバイス・エリア・年齢性別・キャンペーンは <b>toyota.jp の GA4 実測値</b>（2026-01-31〜08-18・Windsor.ai経由）にキャリブレーション済みです。チャネル＝<a href="https://support.google.com/analytics/answer/9756891?hl=ja" target="_blank" rel="noopener">デフォルトチャネルグループ</a>実測。アフィニティ・検討ステージ・訪問回数・会員ランク等、GA4に実測ディメンションが無い内訳は<b>実測合計に整合する推定按分</b>（<a href="https://support.google.com/analytics/answer/2819950?hl=ja" target="_blank" rel="noopener">Googleシグナル</a>／<a href="https://support.google.com/analytics/answer/14240153?hl=ja" target="_blank" rel="noopener">カスタムディメンション</a>接続で実測化可能）。</div>
       <div class="src">出典・定義：<a href="https://developers.google.com/analytics/devguides/reporting/data/v1?hl=ja" target="_blank" rel="noopener">GA4 Data API</a> ／ <a href="https://support.google.com/analytics/answer/9143382?hl=ja" target="_blank" rel="noopener">GA4 ディメンションと指標</a> ／ 姉妹ボード：<a href="https://ketrketr2.github.io/toyota-geo-board/" target="_blank" rel="noopener">AI Visibility KPI Board（GEO）</a> ／ ソースコード：<a href="https://github.com/ketrketr2/toyota-ga-board" target="_blank" rel="noopener">GitHub</a></div>
     </footer>
   </div>

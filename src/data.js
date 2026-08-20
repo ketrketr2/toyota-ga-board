@@ -1,5 +1,10 @@
 /* =====================================================
-   TOYOTA GA4 COMMAND — データエンジン（デモデータ）
+   TOYOTA GA4 COMMAND — データエンジン（GA4実測キャリブレーション済み）
+   日次トラフィック・チャネル構成・車種別ボリューム・CVイベント・
+   デバイス・エリア・年齢性別・キャンペーンは toyota.jp GA4
+   （プロパティ 324699885 / Windsor.ai経由 2026-08-19取得）の実測値。
+   実測ディメンションが存在しない内訳（アフィニティ・検討ステージ・
+   訪問回数・チャネル×車種ミックス等）は実測合計に整合する推定按分。
    すべての画面はこの単一テンソルから導出されるため、
    どの画面でも合計値・内訳が必ず一致する。
    ===================================================== */
@@ -22,99 +27,103 @@ const GA = (() => {
   }
   const IDX = Object.fromEntries(DATES.map((s,i)=>[s,i]));
 
-  /* ---------- マスタ：チャネル（表示順＝固定・配色順） ---------- */
+  /* ---------- マスタ：チャネル（GA4デフォルトチャネルグループ実測・7/22〜8/18） ---------- */
+  /* share・newShare＝実測。GA4グループを8束に集約：
+     org=Organic Search / sem=Paid Search+Cross-network+Paid Other / dsp=Display /
+     vid=Paid Video+Organic Video / sns=Organic Social+Paid Social / crm=Email /
+     ref=Referral+AI Assistant / dir=Direct+Unassigned */
   const CHANNELS=[
-    {id:'org', name:'自然検索',        color:'#3987E5', share:.335, newShare:.55, paid:false},
-    {id:'sem', name:'リスティング広告', color:'#D95926', share:.165, newShare:.64, paid:true},
-    {id:'dsp', name:'ディスプレイ広告', color:'#199E70', share:.062, newShare:.82, paid:true},
-    {id:'vid', name:'動画広告',        color:'#C98500', share:.078, newShare:.78, paid:true},
-    {id:'sns', name:'SNS広告',        color:'#D55181', share:.070, newShare:.74, paid:true},
-    {id:'crm', name:'メール・LINE',    color:'#008300', share:.050, newShare:.12, paid:false},
-    {id:'ref', name:'外部サイト',      color:'#9085E9', share:.095, newShare:.60, paid:false},
-    {id:'dir', name:'ダイレクト',      color:'#E66767', share:.145, newShare:.28, paid:false},
+    {id:'org', name:'自然検索',            color:'#3987E5', share:.4907, newShare:.347, paid:false},
+    {id:'sem', name:'検索広告',            color:'#D95926', share:.0106, newShare:.559, paid:true},
+    {id:'dsp', name:'ディスプレイ広告',     color:'#199E70', share:.0594, newShare:.743, paid:true},
+    {id:'vid', name:'動画',               color:'#C98500', share:.0008, newShare:.579, paid:true},
+    {id:'sns', name:'SNS',               color:'#D55181', share:.0037, newShare:.573, paid:false},
+    {id:'crm', name:'メール',             color:'#008300', share:.0044, newShare:.157, paid:false},
+    {id:'ref', name:'外部サイト・AI経由',   color:'#9085E9', share:.1264, newShare:.258, paid:false},
+    {id:'dir', name:'ダイレクト',          color:'#E66767', share:.3040, newShare:.356, paid:false},
   ];
   const NC=CHANNELS.length;
 
-  /* ---------- マスタ：車種 ----------
-     base: 平常時の1日あたり車種ページセッション（千）
-     mix: チャネル補正（1=平均）/ cvr: 見積り完了率の基準
-     tool: 検討ツール到達率 / dealer: 販売店接点率 */
+  /* ---------- マスタ：車種（実測上位14ライン・7/22〜8/18） ----------
+     base: 1日あたり車種ページ群セッション（千）＝GA4実測
+     （/車種/ 直下＋grade/usability/design/performance等の下層ページ計÷28日）
+     mix: チャネル補正 / cvr・tool・dealer・eng・pps: 実測合計に整合する推定按分 */
   const MODELS=[
-    {id:'alphard', name:'アルファード',     cat:'ミニバン',   price:'510万〜', base:68, cvr:.019, tool:.24, dealer:.072, eng:.66, pps:5.8,
-     mix:{org:1.15,sem:1.0,dsp:.9,vid:1.1,sns:.8,crm:1.1,ref:1.1,dir:1.2}, icon:'van'},
-    {id:'voxy',    name:'ヴォクシー',       cat:'ミニバン',   price:'309万〜', base:38, cvr:.022, tool:.26, dealer:.078, eng:.63, pps:5.2,
-     mix:{org:1.0,sem:1.05,dsp:1.0,vid:1.0,sns:1.35,crm:1.0,ref:.9,dir:.95}, icon:'van'},
-    {id:'noah',    name:'ノア',            cat:'ミニバン',   price:'305万〜', base:30, cvr:.021, tool:.25, dealer:.076, eng:.62, pps:5.0,
-     mix:{org:1.0,sem:1.05,dsp:1.0,vid:.95,sns:1.3,crm:1.0,ref:.9,dir:.95}, icon:'van'},
-    {id:'sienta',  name:'シエンタ',         cat:'ミニバン',   price:'199万〜', base:42, cvr:.024, tool:.27, dealer:.082, eng:.64, pps:4.8,
+    {id:'sienta',  name:'シエンタ',         cat:'ミニバン', price:'199万〜', base:9.94, cvr:.022, tool:.26, dealer:.080, eng:.64, pps:4.8,
      mix:{org:.95,sem:1.1,dsp:1.05,vid:.9,sns:1.5,crm:1.05,ref:.85,dir:.9}, icon:'van'},
-    {id:'harrier', name:'ハリアー',         cat:'SUV',       price:'320万〜', base:56, cvr:.021, tool:.25, dealer:.070, eng:.67, pps:6.1,
+    {id:'rav4',    name:'RAV4',            cat:'SUV',     price:'—',      base:9.91, cvr:.019, tool:.24, dealer:.068, eng:.66, pps:5.5,
+     mix:{org:1.05,sem:1.0,dsp:1.05,vid:.95,sns:1.05,crm:.9,ref:1.0,dir:.95}, icon:'suv'},
+    {id:'harrier', name:'ハリアー',         cat:'SUV',     price:'312万〜', base:9.77, cvr:.020, tool:.25, dealer:.070, eng:.67, pps:6.1,
      mix:{org:1.05,sem:1.1,dsp:1.15,vid:1.05,sns:1.0,crm:.9,ref:1.0,dir:1.0}, icon:'suv'},
-    {id:'rav4',    name:'RAV4',           cat:'SUV',       price:'324万〜', base:33, cvr:.019, tool:.23, dealer:.068, eng:.63, pps:5.4,
-     mix:{org:1.0,sem:1.0,dsp:1.05,vid:.95,sns:1.05,crm:.9,ref:1.0,dir:.95}, icon:'suv'},
-    {id:'landcruiser',name:'ランドクルーザー',cat:'SUV',      price:'525万〜', base:62, cvr:.013, tool:.20, dealer:.055, eng:.70, pps:6.8,
-     mix:{org:1.3,sem:.8,dsp:.7,vid:.9,sns:.7,crm:.9,ref:1.35,dir:1.3}, icon:'suv'},
-    {id:'corolla', name:'カローラ',         cat:'セダン・ワゴン', price:'216万〜', base:40, cvr:.021, tool:.24, dealer:.075, eng:.60, pps:4.6,
-     mix:{org:1.05,sem:1.0,dsp:.95,vid:.9,sns:.85,crm:1.15,ref:.95,dir:1.0}, icon:'sedan'},
-    {id:'crown',   name:'クラウン',         cat:'セダン・ワゴン', price:'475万〜', base:34, cvr:.014, tool:.21, dealer:.058, eng:.68, pps:6.2,
-     mix:{org:1.1,sem:.9,dsp:1.0,vid:1.4,sns:.8,crm:.95,ref:1.1,dir:1.1}, icon:'sedan'},
-    {id:'prius',   name:'プリウス',         cat:'コンパクト・HEV', price:'275万〜', base:36, cvr:.018, tool:.23, dealer:.066, eng:.64, pps:5.3,
+    {id:'alphard', name:'アルファード',     cat:'ミニバン', price:'555万〜', base:9.59, cvr:.017, tool:.24, dealer:.070, eng:.67, pps:5.8,
+     mix:{org:1.1,sem:1.0,dsp:.95,vid:1.1,sns:.85,crm:1.1,ref:1.1,dir:1.15}, icon:'van'},
+    {id:'corollacross',name:'カローラクロス',cat:'SUV',    price:'218万〜', base:9.58, cvr:.021, tool:.25, dealer:.074, eng:.63, pps:5.2,
+     mix:{org:1.0,sem:1.05,dsp:1.0,vid:.95,sns:1.1,crm:1.0,ref:.9,dir:.95}, icon:'suv'},
+    {id:'yariscross',name:'ヤリスクロス',   cat:'SUV',     price:'190万〜', base:7.52, cvr:.021, tool:.25, dealer:.076, eng:.61, pps:4.9,
+     mix:{org:1.0,sem:1.1,dsp:1.05,vid:.9,sns:1.1,crm:1.05,ref:.85,dir:.9}, icon:'suv'},
+    {id:'noah',    name:'ノア',            cat:'ミニバン', price:'267万〜', base:6.28, cvr:.021, tool:.25, dealer:.076, eng:.62, pps:5.0,
+     mix:{org:1.0,sem:1.05,dsp:1.0,vid:.95,sns:1.3,crm:1.0,ref:.9,dir:.95}, icon:'van'},
+    {id:'voxy',    name:'ヴォクシー',       cat:'ミニバン', price:'309万〜', base:6.23, cvr:.021, tool:.26, dealer:.078, eng:.63, pps:5.2,
+     mix:{org:1.0,sem:1.05,dsp:1.0,vid:1.0,sns:1.35,crm:1.0,ref:.9,dir:.95}, icon:'van'},
+    {id:'landcruiser300',name:'ランドクルーザー300',cat:'SUV',price:'510万〜', base:5.95, cvr:.012, tool:.20, dealer:.055, eng:.70, pps:6.8,
+     mix:{org:1.25,sem:.8,dsp:.7,vid:.9,sns:.7,crm:.9,ref:1.3,dir:1.3}, icon:'suv'},
+    {id:'prius',   name:'プリウス',         cat:'コンパクト・HEV', price:'275万〜', base:5.69, cvr:.018, tool:.23, dealer:.066, eng:.64, pps:5.3,
      mix:{org:1.1,sem:.95,dsp:.95,vid:1.0,sns:.95,crm:1.1,ref:1.05,dir:1.05}, icon:'sedan'},
-    {id:'aqua',    name:'アクア',           cat:'コンパクト・HEV', price:'214万〜', base:24, cvr:.020, tool:.24, dealer:.074, eng:.59, pps:4.4,
+    {id:'landcruiser250',name:'ランドクルーザー250',cat:'SUV',price:'545万〜', base:5.69, cvr:.013, tool:.21, dealer:.058, eng:.69, pps:6.5,
+     mix:{org:1.2,sem:.85,dsp:.75,vid:.95,sns:.8,crm:.9,ref:1.25,dir:1.25}, icon:'suv'},
+    {id:'landcruiserfj',name:'ランドクルーザーFJ',cat:'SUV', price:'—',     base:5.56, cvr:.011, tool:.19, dealer:.050, eng:.71, pps:6.9,
+     mix:{org:1.2,sem:.8,dsp:.8,vid:1.1,sns:1.1,crm:.8,ref:1.35,dir:1.15}, icon:'suv'},
+    {id:'raize',   name:'ライズ',           cat:'SUV',     price:'171万〜', base:5.33, cvr:.022, tool:.25, dealer:.080, eng:.59, pps:4.4,
+     mix:{org:1.0,sem:1.1,dsp:1.05,vid:.85,sns:1.05,crm:1.1,ref:.85,dir:.9}, icon:'suv'},
+    {id:'aqua',    name:'アクア',           cat:'コンパクト・HEV', price:'214万〜', base:5.02, cvr:.020, tool:.24, dealer:.074, eng:.59, pps:4.4,
      mix:{org:1.0,sem:1.05,dsp:1.0,vid:.85,sns:1.0,crm:1.2,ref:.85,dir:.95}, icon:'compact'},
-    {id:'yaris',   name:'ヤリス',           cat:'コンパクト・HEV', price:'155万〜', base:30, cvr:.022, tool:.25, dealer:.080, eng:.58, pps:4.2,
-     mix:{org:1.0,sem:1.1,dsp:1.05,vid:.85,sns:1.05,crm:1.1,ref:.85,dir:.9}, icon:'compact'},
-    {id:'bz4x',    name:'bZ4X',           cat:'BEV',       price:'550万〜', base:12, cvr:.009, tool:.19, dealer:.045, eng:.61, pps:5.6,
-     mix:{org:.8,sem:1.05,dsp:1.5,vid:1.6,sns:1.25,crm:.8,ref:1.0,dir:.7}, icon:'ev'},
-    {id:'gr86',    name:'GR86',           cat:'スポーツ',    price:'293万〜', base:9,  cvr:.010, tool:.18, dealer:.050, eng:.72, pps:7.2,
-     mix:{org:1.2,sem:.8,dsp:.7,vid:1.0,sns:1.2,crm:.8,ref:1.5,dir:1.2}, icon:'sport'},
   ];
   const NM=MODELS.length;
 
-  /* ---------- マスタ：商材・コンバージョン ---------- */
+  /* ---------- マスタ：商材レンズ・コンバージョン（GA4キーイベント実測・7/22〜8/18） ---------- */
   const GOODS=[
-    {id:'new',    name:'新車',        color:'#3987E5'},
-    {id:'used',   name:'認定中古車',  color:'#D95926'},
-    {id:'kinto',  name:'KINTO',      color:'#199E70'},
-    {id:'service',name:'点検・サービス',color:'#C98500'},
-    {id:'acc',    name:'アクセサリー', color:'#D55181'},
+    {id:'shodan', name:'新車商談',     color:'#3987E5'},
+    {id:'store',  name:'来店・店舗',   color:'#D95926'},
+    {id:'idreg',  name:'会員・ID',     color:'#199E70'},
+    {id:'ec',     name:'EC・購入',     color:'#C98500'},
+    {id:'fb',     name:'サイト改善',   color:'#D55181'},
   ];
+  /* real: GA4実測の28日発生数。mult は生成テンソルの28日合計が real に一致するよう
+     後段 calibrateGoals() で自動決定（value＝1件あたりの想定価値・円） */
   const GOALS=[
-    {id:'estimate', name:'見積りシミュレーション完了', goods:'new',    mult:0.60,  value:8000,  ev:'estimate_complete'},
-    {id:'testdrive',name:'試乗予約',                goods:'new',    mult:0.093, value:25000, ev:'test_drive_reserve'},
-    {id:'visit',    name:'来店予約',                goods:'new',    mult:0.063, value:22000, ev:'dealer_visit_reserve'},
-    {id:'catalog',  name:'WEBカタログ閲覧完了',      goods:'new',    mult:0.32,  value:1500,  ev:'catalog_view_complete'},
-    {id:'kinto',    name:'KINTO 申込・見積り',      goods:'kinto',  mult:0.033, value:18000, ev:'kinto_apply'},
-    {id:'used',     name:'中古車 在庫問合せ',        goods:'used',   mult:0.057, value:9000,  ev:'used_stock_inquiry'},
-    {id:'service',  name:'点検・サービス予約',       goods:'service',mult:0.21,  value:4500,  ev:'service_reserve'},
-    {id:'acc',      name:'アクセサリー購入',         goods:'acc',    mult:0.024, value:6000,  ev:'acc_purchase'},
+    {id:'estimate', name:'見積りシミュレーション完了', goods:'shodan', mult:1, real:393556, value:8000,  ev:'estimate_simulation_complete'},
+    {id:'testdrive',name:'試乗予約',                goods:'shodan', mult:1, real:2429,   value:25000, ev:'test_drive_complete（通常+即時）'},
+    {id:'consult',  name:'商談・購入相談予約',        goods:'shodan', mult:1, real:775,    value:30000, ev:'purchase_consultation'},
+    {id:'lead',     name:'リード獲得',              goods:'shodan', mult:1, real:3209,   value:15000, ev:'lead'},
+    {id:'dealer',   name:'販売店検索',              goods:'store',  mult:1, real:79579,  value:3000,  ev:'dealer_search'},
+    {id:'tel',      name:'電話発信タップ',           goods:'store',  mult:1, real:7559,   value:12000, ev:'tel'},
+    {id:'signup',   name:'TOYOTAアカウント登録',     goods:'idreg',  mult:1, real:161185, value:2500,  ev:'sign_up'},
+    {id:'purchase', name:'購入手続き完了',           goods:'ec',     mult:1, real:2960,   value:20000, ev:'purchase'},
+    {id:'improve',  name:'サイト改善フィードバック',  goods:'fb',     mult:1, real:5104,   value:300,   ev:'jp_improvement'},
   ];
-  /* ゴール×チャネル係数（メールはサービス系に強い等） */
+  /* ゴール×チャネル係数（チャネル別の出やすさ・実測合計に整合する推定按分） */
   const GOAL_CH={
     estimate:{org:1.15,sem:1.25,dsp:.45,vid:.55,sns:.7,crm:1.1,ref:.9,dir:1.15},
     testdrive:{org:1.1,sem:1.2,dsp:.5,vid:.65,sns:.8,crm:1.15,ref:.85,dir:1.2},
-    visit:{org:1.1,sem:1.15,dsp:.5,vid:.6,sns:.75,crm:1.3,ref:.85,dir:1.25},
-    catalog:{org:1.05,sem:1.1,dsp:.8,vid:.9,sns:1.0,crm:.9,ref:1.0,dir:.95},
-    kinto:{org:.85,sem:1.1,dsp:.9,vid:1.15,sns:2.6,crm:.85,ref:1.0,dir:.75},
-    used:{org:1.2,sem:1.15,dsp:.6,vid:.5,sns:.7,crm:.9,ref:1.1,dir:1.0},
-    service:{org:.55,sem:.30,dsp:.15,vid:.15,sns:.25,crm:8.5,dir:1.2,ref:.35},
-    acc:{org:1.0,sem:.9,dsp:.7,vid:.7,sns:1.2,crm:1.6,ref:.9,dir:1.1},
+    consult:{org:1.1,sem:1.15,dsp:.5,vid:.6,sns:.75,crm:1.3,ref:.85,dir:1.25},
+    lead:{org:1.05,sem:1.2,dsp:.6,vid:.7,sns:.9,crm:1.1,ref:.9,dir:1.1},
+    dealer:{org:1.1,sem:1.1,dsp:.5,vid:.6,sns:.8,crm:1.0,ref:.85,dir:1.2},
+    tel:{org:1.05,sem:1.1,dsp:.4,vid:.5,sns:.7,crm:1.0,ref:.8,dir:1.35},
+    signup:{org:.9,sem:.9,dsp:.7,vid:.8,sns:1.1,crm:1.5,ref:1.1,dir:1.3},
+    purchase:{org:.9,sem:.8,dsp:.5,vid:.5,sns:.8,crm:2.2,ref:.9,dir:1.4},
+    improve:{org:1.0,sem:1.0,dsp:.8,vid:.8,sns:1.0,crm:1.0,ref:1.0,dir:1.0},
   };
-  /* 再訪/新規のCV倍率（再訪÷新規） */
-  const GOAL_RET_RATIO={estimate:3.0,testdrive:3.4,visit:3.6,catalog:1.8,kinto:2.6,used:2.4,service:5.5,acc:2.8};
-  /* 車種ごとの商材関心シェア（セッション帰属・合計1） */
+  /* 再訪/新規のCV倍率（再訪÷新規・推定） */
+  const GOAL_RET_RATIO={estimate:3.0,testdrive:3.4,consult:3.6,lead:2.8,dealer:2.2,tel:2.6,signup:1.4,purchase:4.5,improve:1.6};
+  /* 車種ごとの商材レンズ関心シェア（セッション帰属・合計1・推定按分） */
   function goodsShare(m){
-    let s={new:.62,used:.10,kinto:.09,service:.13,acc:.06};
-    if(m.id==='landcruiser'){s={new:.55,used:.20,kinto:.05,service:.13,acc:.07}}
-    if(m.id==='alphard'){s={new:.58,used:.15,kinto:.08,service:.12,acc:.07}}
-    if(m.cat==='コンパクト・HEV'){s={new:.58,used:.11,kinto:.12,service:.14,acc:.05}}
-    if(m.id==='bz4x'){s={new:.60,used:.04,kinto:.22,service:.09,acc:.05}}
-    if(m.id==='gr86'){s={new:.52,used:.22,kinto:.06,service:.10,acc:.10}}
-    if(m.id==='sienta'||m.id==='voxy'||m.id==='noah'){s={new:.60,used:.10,kinto:.12,service:.12,acc:.06}}
+    let s={shodan:.56,store:.16,idreg:.18,ec:.05,fb:.05};
+    if(m.id==='landcruiser300'||m.id==='landcruiser250'||m.id==='landcruiserfj'){s={shodan:.60,store:.14,idreg:.16,ec:.05,fb:.05}}
+    if(m.id==='alphard'){s={shodan:.58,store:.15,idreg:.17,ec:.05,fb:.05}}
+    if(m.cat==='コンパクト・HEV'){s={shodan:.54,store:.17,idreg:.19,ec:.05,fb:.05}}
+    if(m.id==='sienta'||m.id==='voxy'||m.id==='noah'){s={shodan:.56,store:.16,idreg:.18,ec:.05,fb:.05}}
     return s;
   }
-  /* サービス予約は保有台数の多い車種で高い（cvr補正） */
-  const SERVICE_W={corolla:2.6,prius:2.2,aqua:2.4,yaris:1.9,sienta:1.5,voxy:1.4,noah:1.3,alphard:1.1,harrier:1.0,rav4:.9,landcruiser:.8,crown:.9,bz4x:.4,gr86:.5};
 
   /* ---------- マスタ：アフィニティ／ステージ／エリア ---------- */
   const AFFINITY=[
@@ -134,12 +143,11 @@ const GA = (() => {
     const boost=(k,v)=>{t[k]*=v};
     if(m.cat==='ミニバン'){boost('family',1.8);boost('travel',1.2);boost('car',.75);boost('biz',.7)}
     if(m.cat==='SUV'){boost('outdoor',1.7);boost('car',1.15);boost('travel',1.15)}
-    if(m.id==='landcruiser'){boost('outdoor',1.4);boost('car',1.3);boost('biz',1.1)}
-    if(m.cat==='セダン・ワゴン'){boost('biz',1.5)}
-    if(m.id==='crown'){boost('biz',1.9);boost('car',1.2);boost('family',.6)}
+    if(m.id==='landcruiser300'||m.id==='landcruiser250'||m.id==='landcruiser70'){boost('outdoor',1.4);boost('car',1.3);boost('biz',1.1)}
+    if(m.id==='landcruiserfj'){boost('outdoor',1.6);boost('car',1.4);boost('tech',1.1)}
+    if(m.id==='alphard'){boost('biz',1.5)}
     if(m.cat==='コンパクト・HEV'){boost('eco',1.5);boost('family',1.1)}
-    if(m.id==='bz4x'){boost('tech',2.1);boost('eco',1.9);boost('family',.7)}
-    if(m.id==='gr86'){boost('car',2.6);boost('sports',1.5);boost('family',.4)}
+    if(m.id==='raize'||m.id==='yariscross'){boost('eco',1.15);boost('family',1.15)}
     const sum=Object.values(t).reduce((a,b)=>a+b,0);
     Object.keys(t).forEach(k=>t[k]/=sum);
     return t;
@@ -161,10 +169,9 @@ const GA = (() => {
     {id:'kinki',name:'近畿'},{id:'chushi',name:'中国・四国'},{id:'kyushu',name:'九州・沖縄'},
   ];
   function areaShare(m){
-    const t={hokkaido:.09,kanto:.35,chubu:.17,kinki:.19,chushi:.09,kyushu:.11};
-    if(m.id==='landcruiser'){t.chubu*=1.2;t.kyushu*=1.25;t.hokkaido*=1.3;t.kanto*=.85}
-    if(m.id==='crown'){t.kanto*=1.12;t.chubu*=1.1}
-    if(m.id==='bz4x'){t.kanto*=1.25;t.kinki*=1.05;t.chushi*=.8;t.hokkaido*=.7}
+    /* ベース＝GA4実測の都道府県セッションを6エリアに集約（7/22〜8/18） */
+    const t={hokkaido:.1254,kanto:.3921,chubu:.1710,kinki:.1495,chushi:.1078,kyushu:.0543};
+    if(m.id==='landcruiser300'||m.id==='landcruiser250'||m.id==='landcruiserfj'){t.chubu*=1.15;t.kyushu*=1.2;t.hokkaido*=1.2;t.kanto*=.9}
     if(m.cat==='ミニバン'){t.kanto*=1.02;t.kyushu*=1.05}
     const s=Object.values(t).reduce((a,b)=>a+b,0);Object.keys(t).forEach(k=>t[k]/=s);
     return t;
@@ -184,27 +191,30 @@ const GA = (() => {
 
   /* ---------- デバイス・デモグラ ---------- */
   const DEVICES=[{id:'mob',name:'モバイル'},{id:'pc',name:'PC'},{id:'tab',name:'タブレット'}];
-  const DEV_CH={org:[.71,.25,.04],sem:[.74,.22,.04],dsp:[.80,.16,.04],vid:[.83,.13,.04],sns:[.88,.09,.03],crm:[.76,.20,.04],ref:[.62,.34,.04],dir:[.58,.37,.05]};
+  /* 実測デバイス比（7/22〜8/18）: mobile 76.2% / desktop 22.5% / tablet 1.3%。
+     チャネル別の傾斜は推定・全体は実測比に整合 */
+  const DEV_CH={org:[.78,.205,.015],sem:[.80,.187,.013],dsp:[.86,.128,.012],vid:[.85,.138,.012],sns:[.90,.09,.01],crm:[.82,.168,.012],ref:[.66,.328,.012],dir:[.755,.230,.015]};
   const AGES=['18-24','25-34','35-44','45-54','55-64','65+'];
   function ageGender(m){ // [male share by age…, female share by age…] 合計1
-    let male=[.04,.12,.16,.15,.11,.08], female=[.03,.08,.09,.07,.04,.03];
-    if(m.cat==='ミニバン'){male=[.03,.14,.19,.13,.07,.04];female=[.03,.13,.13,.07,.03,.01]}
-    if(m.id==='crown'||m.id==='landcruiser'){male=[.02,.08,.14,.19,.16,.12];female=[.01,.04,.07,.08,.05,.04]}
-    if(m.id==='gr86'){male=[.09,.19,.18,.14,.10,.05];female=[.03,.07,.07,.05,.02,.01]}
-    if(m.id==='aqua'||m.id==='yaris'){male=[.05,.10,.12,.12,.11,.10];female=[.04,.08,.10,.09,.05,.04]}
-    if(m.id==='bz4x'){male=[.03,.14,.20,.17,.11,.06];female=[.02,.08,.09,.06,.03,.01]}
+    /* ベース＝GA4実測（Googleシグナル取得分・7/22〜8/18）：
+       男性 9.3/19.0/18.6/14.6/7.0/3.9% ・ 女性 3.2/7.5/8.5/4.6/2.3/1.6% */
+    let male=[.0930,.1896,.1858,.1464,.0698,.0390], female=[.0315,.0746,.0852,.0464,.0228,.0159];
+    if(m.cat==='ミニバン'){male=[.07,.21,.21,.13,.06,.03];female=[.03,.10,.10,.04,.02,.01]}
+    if(m.id==='landcruiser300'||m.id==='landcruiser250'||m.id==='landcruiserfj'){male=[.05,.15,.19,.19,.11,.06];female=[.02,.05,.07,.06,.03,.02]}
+    if(m.id==='aqua'||m.id==='raize'){male=[.08,.16,.16,.14,.09,.06];female=[.04,.09,.10,.06,.03,.02]}
     const s=[...male,...female].reduce((a,b)=>a+b,0);
     return {male:male.map(v=>v/s), female:female.map(v=>v/s)};
   }
 
-  /* ---------- イベント（スパイク） ---------- */
+  /* ---------- イベント（スパイク・GA4実測の実発生日） ----------
+     日付・規模＝実測日次セッションから検出した実スパイク（要因ラベルは中立表記）。
+     日次合計は後段で実測値に較正されるため amp/dur は形状の初期値。 */
   const EVENTS=[
-    {date:'2026-05-03',model:null,      amp:1.10,dur:4, label:'GW連休'},
-    {date:'2026-06-26',model:'gr86',    amp:2.4, dur:7, label:'GR86 限定車抽選 受付開始'},
-    {date:'2026-07-01',model:'harrier', amp:1.9, dur:10,label:'ハリアー 特別仕様車 発表'},
-    {date:'2026-07-17',model:'alphard', amp:1.8, dur:12,label:'アルファード 一部改良 発表'},
-    {date:'2026-08-01',model:'crown',   amp:1.7, dur:10,label:'クラウン 一部改良 発表'},
-    {date:'2026-08-07',model:'bz4x',    amp:2.2, dur:42,label:'bZ4X サマーキャンペーン 開始'},
+    {date:'2026-02-19',model:null, amp:1.30,dur:7, label:'アクセス増加期 ①（実測 78〜82万S/日）'},
+    {date:'2026-04-10',model:null, amp:1.45,dur:3, label:'アクセス急増 ②（実測 峰64.6万S/日）'},
+    {date:'2026-05-14',model:null, amp:1.75,dur:4, label:'アクセス急増 ③（実測 峰86.5万S/日・期間最大）'},
+    {date:'2026-07-25',model:null, amp:1.24,dur:2, label:'週末アクセス増 ④（実測 峰42万S/日）'},
+    {date:'2026-08-01',model:null, amp:1.20,dur:3, label:'月初アクセス増 ⑤（実測 峰41.9万S/日）'},
   ];
   const WD=[1.16,.94,.90,.92,.94,1.00,1.22]; // 日〜土
   /* CV日次ノイズ（決定論・セグメント間で共通のため合計整合は維持される） */
@@ -254,15 +264,69 @@ const GA = (() => {
       row.push(cells);
     }
     S.push(row);
-    // 車種ページ以外（TOP・企業情報・サポート等）
+    // 車種ページ以外（見積り・T-Connect・マイページ・TOP・サポート等）
+    // 係数2.31 → 車種ページ群シェアが実測 29.5%（車種ライン別ページ実測合計 285.8万S/28日）に一致
     const oc=[];
     for(let c=0;c<NC;c++){
       const modelSum=row.reduce((a,r)=>a+r[c],0);
       const f={org:.95,sem:.30,dsp:.55,vid:.60,sns:.65,crm:1.45,ref:1.15,dir:1.35}[CHANNELS[c].id];
-      oc.push(modelSum*f*.52*(1+jit(.05)));
+      oc.push(modelSum*f*2.31*(1+jit(.05)));
     }
     OTHER.push(oc);
   }
+
+  /* ========== 実測キャリブレーション（GA4: toyota.jp 324699885 / 2026-08-19 Windsor.ai経由取得） ========== */
+  /* REAL_DAILY[d] = [sessions, totalUsers, newUsers]  2026-01-31〜2026-08-18 の200日・GA4実測値 */
+  const REAL_DAILY=[[592730,466769,224047],[657658,523435,260892],[566364,475723,234716],[664960,541037,246490],[617726,521731,246718],[576288,491115,241802],[589731,489542,243500],[679211,538931,273933],[662241,545047,268927],[536161,448615,219714],[528896,433088,218491],[625437,505542,258106],[606625,480455,224531],[633969,515535,275139],[727266,588581,327080],[766740,619774,344040],[639268,535779,305988],[614789,514520,289334],[668040,576372,326627],[822129,681550,400969],[784674,670496,369210],[823163,667744,366460],[798116,676422,373262],[753239,645657,354811],[771952,634580,338784],[764944,648484,345646],[675019,548454,279191],[628915,539386,267914],[688632,566920,290065],[676068,553707,287783],[655811,579269,314184],[684844,600092,331446],[674958,568200,305367],[671493,570406,305023],[640055,539937,279109],[690109,586634,313020],[720781,597969,321586],[643299,536161,277867],[710438,602283,333590],[681029,562098,302996],[642561,549726,275158],[546359,454965,222262],[547800,450404,221827],[543879,441574,218659],[482565,399826,192655],[441497,370234,174106],[455323,370248,171046],[445859,363388,162657],[487596,388209,185426],[479233,393629,188968],[513633,420198,200466],[470912,387804,169516],[415767,348536,158487],[433203,349163,161424],[458238,375098,171203],[440723,359203,163944],[489212,397872,189887],[506199,413598,201436],[414126,342987,158933],[413388,334999,152509],[410954,334620,146466],[502327,413366,200931],[494621,409538,185257],[542613,430864,200704],[520041,411968,193497],[427905,353548,160083],[440921,356555,157193],[412849,341137,151410],[434244,356976,159898],[637061,483431,221140],[646193,490488,222261],[608433,479312,217236],[506695,423041,175317],[532193,416374,166563],[593651,475018,191027],[553512,442075,187554],[513367,407576,191401],[582002,454652,214654],[593603,474793,230242],[460777,391922,183795],[466102,384238,183071],[479709,388719,183143],[467685,388030,180776],[472203,385798,180234],[559563,437530,212364],[577522,455887,224470],[484931,396098,191843],[440101,360029,170649],[476449,385581,186139],[439670,354900,171329],[423516,348575,171875],[404390,338150,166562],[409383,339505,181242],[403222,334775,170173],[386314,325006,166525],[431414,360967,180325],[479349,388769,183573],[502732,404151,190703],[555078,435015,206014],[536676,429485,203282],[448391,375552,176577],[516160,425267,209501],[560583,447125,211794],[865187,660225,333066],[753307,599954,290850],[707515,551541,268873],[703864,545622,260880],[552821,454561,222892],[535853,447811,218801],[524803,424730,198206],[547329,449670,214844],[554135,446721,204072],[631604,488816,234249],[659220,520934,245766],[498387,415738,192864],[458865,389737,182674],[584625,476560,235643],[573581,471271,235781],[433032,351311,158768],[446658,355193,165139],[430936,347394,158032],[374083,303554,137009],[349789,286291,129098],[450201,356632,162349],[400481,331762,145877],[384744,320287,143911],[432570,354579,168221],[469352,364521,174267],[331496,270967,116445],[308101,254483,104894],[333021,267124,112594],[338159,268900,119566],[333588,271524,117907],[398014,315087,145573],[413203,324631,151940],[308739,255599,115469],[301268,251168,112171],[334778,271855,118567],[350229,285497,129558],[337148,278553,113898],[405224,326347,147825],[414148,322307,147224],[338546,277591,128956],[331150,271804,121184],[368496,296650,124431],[353646,292264,129820],[324039,264890,112392],[402974,314137,139335],[419277,324738,142453],[303415,257461,107562],[282214,229525,99640],[415162,333874,145810],[394879,316462,134782],[359314,294772,121684],[409246,322577,143460],[426668,340446,150766],[336129,274785,118463],[306747,257421,109625],[335928,274060,113600],[342336,274361,114788],[340733,272903,114709],[395653,307944,136800],[415798,326366,143943],[336356,273078,120316],[329236,260406,114278],[344474,278168,117164],[338095,273243,117204],[334074,271268,116375],[398745,302899,136148],[409253,320500,146069],[357080,286604,125891],[314551,261794,113348],[366511,289442,116876],[356926,288287,116552],[335402,270615,115146],[420440,324071,143340],[411293,323757,146400],[336563,271683,118334],[296136,244931,102932],[307721,249185,105828],[327969,262900,109778],[336396,270935,115029],[390692,309510,136757],[418714,331843,146446],[390661,298147,128963],[371067,293607,127277],[345173,282611,120360],[358328,280869,121120],[347910,279419,119719],[387981,306222,139416],[389902,315169,146982],[319744,260232,122588],[316761,255739,122553],[305131,252998,123290],[295473,251159,126879],[286956,248597,125498],[300852,242778,118837],[304939,249554,121710],[332354,270550,126563],[324805,271145,125173]];
+  (function calibrate(){
+    if(REAL_DAILY.length!==NDAYS) return;
+    // (a) チャネル構成を実測シェアへ（直近28日の現行構成→実測構成の係数を全期間に適用）
+    const target=CHANNELS.map(c=>c.share);
+    const cur=new Array(NC).fill(0);
+    for(let d=NDAYS-28;d<NDAYS;d++){
+      for(let c=0;c<NC;c++){
+        for(let mi=0;mi<NM;mi++)cur[c]+=S[d][mi][c];
+        cur[c]+=OTHER[d][c];
+      }
+    }
+    const tot=cur.reduce((a,b)=>a+b,0);
+    const cAdj=target.map((t,c)=>t/Math.max(1e-9,cur[c]/tot));
+    for(let d=0;d<NDAYS;d++)for(let c=0;c<NC;c++){
+      for(let mi=0;mi<NM;mi++)S[d][mi][c]*=cAdj[c];
+      OTHER[d][c]*=cAdj[c];
+    }
+    // (b) 日次合計を実測セッションへ
+    for(let d=0;d<NDAYS;d++){
+      let curD=0;
+      for(let mi=0;mi<NM;mi++)for(let c=0;c<NC;c++)curD+=S[d][mi][c];
+      for(let c=0;c<NC;c++)curD+=OTHER[d][c];
+      const k=REAL_DAILY[d][0]/Math.max(1,curD);
+      for(let mi=0;mi<NM;mi++)for(let c=0;c<NC;c++)S[d][mi][c]*=k;
+      for(let c=0;c<NC;c++)OTHER[d][c]*=k;
+    }
+    // (c) CVイベント量を実測へ：mult を「生成28日合計 = GA4実測28日」となるよう決定
+    GOALS.forEach(g=>{
+      let raw=0;
+      for(let d=NDAYS-28;d<NDAYS;d++)for(let mi=0;mi<NM;mi++){
+        const m=MODELS[mi];
+        for(let c=0;c<NC;c++)raw+=S[d][mi][c]*m.cvr*(GOAL_CH[g.id][CHANNELS[c].id]||1)*DN[g.id][d];
+      }
+      g.mult=g.real/Math.max(1e-9,raw);
+    });
+  })();
+  /* PV・エンゲージ率・平均滞在の較正係数（直近28日実測に一致させる） */
+  const CAL={pvps:3.3146, eng:0.6682, dur:265.21};   // GA4実測（7/22〜8/18）
+  const CALF=(function(){
+    let mSess=0,oSess=0,pvRaw=0,engRaw=0,durRaw=0;
+    for(let d=NDAYS-28;d<NDAYS;d++){
+      for(let mi=0;mi<NM;mi++){let s=0;for(let c=0;c<NC;c++)s+=S[d][mi][c];
+        mSess+=s;pvRaw+=s*MODELS[mi].pps;engRaw+=s*MODELS[mi].eng;durRaw+=s*(52+MODELS[mi].pps*21)}
+      for(let c=0;c<NC;c++)oSess+=OTHER[d][c];
+    }
+    pvRaw+=oSess*2.1;
+    const sess=mSess+oSess;
+    return {pv:CAL.pvps*sess/Math.max(1,pvRaw), eng:CAL.eng/(engRaw/Math.max(1,mSess)), dur:CAL.dur/(durRaw/Math.max(1,mSess))};
+  })();
 
   /* ---------- セグメント係数 ---------- */
   function segShare(seg,c){ // セッションに掛ける割合
@@ -300,8 +364,7 @@ const GA = (() => {
             byModel[mi].sessions+=s; byModel[mi].byChannel[c]+=s; byChannel[c]+=s;
             daySess+=s; dayCh[c]+=s; mDay+=s;
             for(const g of GOALS){
-              let rate=m.cvr*g.mult*(GOAL_CH[g.id][CHANNELS[c].id]||1);
-              if(g.id==='service') rate=m.cvr*g.mult*(GOAL_CH.service[CHANNELS[c].id]||1)*(SERVICE_W[m.id]||1)*.55;
+              const rate=m.cvr*g.mult*(GOAL_CH[g.id][CHANNELS[c].id]||1);
               const cv=s0*rate*segCvFactor(seg,g.id,c)*DN[g.id][d];
               byModel[mi].cv[g.id]+=cv; byModel[mi].cvByChannel[g.id][c]+=cv; dayCv+=cv;
             }
@@ -328,18 +391,18 @@ const GA = (() => {
       const cvByGoal={}; GOALS.forEach(g=>cvByGoal[g.id]=X.byModel.reduce((a,b)=>a+b.cv[g.id],0));
       const cv=Object.values(cvByGoal).reduce((a,b)=>a+b,0);
       const value=GOALS.reduce((a,g)=>a+cvByGoal[g.id]*g.value,0);
-      // ユーザー数はセッション÷頻度係数（範囲が長いほど重複が増える）
-      const freq= range<=7?1.32: range<=28?1.78:2.45;
+      // ユーザー数はセッション÷頻度係数＝GA4実測（期間セッション÷期間ユニークユーザー）
+      const freq= range<=7?1.4289: range<=28?1.7765:1.9735;
       const users=sessions/freq;
       const nsAll=CHANNELS.reduce((a,c,i)=>a+(X.byChannel[i]+X.otherByChannel[i])*(seg==='all'?c.newShare:seg==='new'?1:0),0);
       const newRate= sessions? nsAll/sessions:0;
-      const pv=X.byModel.reduce((a,b,i)=>a+b.sessions*MODELS[i].pps,0)+X.other*2.1;
+      const pv=(X.byModel.reduce((a,b,i)=>a+b.sessions*MODELS[i].pps,0)+X.other*2.1)*CALF.pv;  // ×較正 → 実測 PV/S 3.315（GA4 28日）
       return {sessions,users,newRate,cv,cvByGoal,value,pv,modelSessions};
     }
     const T=totals(A), TP=totals(P);
-    // エンゲージメント（車種加重）
-    const engRate=A.byModel.reduce((a,b,i)=>a+MODELS[i].eng*b.sessions,0)/Math.max(1,T.modelSessions)*(seg==='ret'?1.08:seg==='new'?0.94:1);
-    const avgDur=A.byModel.reduce((a,b,i)=>a+(52+MODELS[i].pps*21)*b.sessions,0)/Math.max(1,T.modelSessions);
+    // エンゲージメント（車種加重・×較正 → 実測 66.8%／平均265秒＝GA4 28日）
+    const engRate=A.byModel.reduce((a,b,i)=>a+MODELS[i].eng*b.sessions,0)/Math.max(1,T.modelSessions)*(seg==='ret'?1.08:seg==='new'?0.94:1)*CALF.eng;
+    const avgDur=A.byModel.reduce((a,b,i)=>a+(52+MODELS[i].pps*21)*b.sessions,0)/Math.max(1,T.modelSessions)*CALF.dur;
 
     /* 車種オブジェクト */
     const models=MODELS.map((m,mi)=>{
@@ -477,12 +540,12 @@ const GA = (() => {
   function sankey(range,seg){
     const A=agg(range,seg);
     const chSess=A.channels.map(c=>c.sessions);
-    const LP=['車種トップ','キャンペーンLP','サイトトップ','販売店検索','KINTO・中古車'];
+    const LP=['車種ページ','見積り・T-Connect系','サイトトップ','販売店検索','マイページ・会員'];
     const LP_MIX={org:[.46,.05,.30,.09,.10],sem:[.50,.16,.14,.10,.10],dsp:[.24,.58,.10,.03,.05],vid:[.28,.54,.10,.03,.05],
       sns:[.30,.44,.12,.04,.10],crm:[.26,.16,.30,.14,.14],ref:[.38,.10,.34,.08,.10],dir:[.30,.04,.48,.10,.08]};
     const MID=['グレード・価格','見積りシミュレーター','車種比較・ギャラリー','販売店・在庫検索','離脱（回遊なし）'];
     const LP_MID=[[.26,.16,.22,.10,.26],[.20,.22,.18,.08,.32],[.14,.08,.16,.12,.50],[.10,.10,.06,.52,.22],[.16,.30,.10,.16,.28]];
-    const OUT=['見積り完了','試乗・来店予約','KINTO・中古車CV','サービス予約','未CVで離脱'];
+    const OUT=['見積り完了','試乗・商談・リード','アカウント登録','店舗・購入ほか','未CVで離脱'];
     const links=[],nodes=[];
     const nodeIdx={}; const addNode=n=>{if(nodeIdx[n]==null){nodeIdx[n]=nodes.length;nodes.push({name:n})}return nodeIdx[n]};
     const lpTotals=new Array(LP.length).fill(0);
@@ -500,11 +563,11 @@ const GA = (() => {
         links.push({source:addNode(lp),target:addNode(md),value:v});
       });
     });
-    // 成果ノード：実CVに厳密整合
-    const cvEst=A.total.cvByGoal.estimate+A.total.cvByGoal.catalog;
-    const cvVisit=A.total.cvByGoal.testdrive+A.total.cvByGoal.visit;
-    const cvKU=A.total.cvByGoal.kinto+A.total.cvByGoal.used;
-    const cvSrv=A.total.cvByGoal.service+A.total.cvByGoal.acc;
+    // 成果ノード：実CVに厳密整合（GA4キーイベント9種を4束に集約）
+    const cvEst=A.total.cvByGoal.estimate;
+    const cvVisit=A.total.cvByGoal.testdrive+A.total.cvByGoal.consult+A.total.cvByGoal.lead;
+    const cvKU=A.total.cvByGoal.signup;
+    const cvSrv=A.total.cvByGoal.dealer+A.total.cvByGoal.tel+A.total.cvByGoal.purchase+A.total.cvByGoal.improve;
     const outVals=[cvEst,cvVisit,cvKU,cvSrv];
     const midSum=midTotals.reduce((a,b)=>a+b,0);
     const cvSum=outVals.reduce((a,b)=>a+b,0);
@@ -534,7 +597,7 @@ const GA = (() => {
       {name:'STAGE 2｜車種ページ閲覧', v:s2, desc:'いずれかの車種を閲覧'},
       {name:'STAGE 3｜検討ツール利用', v:s3, desc:'見積り・比較・シミュレーター'},
       {name:'STAGE 4｜販売店コンタクト', v:s4, desc:'販売店検索・店舗ページ'},
-      {name:'CLEAR｜コンバージョン',   v:s5, desc:'8種のCV合計'},
+      {name:'CLEAR｜コンバージョン',   v:s5, desc:'9種のキーイベント合計（GA4実測）'},
     ];
   }
 
@@ -574,80 +637,66 @@ const GA = (() => {
       idx: (cv[ai]/Math.max(1,sess[ai]))/(totC/totS)*100 }));
   }
 
-  /* ---------- キャンペーン（広告トラッキング） ---------- */
+  /* ---------- キャンペーン（GA4 utm_campaign 実測・7/22〜8/18） ----------
+     sessions＝GA4実測。CV＝チャネル平均CVRからの推定按分（広告費・媒体レポートは未連携のため非表示） */
   const CAMPAIGNS=[
-    {id:'brand_go', name:'指名検索 常時運用',        ch:'sem', src:'google', med:'cpc',  utm:'always-on_brand',       from:'2026-02-01',to:'2026-08-18', share:.34, cpc:38,  q:1.35, goal:'estimate'},
-    {id:'gen_go',   name:'一般KW 常時運用',          ch:'sem', src:'google', med:'cpc',  utm:'always-on_generic',     from:'2026-02-01',to:'2026-08-18', share:.27, cpc:95,  q:0.85, goal:'estimate'},
-    {id:'brand_yh', name:'Yahoo!検索 指名',          ch:'sem', src:'yahoo',  med:'cpc',  utm:'always-on_brand-y',     from:'2026-02-01',to:'2026-08-18', share:.18, cpc:41,  q:1.22, goal:'estimate'},
-    {id:'alp_dsp',  name:'アルファード改良 告知',     ch:'dsp', src:'dv360',  med:'display',utm:'alphard_mc_202607',   from:'2026-07-17',to:'2026-08-31', share:.30, cpc:52,  q:1.10, goal:'catalog', model:'alphard'},
-    {id:'har_dsp',  name:'ハリアー特別仕様 告知',     ch:'dsp', src:'yda',    med:'display',utm:'harrier_sp_202607',   from:'2026-07-01',to:'2026-08-15', share:.24, cpc:49,  q:1.05, goal:'catalog', model:'harrier'},
-    {id:'bz_dsp',   name:'bZ4X サマー ディスプレイ',  ch:'dsp', src:'gdn',    med:'display',utm:'bz4x_summer_202608',  from:'2026-08-07',to:'2026-08-18', share:.22, cpc:55,  q:0.92, goal:'estimate', model:'bz4x'},
-    {id:'crown_tver',name:'クラウン改良 TVer',        ch:'vid', src:'tver',   med:'video', utm:'crown_mc_202608',      from:'2026-08-01',to:'2026-08-18', share:.30, cpc:64,  q:1.02, goal:'catalog', model:'crown'},
-    {id:'bz_yt',    name:'bZ4X サマー YouTube',      ch:'vid', src:'youtube',med:'video', utm:'bz4x_summer_202608',   from:'2026-08-07',to:'2026-08-18', share:.34, cpc:58,  q:0.96, goal:'estimate', model:'bz4x'},
-    {id:'kinto_meta',name:'KINTO 夏の乗り換え',       ch:'sns', src:'meta',   med:'paid_social',utm:'kinto_summer_2026',from:'2026-07-01',to:'2026-08-18', share:.36, cpc:72,  q:1.18, goal:'kinto'},
-    {id:'sienta_line',name:'シエンタ ファミリー訴求',  ch:'sns', src:'line',   med:'paid_social',utm:'sienta_family_2026',from:'2026-07-01',to:'2026-08-18',share:.28, cpc:66,  q:1.08, goal:'testdrive', model:'sienta'},
-    {id:'gr86_x',   name:'GR86 抽選告知',            ch:'sns', src:'x',      med:'paid_social',utm:'gr86_lottery_202606',from:'2026-06-20',to:'2026-07-10',share:.18, cpc:60,  q:0.90, goal:'catalog', model:'gr86'},
-    {id:'after_crm',name:'点検・入庫促進（CRM）',     ch:'crm', src:'crm',    med:'email', utm:'aftersales_202608',    from:'2026-08-01',to:'2026-08-18', share:.44, cpc:0,   q:1.60, goal:'service'},
+    {id:'toyou',    name:'toyou ブランド訴求（常時）',        ch:'dsp', utm:'toyou_brand_2606_tq',        real:486980, since:'2026-06', active:true},
+    {id:'smc',      name:'smc 常時計測タグ',                 ch:'dir', utm:'smc_2305_tqa',               real:85230,  since:'2023-05', active:true},
+    {id:'tt2607',   name:'トヨタイムズ ブランド（7月）',       ch:'sem', utm:'toyotatimes_brand_2607_tq',  real:77536,  since:'2026-07', active:false},
+    {id:'crown',    name:'クラウンシリーズ 販売促進',          ch:'dsp', utm:'crownseries_sales_2604_tq',  real:28878,  since:'2026-04', active:true},
+    {id:'pdf',      name:'PDF資料からの誘導',                ch:'crm', utm:'pdf_doc',                    real:21267,  since:'常時',    active:true},
+    {id:'tt2608',   name:'トヨタイムズ ブランド（8月）',       ch:'sem', utm:'toyotatimes_brand_2608_tq',  real:19794,  since:'2026-08', active:true},
+    {id:'tacct',    name:'TOYOTAアカウント経由',             ch:'dir', utm:'toyotaaccount',              real:19702,  since:'常時',    active:true},
+    {id:'alp_mmc',  name:'アルファード 一部改良 告知',         ch:'sns', utm:'alphard_mmc_2606_tq',        real:16163,  since:'2026-06', active:true, model:'alphard'},
+    {id:'ml2608',   name:'マンスリーメール 8月号',            ch:'crm', utm:'monthly260807_always_2608_dp',real:6863,  since:'2026-08', active:true},
+    {id:'tgram',    name:'トヨタグラム ブランド',             ch:'dsp', utm:'toyotagram_brand_2602_tq',   real:6039,   since:'2026-02', active:true},
+    {id:'ml2607',   name:'マンスリーメール 7月号',            ch:'crm', utm:'monthly260731_always_2607_dp',real:5608,  since:'2026-07', active:false},
+    {id:'welcab',   name:'ウェルキャブ・C+walks 常時',        ch:'sem', utm:'welcab-cwalks_always_2204_tq',real:4991,  since:'2022-04', active:true},
+    {id:'meta_id',  name:'SNS広告（ID管理キャンペーン）',      ch:'sns', utm:'120252578260050729',         real:3852,   since:'—',       active:true},
   ];
   function campaigns(range){
     const A=agg(range,'all');
     const chIdx=Object.fromEntries(CHANNELS.map((c,i)=>[c.id,i]));
+    // 28日実測を基準に、選択期間のチャネル実測比でスケール
+    const A28=agg(28,'all');
     return CAMPAIGNS.map(cp=>{
-      const w={a:Math.max(NDAYS-range,IDX[cp.from]??0), b:Math.min(NDAYS-1,IDX[cp.to]??NDAYS-1)};
-      let sess=0;
-      if(w.a<=w.b){
-        for(let d=w.a;d<=w.b;d++){
-          let chSum=0;
-          for(let mi=0;mi<NM;mi++)chSum+=S[d][mi][chIdx[cp.ch]];
-          chSum+=OTHER[d][chIdx[cp.ch]];
-          // 車種指定キャンペーンはその車種の伸びに連動
-          if(cp.model){
-            const mi=MODELS.findIndex(m=>m.id===cp.model);
-            sess+=S[d][mi][chIdx[cp.ch]]*2.6*cp.share;
-          }else{
-            sess+=chSum*cp.share;
-          }
-        }
-      }
-      const g=GOALS.find(x=>x.id===cp.goal);
-      const chObj=A.channels[chIdx[cp.ch]];
-      const cvr=chObj.cvr*cp.q*(cp.goal==='service'?2.4:1);
+      const ci=chIdx[cp.ch];
+      const scale=A.channels[ci].sessions/Math.max(1,A28.channels[ci].sessions);
+      const sess=cp.real*scale;
+      const cvr=A.channels[ci].cvr;
       const cv=sess*cvr;
-      const spend=sess*cp.cpc;
-      const value=cv*g.value*3.2;         // 商談価値換算
-      return {...cp, chName:CHANNELS[chIdx[cp.ch]].name, chColor:CHANNELS[chIdx[cp.ch]].color,
-        sessions:sess, cv, cvr, spend, cpa:cv>0?spend/cv:0, roas:spend>0?value/spend:null,
-        active: IDX[cp.to]>=NDAYS-range};
-    }).filter(c=>c.sessions>500);
+      return {...cp, src:CHANNELS[ci].name, med:'utm_campaign', chName:CHANNELS[ci].name, chColor:CHANNELS[ci].color,
+        sessions:sess, cv, cvr, spend:0, cpa:null, roas:null, active:cp.active};
+    });
   }
 
-  /* ---------- UTMサンバースト ---------- */
+  /* ---------- UTMサンバースト（チャネル → utm_campaign・実測） ---------- */
   function utmTree(range){
     const cps=campaigns(range);
     const bySrc={};
     cps.forEach(c=>{
-      bySrc[c.src]=bySrc[c.src]||{name:c.src,children:[],value:0,med:c.med};
-      bySrc[c.src].children.push({name:c.utm,value:Math.round(c.sessions),cv:c.cv,cp:c});
-      bySrc[c.src].value+=c.sessions;
+      bySrc[c.chName]=bySrc[c.chName]||{name:c.chName,children:[],value:0};
+      bySrc[c.chName].children.push({name:c.utm,value:Math.round(c.sessions),cv:c.cv,cp:c});
+      bySrc[c.chName].value+=c.sessions;
     });
     const A=agg(range,'all');
     const paidSess=A.channels.filter(c=>c.paid).reduce((a,c)=>a+c.sessions,0);
-    const tracked=cps.reduce((a,c)=>a+c.sessions,0);
+    const tracked=cps.filter(c=>CHANNELS.find(x=>x.id===c.ch).paid).reduce((a,c)=>a+c.sessions,0);
     return {tree:Object.values(bySrc),tracked,paidSess,untracked:Math.max(0,paidSess-tracked)};
   }
 
-  /* ---------- ミッション（8月・月次目標） ---------- */
+  /* ---------- ミッション（8月・月次目標＝直近28日実測ペース×31日の仮置き） ---------- */
   function missions(){
     // 8/1〜8/18 の実績
     const a=IDX['2026-08-01'], b=IDX['2026-08-18'];
-    const mtd={estimate:0,testdrive:0,kinto:0,newSessions:0};
+    const mtd={estimate:0,testdrive:0,signup:0,newSessions:0};
     for(let d=a;d<=b;d++){
       for(let mi=0;mi<NM;mi++){
         const m=MODELS[mi];
         for(let c=0;c<NC;c++){
           const s=S[d][mi][c];
           mtd.newSessions+=s*CHANNELS[c].newShare;
-          for(const gid of ['estimate','testdrive','kinto']){
+          for(const gid of ['estimate','testdrive','signup']){
             const g=GOALS.find(x=>x.id===gid);
             mtd[gid]+=s*m.cvr*g.mult*(GOAL_CH[gid][CHANNELS[c].id]||1)*DN[gid][d];
           }
@@ -656,11 +705,13 @@ const GA = (() => {
       for(let c=0;c<NC;c++)mtd.newSessions+=OTHER[d][c]*CHANNELS[c].newShare;
     }
     const pace=18/31;
+    /* 目標値＝GA4実測（7/22〜8/18）の28日実績×31/28（月次換算）を丸めた仮置き。
+       確定目標の受領後に置換可能 */
     const defs=[
-      {id:'m1',name:'見積りシミュレーション完了', target:190000, actual:mtd.estimate, unit:'件', icon:'target'},
-      {id:'m2',name:'試乗予約',                target:31500, actual:mtd.testdrive, unit:'件', icon:'wheel'},
-      {id:'m3',name:'KINTO 申込・見積り',       target:9200,  actual:mtd.kinto,    unit:'件', icon:'key'},
-      {id:'m4',name:'新規ユーザー獲得',          target:15000000, actual:mtd.newSessions/1.06, unit:'人', icon:'user'},
+      {id:'m1',name:'見積りシミュレーション完了', target:435000, actual:mtd.estimate, unit:'件', icon:'target'},
+      {id:'m2',name:'試乗予約',                target:2700,  actual:mtd.testdrive, unit:'件', icon:'wheel'},
+      {id:'m3',name:'TOYOTAアカウント登録',      target:178000, actual:mtd.signup,  unit:'件', icon:'key'},
+      {id:'m4',name:'新規ユーザー獲得',          target:3860000, actual:mtd.newSessions, unit:'人', icon:'user'},
     ];
     return defs.map(d=>{
       const prog=d.actual/d.target;
@@ -681,15 +732,15 @@ const GA = (() => {
     const a=IDX['2026-08-01'], b=IDX['2026-08-18'];
     const w=[.32,.28,.16,.24];
     const out=[];
-    const mtd={estimate:0,testdrive:0,kinto:0,newSessions:0};
-    const targets=[190000,31500,9200,15000000];
+    const mtd={estimate:0,testdrive:0,signup:0,newSessions:0};
+    const targets=[435000,2700,178000,3860000];
     for(let d=a;d<=b;d++){
       for(let mi=0;mi<NM;mi++){
         const m=MODELS[mi];
         for(let c=0;c<NC;c++){
           const sv=S[d][mi][c];
           mtd.newSessions+=sv*CHANNELS[c].newShare;
-          for(const gid of ['estimate','testdrive','kinto']){
+          for(const gid of ['estimate','testdrive','signup']){
             const g=GOALS.find(x=>x.id===gid);
             mtd[gid]+=sv*m.cvr*g.mult*(GOAL_CH[gid][CHANNELS[c].id]||1)*DN[gid][d];
           }
@@ -697,7 +748,7 @@ const GA = (() => {
       }
       for(let c=0;c<NC;c++)mtd.newSessions+=OTHER[d][c]*CHANNELS[c].newShare;
       const pace=(d-a+1)/31;
-      const acts=[mtd.estimate,mtd.testdrive,mtd.kinto,mtd.newSessions/1.06];
+      const acts=[mtd.estimate,mtd.testdrive,mtd.signup,mtd.newSessions];
       const sc=acts.reduce((acc,v,i)=>acc+w[i]*Math.min(1.15,(v/targets[i])/pace),0)/1.15*100;
       out.push({date:DATES[d], score:sc});
     }
@@ -717,33 +768,44 @@ const GA = (() => {
     });
   }
 
-  /* ---------- カスタムディメンション辞書 ---------- */
+  /* ---------- カスタムディメンション台帳（GA4プロパティに実登録されている定義・Windsor.aiフィールド一覧より） ---------- */
   const CUSTOM_DIMS=[
-    {scope:'User',  disp:'会員ランク',            param:'member_rank',        fill:.92, vals:'gold / silver / bronze / guest', note:'TOYOTAアカウント連携。CRM側IDと突合可能'},
-    {scope:'User',  disp:'ログイン状態',           param:'login_status',       fill:.99, vals:'logged_in / guest', note:'全ヒットに付与。ステージ分析の基礎'},
-    {scope:'User',  disp:'検討ステージ',           param:'consideration_stage',fill:.84, vals:'aware / interest / consider / nego', note:'行動スコアリングで日次更新'},
-    {scope:'User',  disp:'保有車種',              param:'owned_model',        fill:.61, vals:'model_code準拠', note:'申告ベース。取得率が低く改善対象'},
-    {scope:'Event', disp:'車種コード',            param:'model_code',         fill:.97, vals:'alphard / harrier / …', note:'車種ページ・見積りに付与'},
-    {scope:'Event', disp:'グレードコード',         param:'grade_code',         fill:.88, vals:'Z / G / X / Executive…', note:'グレード選択以降のヒット'},
-    {scope:'Event', disp:'シミュレーター結果金額',  param:'sim_price',          fill:.76, vals:'数値（万円）', note:'月額換算はkinto_plan側'},
-    {scope:'Event', disp:'販売店エリア',           param:'dealer_area',        fill:.81, vals:'都道府県コード', note:'販売店検索・来店予約に付与'},
-    {scope:'Event', disp:'CPパス_内部リンク',      param:'padid',              fill:.93, vals:'top_kv / cp_banner_01 / …', note:'サイト内バナー・導線の効果測定キー'},
-    {scope:'Event', disp:'KINTOプラン',           param:'kinto_plan',         fill:.95, vals:'initial / solutions', note:'KINTO遷移・申込ヒット'},
-    {scope:'Event', disp:'来訪目的',              param:'visit_purpose',      fill:.58, vals:'buy / maintain / browse…', note:'アンケート由来。取得率が低く改善対象'},
-    {scope:'Event', disp:'フォームステップ',       param:'form_step',          fill:.96, vals:'step1〜4 / complete', note:'EFO分析用'},
+    {scope:'User',  disp:'会員種別',              param:'membership_type',    fill:null, vals:'会員区分', note:'TOYOTAアカウント連携の会員区分'},
+    {scope:'User',  disp:'TOYOTAユニークID ①〜③', param:'toyota_unique_id1-3',fill:null, vals:'ハッシュID', note:'CRM側IDとの突合キー（3系統）'},
+    {scope:'User',  disp:'カスタムクライアントID',  param:'custom_client_id',   fill:null, vals:'ハッシュID', note:'デバイス横断の紐付け補助（2系統）'},
+    {scope:'User',  disp:'カラーモード',           param:'color_mode',         fill:null, vals:'light / dark', note:'表示設定。UI改善分析用'},
+    {scope:'Event', disp:'ページ名',              param:'page_name',          fill:null, vals:'正規化ページ名', note:'ページ分析の主キー'},
+    {scope:'Event', disp:'ページ種別',             param:'page_type',          fill:null, vals:'car / estimate / member / …', note:'テンプレート単位の集計キー'},
+    {scope:'Event', disp:'ページディレクトリ ①〜③', param:'page_directory1-3',  fill:null, vals:'URL階層', note:'車種・機能単位のドリルダウン'},
+    {scope:'Event', disp:'正規化ページURL',        param:'page_location_normalized', fill:null, vals:'URL', note:'パラメータ除去済みURL'},
+    {scope:'Event', disp:'ページ参照元',           param:'page_referrer',      fill:null, vals:'URL', note:'遷移元の把握'},
+    {scope:'Event', disp:'販売店コード×チャネル',   param:'dealer_code_and_channel_data', fill:null, vals:'販売店コード', note:'販売店送客の効果測定キー'},
+    {scope:'Event', disp:'キャンペーンフォームID',  param:'campaign_form_id',   fill:null, vals:'フォームID', note:'CP応募フォームの識別'},
+    {scope:'Event', disp:'利用種別',              param:'usage_type',         fill:null, vals:'用途区分', note:'来訪目的の分類'},
+    {scope:'Event', disp:'エラーメッセージ',        param:'error_message',      fill:null, vals:'テキスト', note:'フォーム離脱要因の特定'},
+    {scope:'Event', disp:'送信元識別子',           param:'sender_source',      fill:null, vals:'識別子', note:'通知・メール経由の識別'},
   ];
+  /* イベント辞書（GA4実測・7/22〜8/18の実発生数） */
   const EVENTS_DICT=[
-    {ev:'page_view',            disp:'ページ表示',          scale:'pv'},
-    {ev:'view_item',            disp:'車種詳細 閲覧',        scale:'modelSessions'},
-    {ev:'select_grade',         disp:'グレード選択',         scale:'grade'},
-    {ev:'simulation_start',     disp:'見積りシミュレーター開始', scale:'simStart'},
-    {ev:'estimate_complete',    disp:'見積り完了',           goal:'estimate'},
-    {ev:'test_drive_reserve',   disp:'試乗予約',            goal:'testdrive'},
-    {ev:'dealer_search',        disp:'販売店検索',           scale:'dealer'},
-    {ev:'catalog_view_complete',disp:'カタログ閲覧完了',      goal:'catalog'},
-    {ev:'kinto_apply',          disp:'KINTO 申込・見積り',   goal:'kinto'},
-    {ev:'favorite_add',         disp:'お気に入り登録',        scale:'fav'},
+    {ev:'page_view',                    disp:'ページ表示',                n0:32153037},
+    {ev:'estimate_simulation',          disp:'見積りシミュレーター操作',    n0:13803090},
+    {ev:'custom_link_click',            disp:'リンククリック',            n0:6600744},
+    {ev:'select_content',               disp:'コンテンツ選択',            n0:3215909},
+    {ev:'conversion_6types_complete',   disp:'6種CV束（参考・重複含む）',  n0:463785},
+    {ev:'estimate_simulation_complete', disp:'見積りシミュレーション完了',  n0:393556, cv:true},
+    {ev:'maker_estimate_complete',      disp:'メーカー希望小売価格 見積り完了', n0:328160, cv:true},
+    {ev:'video_start',                  disp:'動画再生開始',              n0:181650},
+    {ev:'sign_up',                      disp:'TOYOTAアカウント登録',      n0:161185, cv:true},
+    {ev:'dealer_search',                disp:'販売店検索',                n0:79579, cv:true},
+    {ev:'dealer_estimate_complete',     disp:'販売店見積り 完了',          n0:65601, cv:true},
+    {ev:'tel',                          disp:'電話発信タップ',            n0:7559, cv:true},
+    {ev:'jp_improvement',               disp:'サイト改善フィードバック',    n0:5104},
+    {ev:'lead',                         disp:'リード獲得',                n0:3209, cv:true},
+    {ev:'purchase',                     disp:'購入手続き完了',            n0:2960, cv:true},
+    {ev:'test_drive（通常+即時）',       disp:'試乗予約',                 n0:2429, cv:true},
+    {ev:'purchase_consultation',        disp:'商談・購入相談予約',         n0:775, cv:true},
   ];
+  const REAL_S28=9700436;  // 28日実測セッション（イベント数の期間スケール基準）
 
   /* ---------- 会員ランク・ログイン ---------- */
   function memberData(range){
@@ -787,7 +849,7 @@ const GA = (() => {
   }
 
   return {DATES,CHANNELS,MODELS,GOODS,GOALS,AFFINITY,STAGES,AREAS,BUCKETS,RECENCY,DEVICES,AGES,EVENTS,
-    CUSTOM_DIMS,EVENTS_DICT,DIMS,STAGE_LOGIN,
+    CUSTOM_DIMS,EVENTS_DICT,REAL_S28,DIMS,STAGE_LOGIN,
     agg,pairMatrix,sankey,funnel,comboData,rfMatrix,affinityAgg,campaigns,utmTree,missions,score,scoreTrend,eventImpact,
     memberData,deviceAgg,demoAgg,areaAgg,affShare,goodsShare,areaShare};
 })();

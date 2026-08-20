@@ -19,8 +19,8 @@ function showView(v){
   $$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
   $('#crumbView').textContent=VIEW_LABELS[v];
   const owned=OWNED_VIEWS.includes(v);
-  const dm=$('.dm'); dm.textContent=owned?'LIVE · 実測データ':'DEMO DATA'; dm.classList.toggle('live',owned);
-  dm.title=owned?'公式SNSクロール実測＋GA4実測レポート#007に基づく実データ':'実データ接続前の合成デモデータで動作中';
+  const dm=$('.dm'); dm.textContent=owned?'LIVE · 実測データ':'LIVE · GA4実測'; dm.classList.add('live');
+  dm.title=owned?'公式SNSクロール実測＋GA4実測レポート#007に基づく実データ':'toyota.jp GA4実測（Windsor.ai経由）にキャリブレーション済み。アフィニティ・ステージ等の一部内訳は実測合計に整合する推定按分';
   if(!rendered[v]||ST.dirty[v]) renderView(v);
   else requestAnimationFrame(()=>{Object.values(charts).forEach(c=>{try{c.resize()}catch(e){}});revealScan()});
   window.scrollTo({top:0,behavior:REDUCED?'auto':'smooth'});
@@ -118,11 +118,12 @@ function toast(html,cls='',dur=6500){
   setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),450)},dur);
 }
 
-/* ---- ライブカウンター（デモ） ---- */
+/* ---- ライブカウンター（推定同時アクティブ＝実測DAU×平均滞在から算出した平均水準） ---- */
 function liveTick(){
   const h=new Date().getHours()+new Date().getMinutes()/60;
   const curve=Math.max(.22,Math.sin((h-3)/24*Math.PI*2)*.5+.62);
-  const n=Math.round(9200*curve*(1+Math.sin(Date.now()/9000)*.05+(Math.random()-.5)*.04));
+  // 基準1,063人 = 実測28日: 970万S × 平均滞在265秒 ÷ (28日×86,400秒)
+  const n=Math.round(1063*curve*(1+Math.sin(Date.now()/9000)*.05+(Math.random()-.5)*.04));
   $('#liveN').textContent=n.toLocaleString('ja-JP');
 }
 
@@ -145,7 +146,7 @@ let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>Obje
   liveTick(); setInterval(liveTick,3200);
   const SC=GA.score();
   setTimeout(()=>{
-    if(OWNED_VIEWS.includes(ST.view))return; // 実測ビュー閲覧中はデモ用トーストを出さない
+    if(OWNED_VIEWS.includes(ST.view))return; // 実測SNS/資産ビュー閲覧中はミッション系トーストを出さない
     const behind=SC.missions.find(m=>m.status==='behind');
     const ahead=[...SC.missions].sort((a,b)=>b.vsPace-a.vsPace)[0];
     toast(`<b>ミッション更新</b>：「${ahead.name}」が目標ペース <b>+${((ahead.vsPace-1)*100).toFixed(0)}%</b> で進行中`);

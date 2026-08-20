@@ -49,29 +49,29 @@ function renderAcq(){
       fill:MUT,fontSize:10.5,fontFamily:FONT}}]
   }),true);
 
-  /* 投資対効果バブル */
-  const cps=GA.campaigns(ST.range).filter(c=>c.spend>0);
+  /* キャンペーン別 セッション×CV（GA4実測セッション・CVはチャネル平均CVRからの推定按分） */
+  const cps=GA.campaigns(ST.range);
   const maxSess=Math.max(...cps.map(c=>c.sessions));
   const labelSet=new Set([...cps].sort((a,b)=>b.sessions-a.sessions).slice(0,6).map(c=>c.id));
   E('chBubble').setOption(baseOpt({
     tooltip:Object.assign({},TIP,{formatter:p=>{
       const c=p.data.cp;
-      return `<b>${c.name}</b><br>費用 ${yen(c.spend)} ／ CV <b>${CM(c.cv)}</b><br>CPA ${yen(c.cpa)} ／ ROAS ${c.roas.toFixed(1)}倍<br>セッション ${fmtJP(c.sessions)}`;}}),
+      return `<b>${c.name}</b><br>utm_campaign <span style="font-family:monospace">${c.utm}</span><br>セッション <b>${fmtJP(c.sessions)}</b>（GA4実測）<br>CV寄与 ${CM(c.cv)}（チャネル平均CVRからの推定）`;}}),
     grid:{left:8,right:46,top:30,bottom:8,containLabel:true},
-    xAxis:axY({name:'広告費用',nameTextStyle:{color:MUT,fontSize:10},axisLabel:{formatter:v=>yen(v),color:MUT,fontSize:10,fontFamily:MONOF},splitLine:{lineStyle:{color:LINE,type:[3,4]}}}),
-    yAxis:axY({name:'CV',nameTextStyle:{color:MUT,fontSize:10},axisLabel:{formatter:v=>fmtJP(v),color:MUT,fontSize:10,fontFamily:MONOF}}),
+    xAxis:axY({name:'セッション（実測・log）',nameTextStyle:{color:MUT,fontSize:10},type:'log',
+      axisLabel:{formatter:v=>fmtJP(v),color:MUT,fontSize:10,fontFamily:MONOF},splitLine:{lineStyle:{color:LINE,type:[3,4]}}}),
+    yAxis:axY({name:'CV寄与（推定）',nameTextStyle:{color:MUT,fontSize:10},axisLabel:{formatter:v=>fmtJP(v),color:MUT,fontSize:10,fontFamily:MONOF}}),
     series:[{type:'scatter',
       symbolSize:(val,params)=>8+Math.sqrt((params.data.cp.sessions)/maxSess)*42,
       itemStyle:{opacity:.88,borderColor:'#0A1120',borderWidth:1.5},
-      data:cps.map(c=>({value:[Math.round(c.spend),Math.round(c.cv)],cp:c,itemStyle:{color:c.chColor},
+      data:cps.map(c=>({value:[Math.max(1,Math.round(c.sessions)),Math.round(c.cv)],cp:c,itemStyle:{color:c.chColor},
         label:{show:labelSet.has(c.id),position:'top',formatter:()=>c.name.length>11?c.name.slice(0,11)+'…':c.name,color:TX2,fontSize:9.5,fontFamily:FONT,distance:4}}))}]
   }),true);
 
-  const best=[...cps].sort((a,b)=>b.roas-a.roas)[0];
-  const worst=[...cps].sort((a,b)=>a.roas-b.roas)[0];
-  $('#acqInsight').innerHTML=`<span class="it">INSIGHT — 集客・広告</span>
-    <p>費用対効果の首位は <span class="hl-g">${best.name}</span>（ROAS <b class="num">${best.roas.toFixed(1)}倍</b> ／ CPA <b class="num">${yen(best.cpa)}</b>）。ただし指名検索はもともと来る顧客を刈り取る性質のため、<span class="hl-b">増分評価では一般KW・SNS の伸びしろを見るべき</span>。</p>
-    <p>効率最下位は <span class="hl-r">${worst.name}</span>（CPA <b class="num">${yen(worst.cpa)}</b>）。認知目的の出稿なら「CV単価」でなく <span class="hl">車種ページ到達単価・検討ツール到達単価</span> をKPIに切り替えて評価するのが妥当。UTM捕捉率は <b class="num">${pct(U.tracked/U.paidSess,0)}</b> で、残りは計測設計タブの命名規約徹底で回収する。</p>`;
+  const bigs=[...cps].sort((a,b)=>b.sessions-a.sessions);
+  $('#acqInsight').innerHTML=`<span class="it">INSIGHT — 集客・広告（GA4実測）</span>
+    <p>実測の流入構成は <span class="hl">自然検索 49.1%・ダイレクト 30.4%・外部サイト/AI経由 12.6%</span> が3本柱で、広告チャネル（検索・ディスプレイ・動画）は合計 <b class="num">7.1%</b>。トラッキング済みキャンペーンの最大は <span class="hl-g">${bigs[0].name}</span>（<b class="num">${fmtJP(bigs[0].sessions)}</b> セッション）で、ディスプレイ流入の大半を単独で占める。</p>
+    <p><span class="hl-b">広告費・imp・クリックは媒体レポート未連携のため本ボードでは非表示</span>。CPA・ROAS評価は媒体データ連携（Google広告・DV360等をWindsor.ai経由で接続）後に自動で埋まる設計。UTM捕捉率は <b class="num">${pct(U.tracked/U.paidSess,0)}</b>（実測）。</p>`;
 }
 
 function renderCampaignTable(){
@@ -81,26 +81,24 @@ function renderCampaignTable(){
     const av=a[key]??-1,bv=b[key]??-1;
     return (av-bv)*dir;
   });
-  const maxRoas=Math.max(...cps.map(c=>c.roas||0));
-  const cols=[['name','キャンペーン',0],['utm','トラッキングコード',0],['chName','媒体',0],
-    ['spend','費用',1],['sessions','セッション',1],['cv','CV',1],['cpa','CPA',1],['roas','ROAS',1]];
+  const maxSess2=Math.max(...cps.map(c=>c.sessions||0));
+  const cols=[['name','キャンペーン',0],['utm','トラッキングコード（utm_campaign実測）',0],['chName','チャネル',0],
+    ['sessions','セッション（実測）',1],['cv','CV寄与（推定）',1],['cvr','CVR（チャネル平均）',1]];
   $('#campaignTable').innerHTML=`<thead><tr><th>#</th>${cols.map(([k,l,n])=>
     `<th class="sortable ${n?'num':''}" data-k="${k}">${l}${key===k?`<span class="arrow">${dir<0?'▼':'▲'}</span>`:''}</th>`).join('')}<th>状態</th></tr></thead>
   <tbody>${cps.map((c,i)=>`<tr>
     <td>${i<3?`<span class="medal m${i+1}">${i+1}</span>`:`<span class="medal mx">${i+1}</span>`}</td>
-    <td><b>${c.name}</b>${c.model?`<div style="font-size:9.5px;color:var(--mut)">対象: ${GA.MODELS.find(m=>m.id===c.model).name}</div>`:''}</td>
-    <td><span class="utm">${c.src}/${c.med}<br>${c.utm}</span></td>
+    <td><b>${c.name}</b>${c.model?`<div style="font-size:9.5px;color:var(--mut)">対象: ${(GA.MODELS.find(m=>m.id===c.model)||{}).name||c.model}</div>`:''}<div style="font-size:9.5px;color:var(--mut)">開始 ${c.since}</div></td>
+    <td><span class="utm">${c.utm}</span></td>
     <td><span class="tag" style="color:${c.chColor};background:color-mix(in srgb,${c.chColor} 13%,transparent)">${c.chName}</span></td>
-    <td class="num">${c.spend>0?yen(c.spend):'<span style="color:var(--mut)">¥0（自社）</span>'}</td>
-    <td class="num">${fmtJP(c.sessions)}</td>
+    <td class="num"><div class="tbar" style="min-width:110px"><div class="bg"><i style="width:${Math.max(1.5,Math.pow(c.sessions/maxSess2,.5)*100).toFixed(0)}%;background:linear-gradient(90deg,var(--te),var(--cy))"></i></div><span>${fmtJP(c.sessions)}</span></div></td>
     <td class="num">${CM(c.cv)}</td>
-    <td class="num">${c.spend>0?yen(c.cpa):'—'}</td>
-    <td class="num">${c.roas!=null?`<div class="tbar" style="min-width:110px"><div class="bg"><i style="width:${(c.roas/maxRoas*100).toFixed(0)}%;background:linear-gradient(90deg,var(--te),var(--cy))"></i></div><span>${c.roas.toFixed(1)}倍</span></div>`:'—'}</td>
-    <td>${c.active?'<span class="tag" style="color:var(--gn);background:color-mix(in srgb,var(--gn) 12%,transparent)">● 配信中</span>':'<span class="tag" style="color:var(--mut);background:rgba(255,255,255,.05)">終了</span>'}</td>
+    <td class="num">${pct(c.cvr,2)}</td>
+    <td>${c.active?'<span class="tag" style="color:var(--gn);background:color-mix(in srgb,var(--gn) 12%,transparent)">● 稼働中</span>':'<span class="tag" style="color:var(--mut);background:rgba(255,255,255,.05)">直近流入なし</span>'}</td>
   </tr>`).join('')}</tbody>`;
   $$('#campaignTable th.sortable').forEach(th=>th.onclick=()=>{
     const k=th.dataset.k;
-    if(!['spend','sessions','cv','cpa','roas'].includes(k))return;
+    if(!['sessions','cv','cvr'].includes(k))return;
     if(ST.campSort.key===k)ST.campSort.dir*=-1;else ST.campSort={key:k,dir:-1};
     renderCampaignTable();
   });
@@ -384,52 +382,39 @@ function renderVs(){
    ================================================== */
 function renderDict(){
   const A=GA.agg(ST.range,'all');
-  /* カスタムディメンション台帳 */
+  /* カスタムディメンション台帳（GA4プロパティに実登録されている定義） */
   $('#cdTable').innerHTML=`<thead><tr><th>スコープ</th><th>表示名</th><th>パラメータ名</th><th class="num">取得率</th><th>主な値</th><th>メモ</th></tr></thead>
   <tbody>${GA.CUSTOM_DIMS.map(d=>{
-    const warn=d.fill<.8;
     return `<tr>
       <td><span class="tag" style="color:${d.scope==='User'?'var(--pu)':'var(--cy)'};background:color-mix(in srgb,${d.scope==='User'?'var(--pu)':'var(--cy)'} 12%,transparent)">${d.scope}</span></td>
       <td><b>${d.disp}</b></td>
       <td><span class="utm">${d.param}</span></td>
-      <td class="num"><div class="tbar"><div class="bg"><i style="width:${(d.fill*100).toFixed(0)}%;background:${warn?'linear-gradient(90deg,var(--am),var(--rd))':'linear-gradient(90deg,var(--cy),var(--te))'}"></i></div><span style="${warn?'color:var(--am)':''}">${pct(d.fill,0)}${warn?' ⚠':''}</span></div></td>
+      <td class="num" style="color:var(--mut)" title="取得率の棚卸しは GA4 Data API の isBlank 集計で実測可能">要棚卸し</td>
       <td class="mono">${d.vals}</td>
       <td style="font-size:11px;color:var(--tx2)">${d.note}</td>
     </tr>`}).join('')}</tbody>`;
 
-  /* イベント辞書 */
-  const F=GA.funnel(ST.range,'all');
-  const evCount=e=>{
-    if(e.goal) return A.total.cvByGoal[e.goal];
-    switch(e.scale){
-      case 'pv':return A.total.pv;
-      case 'modelSessions':return A.total.modelSessions;
-      case 'grade':return F[2].v*1.65;
-      case 'simStart':return F[2].v*.62;
-      case 'dealer':return F[3].v;
-      case 'fav':return A.total.modelSessions*.021;
-      default:return 0;}
-  };
-  const evs=GA.EVENTS_DICT.map(e=>({...e,n:evCount(e)}));
+  /* イベント辞書（GA4実測・28日実発生数を選択期間のセッション比でスケール） */
+  const evScale=A.total.sessions/GA.REAL_S28;
+  const evs=GA.EVENTS_DICT.map(e=>({...e,n:e.n0*evScale}));
   const evMax=Math.max(...evs.map(e=>e.n));
-  $('#evTable').innerHTML=`<thead><tr><th>イベント名</th><th>内容</th><th class="num">発生数</th><th class="num">規模</th></tr></thead>
+  $('#evTable').innerHTML=`<thead><tr><th>イベント名</th><th>内容</th><th class="num">発生数${ST.range===28?'（28日実測）':'（実測28日比の換算）'}</th><th class="num">規模</th></tr></thead>
   <tbody>${evs.map(e=>`<tr>
-    <td><span class="utm">${e.ev}</span>${e.goal?' <span class="tag" style="color:var(--gd);background:color-mix(in srgb,var(--gd) 12%,transparent)">CV</span>':''}</td>
+    <td><span class="utm">${e.ev}</span>${e.cv?' <span class="tag" style="color:var(--gd);background:color-mix(in srgb,var(--gd) 12%,transparent)">CV</span>':''}</td>
     <td>${e.disp}</td>
     <td class="num">${fmtJP(e.n)}</td>
-    <td class="num"><div class="tbar" style="min-width:90px"><div class="bg"><i style="width:${Math.max(1.2,Math.pow(e.n/evMax,.4)*100).toFixed(0)}%;background:${e.goal?'linear-gradient(90deg,#E4A900,var(--gd))':'linear-gradient(90deg,var(--cy),var(--te))'}"></i></div></div></td>
+    <td class="num"><div class="tbar" style="min-width:90px"><div class="bg"><i style="width:${Math.max(1.2,Math.pow(e.n/evMax,.4)*100).toFixed(0)}%;background:${e.cv?'linear-gradient(90deg,#E4A900,var(--gd))':'linear-gradient(90deg,var(--cy),var(--te))'}"></i></div></div></td>
   </tr>`).join('')}</tbody>`;
 
-  /* UTM規約 */
+  /* UTM規約（実測 utm_campaign から観測される命名） */
   $('#utmRules').innerHTML=`
-    <p style="color:var(--tx2)">形式：<span class="utm">{施策}_{車種/商材}_{yyyymm}</span></p>
-    <p><b>utm_source</b>：<span class="mono">google / yahoo / meta / line / x / youtube / tver / dv360 / crm</span></p>
-    <p><b>utm_medium</b>：<span class="mono">cpc / display / video / paid_social / email</span></p>
-    <p><b>utm_campaign</b> 例：<span class="utm">bz4x_summer_202608</span>　<span class="utm">alphard_mc_202607</span></p>
+    <p style="color:var(--tx2)">実測で観測される形式：<span class="utm">{施策}_{目的}_{yymm}_{識別子}</span></p>
+    <p><b>utm_campaign</b> 実例：<span class="utm">toyou_brand_2606_tq</span>　<span class="utm">crownseries_sales_2604_tq</span>　<span class="utm">monthly260807_always_2608_dp</span></p>
+    <p><b>観測される系統</b>：<span class="mono">brand（ブランド訴求）/ sales（販売促進）/ always（常時）/ monthly（定期メール）</span></p>
     <p style="font-size:11px;color:var(--mut)">・大文字/日本語/スペース禁止（表記ゆれは自動でチャネル不明に落ちる）<br>・社内リンクにUTMを付けない（セッション断絶の原因）。サイト内バナーは <span class="utm">padid</span> を使用</p>`;
 
-  const low=GA.CUSTOM_DIMS.filter(d=>d.fill<.8).sort((a,b)=>a.fill-b.fill);
-  $('#dictInsight').innerHTML=`<span class="it">CHECK — 計測負債</span>
-    <p>取得率80%未満のカスタムディメンションが <span class="hl-r">${low.length}本</span>：${low.map(d=>`<b>${d.disp}</b>（<span class="num">${pct(d.fill,0)}</span>）`).join('、')}。特に <span class="hl">保有車種と来訪目的</span> はオーディエンス分析・サービス送客の精度に直結するため、ログイン導線でのプロフィール補完キャンペーンを推奨。</p>
-    <p>UTM捕捉率は広告セッションの <b class="num">${pct(GA.utmTree(ST.range).tracked/GA.utmTree(ST.range).paidSess,0)}</b>【検証済み：選択期間の有料チャネル対象】。未捕捉分は媒体側の自動タグ（gclid等）で補完されるが、命名規約の徹底が第一。</p>`;
+  const U2=GA.utmTree(ST.range);
+  $('#dictInsight').innerHTML=`<span class="it">CHECK — 計測設計の実測状況</span>
+    <p>GA4プロパティに登録済みのカスタムディメンションは <span class="hl">${GA.CUSTOM_DIMS.length}系統</span>（ユーザースコープ${GA.CUSTOM_DIMS.filter(d=>d.scope==='User').length}・イベントスコープ${GA.CUSTOM_DIMS.filter(d=>d.scope==='Event').length}）。<b>TOYOTAユニークID×販売店コード</b> が揃っており、販売店送客〜CRM突合の分析基盤は既に実装済み。取得率の棚卸しが次の一手。</p>
+    <p>広告チャネル（検索広告・ディスプレイ・動画）セッションのUTM捕捉率は <b class="num">${pct(U2.tracked/U2.paidSess,0)}</b>（GA4実測）。未捕捉 ${fmtJP(U2.untracked)} セッションは媒体側の自動タグ（gclid等）で補完されるが、命名規約の徹底が第一。</p>`;
 }
