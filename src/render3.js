@@ -249,7 +249,7 @@ function renderOps(){
         <div class="cap">OWNED ACTIVITY — 実装済みの活動</div>
         <div class="n" data-cu="${live}">0</div>
         <div class="u">件<span style="color:var(--mut)">　＝ リクエスト完了ページの <b class="hl">2つのバナー</b></span></div>
-        <div style="font-size:10.5px;color:var(--mut);margin-top:7px">T-Connect（7/27〜）／ au・UQ（8/4〜）。<br>下の台帳の行をクリック → <b style="color:var(--gd)">何が変わったか</b>を表示。<br>活動が増えるたびにこの数字と行が増える。</div>
+        <div style="font-size:10.5px;color:var(--mut);margin-top:7px">T-Connect（7/27〜）／ au・UQ（8/4〜）。<br>各活動カードに<b style="color:var(--gd)">目的とKPI</b>を明記。<br>「詳細」で何が変わったかを表示。活動が増えるたびカードと効果額が積み上がる。</div>
       </div>
       <div>
         <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:var(--gd);margin-bottom:8px">EFFECT — この2件が生んだ効果（GA4実測）</div>
@@ -264,31 +264,61 @@ function renderOps(){
     </div>
   </div>
 
-  <!-- 活動台帳 -->
-  <div class="card s12 reveal">
-    <div class="ct"><span class="bar" style="background:var(--gd);box-shadow:0 0 8px rgba(255,216,77,.5)"></span><h3>活動台帳 — 何をして、どれだけ見られ、何を生んだか</h3><span class="sub">行をクリック → 変更内容・数値詳細・次の一手</span></div>
-    <div class="twrap"><table class="actTbl">
-      <thead><tr><th>ID</th><th>活動</th><th>状態</th><th>アクセスボリューム</th><th>生んだ効果</th><th class="op"></th></tr></thead>
-      <tbody>${ACTS.map((a,i)=>`<tr class="actRow" data-act="${i}">
-        <td class="num" style="color:var(--mut);font-size:10.5px">${a.id}</td>
-        <td style="min-width:220px"><b style="font-size:12.8px">${a.name}</b><div style="font-size:10.3px;color:var(--mut);margin-top:2px">${a.target}</div></td>
-        <td><span class="st ${a.state}" style="display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9.5px;padding:2.5px 9px;border-radius:999px;${a.state==='live'?'color:var(--gn);background:color-mix(in srgb,var(--gn) 12%,transparent)':'color:var(--am);background:color-mix(in srgb,var(--am) 12%,transparent)'}">${a.state==='live'?'● LIVE':'◪ 外部計測'}</span><div style="font-family:var(--mono);font-size:9.5px;color:var(--mut);margin-top:3px">${a.since}</div></td>
-        <td style="font-size:11.3px;line-height:1.75;min-width:200px"><b class="num" style="color:var(--cy)">${a.vol.clicks}</b><div style="color:var(--mut);font-size:10.3px">${a.vol.exposure}</div></td>
-        <td style="font-size:11.3px;line-height:1.8;min-width:240px">${a.fx.slice(0,2).map(f=>`<div><span style="color:var(--gd);font-family:var(--mono);font-size:9px">${f[0]}</span>　${f[1].split('—')[0].split('（')[0]}</div>`).join('')}</td>
-        <td class="op" style="white-space:nowrap"><span style="font-family:var(--mono);font-size:10px;color:var(--gd)">詳細 ▸</span></td>
-      </tr>`).join('')}</tbody></table></div>
-    <div style="font-size:10.5px;color:var(--mut);margin-top:8px">露出面（分母）＝試乗予約 完了 <b class="num">2,429件/28日</b>（GA4実測・日平均86.8件）。この面に立つバナーが上の2件。</div>
+  <!-- 活動カード（目的 → KPI → 効果額） -->
+  ${ACTS.map((a,i)=>{
+    const kpiChips=(a.kpis||[]).map((kp,ki)=>`
+      ${ki>0?'<span style="color:var(--line2);font-size:14px;align-self:center">▶</span>':''}
+      <div style="background:var(--bg2);border:1px solid ${ki<=1?'color-mix(in srgb,var(--cy) 35%,var(--line))':'var(--line)'};border-radius:10px;padding:8px 13px;min-width:108px" title="${kp.s||''}">
+        <div style="font-size:9px;color:var(--mut);letter-spacing:.06em">${kp.k}</div>
+        <div class="num" style="font-size:17px;font-weight:800;color:${kp.v==='集計中'||kp.v==='計測不可'?'var(--mut)':ki<=2?'var(--cy)':'var(--te)'}">${kp.v}<small style="font-size:9.5px;color:var(--tx2);font-weight:400"> ${kp.u||''}</small></div>
+        ${kp.s?`<div style="font-size:8.5px;color:var(--mut);margin-top:1px;max-width:150px;line-height:1.5">${kp.s}</div>`:''}
+      </div>`).join('');
+    return `
+  <div class="card s12 reveal" style="border-left:3px solid ${a.state==='live'?'var(--gd)':'var(--am)'}">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px">
+      <span class="num" style="font-size:10px;color:var(--mut)">${a.id}</span>
+      <b style="font-size:15.5px">${a.name}</b>
+      <span style="font-family:var(--mono);font-size:9.5px;padding:2.5px 10px;border-radius:999px;${a.state==='live'?'color:var(--gn);background:color-mix(in srgb,var(--gn) 12%,transparent)':'color:var(--am);background:color-mix(in srgb,var(--am) 12%,transparent)'}">${a.state==='live'?'● LIVE '+a.since+'〜':'◪ 外部計測'}</span>
+      <span style="margin-left:auto"><button class="btnQ actBtn" data-act="${i}" style="font-size:11px">何が変わったか・詳細 ▸</button></span>
+    </div>
+    <div style="font-size:12.3px;color:var(--tx2);margin-bottom:11px"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--gd)">PURPOSE</span>　${a.purpose}</div>
+    <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:stretch">${kpiChips}
+      <div style="margin-left:auto;background:color-mix(in srgb,var(--gd) 7%,var(--card2));border:1px solid color-mix(in srgb,var(--gd) 34%,transparent);border-radius:10px;padding:8px 15px;min-width:150px" title="${a.money.note}">
+        <div style="font-size:9px;color:var(--gd);letter-spacing:.08em">効果額（年換算）</div>
+        <div class="num" style="font-size:19px;font-weight:800;color:${a.money.now!=null?'var(--gd)':'var(--mut)'}">${a.money.now!=null?a.money.now+'<small style=\'font-size:10px\'>万円</small>':'集計中'}</div>
+        ${a.money.pot?`<div style="font-size:8.5px;color:var(--mut)">改修後ポテンシャル ${CM(a.money.pot)}万円</div>`:`<div style="font-size:8.5px;color:var(--mut)">${a.money.note.slice(0,26)}…</div>`}
+      </div>
+    </div>
+  </div>`}).join('')}
+
+  <!-- 効果額の積み上げ -->
+  <div class="card s12 reveal" style="padding:15px 20px">
+    <div class="ct" style="margin-bottom:9px"><span class="bar" style="background:var(--gd)"></span><h3>活動が生んだ効果額 — 積み上げ</h3><span class="sub">活動が増えるたびにここに積み上がる（年換算・実測ベース）</span></div>
+    <div style="display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center">
+      <div class="num" style="font-size:24px;font-weight:800;color:var(--gd)">73<small style="font-size:11px;color:var(--tx2)">万円/年〜</small></div>
+      <div style="height:22px;background:var(--bg2);border-radius:7px;overflow:hidden;display:flex;position:relative" title="実測 73万円（A-01）／薄い帯＝改修後ポテンシャル 1,251万円">
+        <i style="width:5.8%;background:linear-gradient(90deg,#FFE98A,#C98500)" title="A-01 T-Connect 実測ペース 73万円"></i>
+        <i style="width:94.2%;background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--gd) 13%,transparent) 0 8px,transparent 8px 16px)" title="改修後ポテンシャル 1,251万円（Step3）"></i>
+        <span style="position:absolute;right:9px;top:1px;font-family:var(--mono);font-size:10px;color:var(--mut)">ポテンシャル 1,251万円</span>
+      </div>
+      <div style="font-size:10px;color:var(--mut);max-width:230px;line-height:1.6">A-02は クリック蓄積後に自動加算・A-03は計測連携後。1件あたり価値 ${CM(OWNED.junction.perClickYen)}円（レポート#007から逆算）</div>
+    </div>
   </div>
 
-  <!-- 効果の根拠 -->
-  <div class="card s7 reveal">
-    <div class="ct"><span class="bar"></span><h3>効果の根拠 — クリックした人 vs しなかった人</h3><span class="sub">同一ページ滞在の実測差（GA4・秒）</span></div>
-    <div id="opsLift"></div>
-  </div>
-  <div class="card s5 reveal">
-    <div class="ct"><span class="bar"></span><h3>この効果を量産すると</h3><span class="sub">到達率シナリオ（分母=完了 年換算31,663件 実測）</span></div>
-    <div class="chart" id="chOpsScenario" style="height:238px"></div>
-    <div style="font-size:10.8px;color:var(--tx2);line-height:1.8;margin-top:8px">現状0.87%＝年253クリック・約200万円。<b class="hl">配置と文言の改修のみで 2〜5%＝460万〜1,200万円/年</b>（レポート#007前提）。</div>
+  <!-- ◤ A-01 深掘り -->
+  <div class="s12" style="border-left:3px solid color-mix(in srgb,var(--gd) 55%,transparent);padding-left:13px;margin-top:2px">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--gd);margin-bottom:10px">◤ A-01 T-Connect バナーの深掘り — なぜ効果があると言えるか</div>
+    <div class="grid">
+      <div class="card s7 reveal">
+        <div class="ct"><span class="bar"></span><h3>クリックした人 vs しなかった人</h3><span class="sub">同一ページ滞在の実測差（GA4・秒）</span></div>
+        <div id="opsLift"></div>
+      </div>
+      <div class="card s5 reveal">
+        <div class="ct"><span class="bar"></span><h3>クリック率を上げると（量産シナリオ）</h3><span class="sub">分母=完了 年換算${CM(J.denom.perYear)}件 実測</span></div>
+        <div class="chart" id="chOpsScenario" style="height:238px"></div>
+        <div style="font-size:10.8px;color:var(--tx2);line-height:1.8;margin-top:8px">実測ペース0.28%＝年92件・73万円。<b class="hl">配置と文言の改修のみで 2〜5%＝500万〜1,251万円/年</b>。</div>
+      </div>
+    </div>
   </div>
 
   <!-- 母数（参考・小さく） -->
@@ -324,7 +354,7 @@ function renderOps(){
   drawOpsScenario(J);
   drawSisaku();
   $('#goAssets2').onclick=()=>showView('assets');
-  $$('#opsRoot .actRow').forEach(r=>r.onclick=()=>actOpen(+r.dataset.act));
+  $$('#opsRoot .actBtn').forEach(b=>b.onclick=()=>actOpen(+b.dataset.act));
   runCountUps(root);
 }
 
@@ -474,12 +504,14 @@ function renderSNS(){
 
   root.innerHTML=`
   <!-- バズ・ヒーロー -->
-  <div class="card glow s12 reveal" style="border-color:color-mix(in srgb,var(--gd) 34%,transparent)">
+  <div class="card glow s12 reveal buzzCard" style="border-color:color-mix(in srgb,var(--gd) 40%,transparent)">
     <div style="display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:20px;align-items:center">
       <a href="javascript:void(0)" id="buzzCap" style="display:block;border-radius:12px;overflow:hidden;border:1px solid color-mix(in srgb,var(--gd) 40%,transparent)">
         <img src="${buzz.cap}" alt="精霊馬" style="width:100%;display:block"></a>
       <div>
-        <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.24em;color:var(--gd);margin-bottom:6px">BUZZ OF THE WEEK — 通常帯の80倍</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
+          <span class="buzzRibbon">🎉 BUZZ ACHIEVED</span>
+          <span style="font-family:var(--mono);font-size:9.5px;letter-spacing:.24em;color:var(--gd)">通常帯の80倍 — おめでとうございます！</span></div>
         <div style="font-size:16.5px;font-weight:800;line-height:1.6">お盆の帰省ラッシュ。もしご先祖様も渋滞に巻き込まれていたら？<span style="font-size:11px;color:var(--mut);font-weight:400">（精霊馬・CV:ファイルーズあい・8/13）</span></div>
         <div style="display:flex;gap:22px;flex-wrap:wrap;margin:13px 0 10px">
           <div><div style="font-size:10px;color:var(--mut)">いいね（IG）</div><div class="num" style="font-size:27px;font-weight:800;color:var(--gd)"><span data-cu="8.9" data-dec="1">0</span>万</div><div style="font-size:9.5px;color:var(--gn)">通常帯1,100の <b>81倍</b></div></div>
@@ -501,12 +533,21 @@ function renderSNS(){
           <span style="font-family:var(--mono);font-weight:800;font-size:12px;color:${md.col}">${md.id}　<span style="color:var(--tx);font-family:inherit;font-weight:700">${md.name}</span></span>
           <span class="num" style="font-size:13px;color:var(--tx)">${md.f}<span style="font-size:9px;color:var(--mut)"> ${md.id==='YT'?'登録':'フォロワー'}・${md.asof}</span></span>
         </div>
-        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:9px">
-          <div style="font-size:9.5px;color:var(--mut);font-family:var(--mono);letter-spacing:.12em;margin-bottom:3px">LATEST POST ・ ${md.latest.d}</div>
-          <div style="font-size:12px;font-weight:700;line-height:1.55">${md.latest.t}</div>
-          <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-family:var(--mono);font-size:10.5px;color:var(--tx2)">
-            <span>${md.latest.exp}</span>${md.latest.likes!=null?`<span>♥ ${CM(md.latest.likes)}</span>`:''}<span>${md.latest.rts}</span><span>${md.latest.com}</span>
-          </div>
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:7px 10px;margin-bottom:9px" onclick="event.stopPropagation()">
+          <div style="font-size:9.5px;color:var(--mut);font-family:var(--mono);letter-spacing:.12em;margin:2px 0 5px">RECENT POSTS ・ 直近${md.last5.length}件</div>
+          <table style="min-width:0;width:100%;font-size:10.5px;border-collapse:collapse">
+            <thead><tr style="color:var(--mut);font-family:var(--mono);font-size:8.5px"><th style="text-align:left;padding:2px 4px;border-bottom:1px solid var(--line)">日付</th><th style="text-align:left;padding:2px 4px;border-bottom:1px solid var(--line)">投稿</th><th style="text-align:right;padding:2px 4px;border-bottom:1px solid var(--line)">露出</th><th style="text-align:right;padding:2px 4px;border-bottom:1px solid var(--line)">♥</th><th style="text-align:right;padding:2px 4px;border-bottom:1px solid var(--line)">RP/シェア</th><th style="text-align:right;padding:2px 4px;border-bottom:1px solid var(--line)">コメ</th></tr></thead>
+            <tbody>${md.last5.map(p=>{
+              const hint = p.na?OWNED.sns.naHints.notYet : p.naExp?(md.id==='FB'?OWNED.sns.naHints.fbReach:OWNED.sns.naHints.igReach) : p.naRea?OWNED.sns.naHints.ytRea : '';
+              return `<tr style="${p.buzz?'background:color-mix(in srgb,var(--gd) 7%,transparent);':''}color:var(--tx2)">
+              <td class="num" style="padding:3.5px 4px;font-size:9.5px;color:var(--mut);white-space:nowrap;border-bottom:1px dashed var(--line)">${p.d}</td>
+              <td style="padding:3.5px 4px;line-height:1.45;border-bottom:1px dashed var(--line);${p.buzz?'color:var(--gd);font-weight:700':''}">${p.t}</td>
+              <td class="num" style="padding:3.5px 4px;text-align:right;white-space:nowrap;border-bottom:1px dashed var(--line)">${(p.exp==='非公開'||p.exp==='未取得')?`<span class="naHint" title="${hint}">${p.exp}</span>`:p.exp}</td>
+              <td class="num" style="padding:3.5px 4px;text-align:right;border-bottom:1px dashed var(--line)">${p.likes!=null?CM(p.likes):(p.naRea?`<span class="naHint" title="${OWNED.sns.naHints.ytRea}">—</span>`:'—')}</td>
+              <td class="num" style="padding:3.5px 4px;text-align:right;white-space:nowrap;border-bottom:1px dashed var(--line);font-size:9.5px">${p.rt||'—'}</td>
+              <td class="num" style="padding:3.5px 4px;text-align:right;white-space:nowrap;border-bottom:1px dashed var(--line);font-size:9.5px">${p.com||'—'}</td>
+            </tr>`}).join('')}</tbody>
+          </table>
         </div>
         <div style="font-size:11px;color:var(--tx2);line-height:1.8"><span style="font-family:var(--mono);font-size:9px;color:${md.col};letter-spacing:.14em">ANALYSIS</span><br>${md.note}</div>
       </div></div>`).join('')}
@@ -518,7 +559,7 @@ function renderSNS(){
     <div class="ct"><span class="bar"></span><h3>投稿パフォーマンス 一覧</h3><span class="sub">列見出しクリックでソート・行クリックで実画面／詳細 — 実測 8/19</span>
       <div class="r" id="snsCatFilter"></div></div>
     <div class="twrap"><table id="snsTable"></table></div>
-    <div style="font-size:10.3px;color:var(--mut);margin-top:7px">露出＝imp（X）／回視聴（YT）。IG・FBはリーチ非公開のため <b>倍率＝いいね基準の媒体内通常帯比</b>（代理指標）。倍率の基準値：X imp4.2万・いいね等170／IG 1,100／FB 450／YTはチャンネル別（SR 6千・TM 1.8万・DR 500）。</div>
+    <div style="font-size:10.3px;color:var(--mut);margin-top:7px">「非公開」「—」に<b>マウスを載せると取得方法</b>が表示されます。露出＝imp（X）／回視聴（YT）。IG・FBはリーチ非公開のため <b>倍率＝いいね基準の媒体内通常帯比</b>（代理指標）。倍率の基準値：X imp4.2万・いいね等170／IG 1,100／FB 450／YTはチャンネル別（SR 6千・TM 1.8万・DR 500）。</div>
   </div>
 
   <!-- 四象限 -->
@@ -578,10 +619,10 @@ function drawSnsTable(){
     <td><span class="pf" style="display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:7px;color:${PFC[p.sns]};background:color-mix(in srgb,${PFC[p.sns]} 13%,transparent)">${p.sns}</span></td>
     <td style="min-width:250px;font-size:12px;line-height:1.6">${p.buzz?'<span class="ptag" style="color:var(--gd);background:color-mix(in srgb,var(--gd) 14%,transparent);margin:0 6px 0 0">バズ</span>':''}${p.ad?'<span class="ptag" style="color:#9085E9;background:color-mix(in srgb,#9085E9 14%,transparent);margin:0 6px 0 0">広告併用</span>':''}${p.title}<div style="font-size:9.5px;color:var(--mut)"><span style="color:${CAT_COLORS[p.cat]}">■</span> ${p.cat} ・ ${p.ch}${p.cap?' ・ <span style="color:var(--gd)">実画面 ▸</span>':''}</div></td>
     <td class="num" style="font-size:10.5px;color:var(--mut)">${p.d}</td>
-    <td class="num">${p.exp!=null?fmtJP(p.exp):'<span style="color:var(--mut)">非公開</span>'}</td>
-    <td class="num">${p.likes!=null?CM(p.likes):'—'}</td>
-    <td class="num">${p.rts!=null?CM(p.rts):'—'}</td>
-    <td class="num">${p.com!=null?CM(p.com):'—'}</td>
+    <td class="num">${p.exp!=null?fmtJP(p.exp):`<span class="naHint" style="color:var(--mut)" title="${p.sns==='FB'?OWNED.sns.naHints.fbReach:OWNED.sns.naHints.igReach}">非公開</span>`}</td>
+    <td class="num">${p.likes!=null?CM(p.likes):(p.sns==='YT'?`<span class="naHint" title="${OWNED.sns.naHints.ytRea}">—</span>`:'—')}</td>
+    <td class="num">${p.rts!=null?CM(p.rts):(p.sns==='YT'?`<span class="naHint" title="${OWNED.sns.naHints.ytRea}">—</span>`:'—')}</td>
+    <td class="num">${p.com!=null?CM(p.com):(p.sns==='YT'?`<span class="naHint" title="${OWNED.sns.naHints.ytRea}">—</span>`:'—')}</td>
     <td class="num" style="color:${p.xm>=2?'var(--gd)':p.xm>=1?'var(--gn)':'var(--tx2)'};font-weight:700">×${p.xm>=10?Math.round(p.xm):p.xm.toFixed(2)}</td>
     <td class="num" style="color:${p.rm==null?'var(--mut)':p.rm>=2?'var(--gd)':p.rm>=1?'var(--gn)':'var(--tx2)'};font-weight:700">${p.rm!=null?'×'+(p.rm>=10?Math.round(p.rm):p.rm.toFixed(2)):'—'}</td>
   </tr>`).join('')}</tbody>`;

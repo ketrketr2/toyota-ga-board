@@ -554,3 +554,14 @@ select.sel:focus{outline:1px solid var(--cy)}
 #snsTable th.sortable{cursor:pointer;white-space:nowrap}
 #snsTable th.sortable:hover{color:var(--cy)}
 #snsTable th .arrow{color:var(--gd);margin-left:3px;font-size:9px}
+
+/* ============ v4: 祝い演出・非公開ヒント ============ */
+.naHint{border-bottom:1px dotted var(--mut);cursor:help}
+.buzzRibbon{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:800;letter-spacing:.14em;
+  color:#1A1200;background:linear-gradient(110deg,#FFE98A 0%,#FFD84D 38%,#F7C948 62%,#FFE98A 100%);background-size:200% 100%;
+  border-radius:999px;padding:4px 14px;box-shadow:0 0 18px rgba(255,216,77,.4);animation:buzzShine 2.6s linear infinite}
+@keyframes buzzShine{0%{background-position:0% 0}100%{background-position:200% 0}}
+.buzzCard{position:relative;overflow:hidden}
+.buzzCard::after{content:'';position:absolute;top:-60%;left:-30%;width:36%;height:220%;transform:rotate(22deg);pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,232,138,.075),transparent);animation:buzzSweep 4.2s ease-in-out infinite}
+@keyframes buzzSweep{0%,100%{left:-36%}55%{left:110%}60%{left:110%}}

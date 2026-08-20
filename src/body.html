@@ -54,7 +54,7 @@
       <div class="grid">
         <div class="card glow s7 reveal" id="heroCard"></div>
         <div class="card glow s5 reveal">
-          <div class="ct"><span class="bar"></span><h3>8月ミッションボード</h3><span class="sub">月間目標 × 18日経過時点</span></div>
+          <div class="ct"><span class="bar"></span><h3>8月ミッションボード</h3><span class="sub">月間目標 × 18日経過時点 — 目標の根拠は行クリック</span></div>
           <div class="mission" id="missionBox"></div>
         </div>
         <div id="kpiRow" style="display:contents"></div>
@@ -64,8 +64,9 @@
           <div class="chart" id="chTrend"></div>
         </div>
         <div class="card glow s4 reveal">
-          <div class="ct"><span class="bar"></span><h3>チャネル構成</h3><span class="sub">セッションシェア</span></div>
+          <div class="ct"><span class="bar"></span><h3>チャネル構成</h3><span class="sub">セッションシェア ＋ 日次トレンド（積み上げ）</span></div>
           <div class="chart" id="chChannelDonut"></div>
+          <div class="chart" id="chChannelTrend" style="min-height:150px;margin-top:2px"></div>
         </div>
         <div class="card s12 reveal"><div class="insight" id="hqInsight"></div></div>
       </div>
@@ -128,6 +129,11 @@
         <div class="card glow s6 reveal">
           <div class="ct"><span class="bar"></span><h3>車種 × 主要CV</h3><span class="sub">見積り・試乗・KINTOの獲得マップ</span></div>
           <div class="chart" id="chModelGoal"></div>
+        </div>
+        <div class="card s12 reveal" style="border-color:color-mix(in srgb,#FFD84D 26%,var(--line))">
+          <div class="ct"><span class="bar" style="background:#FFD84D;box-shadow:0 0 8px rgba(255,216,77,.5)"></span><h3>キーイベント実測分解 — 新車・その他CVの細分化</h3><span class="sub">GA4実測 7/22〜8/18（28日間）· 事業部レンズつき</span></div>
+          <div class="twrap"><table id="cvRealTable"></table></div>
+          <div style="font-size:10.4px;color:var(--mut);margin-top:8px">出典：GA4キーイベント実測（Windsor.ai経由 2026-08-19取得）。catalog_request_dealer_complete は28日間0件＝イベント定義の変更可能性があり要確認（表から除外）。事業部別の独立ページは、この分類を軸に施策リストの商材単位で増設していく設計。</div>
         </div>
         <div class="card s12 reveal"><div class="insight" id="goodsInsight"></div></div>
       </div>

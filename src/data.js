@@ -674,7 +674,47 @@ const GA = (() => {
     const w=[.32,.28,.16,.24];
     const s=ms.reduce((a,m,i)=>a+w[i]*Math.min(1.15,m.vsPace),0)/1.15*100;
     const tier= s>=90?'S': s>=72?'A': s>=58?'B':'C';
-    return {score:s, tier, missions:ms};
+    return {score:s, tier, missions:ms, weights:w};
+  }
+  /* スコアの日次推移（8/1〜最終日: 各日時点のMTDペースで再計算） */
+  function scoreTrend(){
+    const a=IDX['2026-08-01'], b=IDX['2026-08-18'];
+    const w=[.32,.28,.16,.24];
+    const out=[];
+    const mtd={estimate:0,testdrive:0,kinto:0,newSessions:0};
+    const targets=[190000,31500,9200,15000000];
+    for(let d=a;d<=b;d++){
+      for(let mi=0;mi<NM;mi++){
+        const m=MODELS[mi];
+        for(let c=0;c<NC;c++){
+          const sv=S[d][mi][c];
+          mtd.newSessions+=sv*CHANNELS[c].newShare;
+          for(const gid of ['estimate','testdrive','kinto']){
+            const g=GOALS.find(x=>x.id===gid);
+            mtd[gid]+=sv*m.cvr*g.mult*(GOAL_CH[gid][CHANNELS[c].id]||1)*DN[gid][d];
+          }
+        }
+      }
+      for(let c=0;c<NC;c++)mtd.newSessions+=OTHER[d][c]*CHANNELS[c].newShare;
+      const pace=(d-a+1)/31;
+      const acts=[mtd.estimate,mtd.testdrive,mtd.kinto,mtd.newSessions/1.06];
+      const sc=acts.reduce((acc,v,i)=>acc+w[i]*Math.min(1.15,(v/targets[i])/pace),0)/1.15*100;
+      out.push({date:DATES[d], score:sc});
+    }
+    return out;
+  }
+  /* イベントの実測影響：期間平均セッション vs 直前同日数平均 */
+  function eventImpact(){
+    const dayTotal=d=>{let t=0;for(let mi=0;mi<NM;mi++)for(let c=0;c<NC;c++)t+=S[d][mi][c];for(let c=0;c<NC;c++)t+=OTHER[d][c];return t};
+    return EVENTS.map(ev=>{
+      const s0=IDX[ev.date]; if(s0==null)return {...ev,impact:null};
+      const len=Math.min(ev.dur,3);  // 初動3日の押し上げで評価
+      let cur=0,prev=0,n=0;
+      for(let i=0;i<len;i++){ if(s0+i<NDAYS){cur+=dayTotal(s0+i);n++} }
+      for(let i=1;i<=n;i++){ if(s0-i>=0)prev+=dayTotal(s0-i) }
+      const ratio= prev>0? (cur/n)/(prev/n) : null;
+      return {...ev, impact:ratio};
+    });
   }
 
   /* ---------- カスタムディメンション辞書 ---------- */
@@ -748,7 +788,7 @@ const GA = (() => {
 
   return {DATES,CHANNELS,MODELS,GOODS,GOALS,AFFINITY,STAGES,AREAS,BUCKETS,RECENCY,DEVICES,AGES,EVENTS,
     CUSTOM_DIMS,EVENTS_DICT,DIMS,STAGE_LOGIN,
-    agg,pairMatrix,sankey,funnel,comboData,rfMatrix,affinityAgg,campaigns,utmTree,missions,score,
+    agg,pairMatrix,sankey,funnel,comboData,rfMatrix,affinityAgg,campaigns,utmTree,missions,score,scoreTrend,eventImpact,
     memberData,deviceAgg,demoAgg,areaAgg,affShare,goodsShare,areaShare};
 })();
 
@@ -1055,3 +1095,86 @@ OWNED.sns.media = [
    latest:{t:'三春町 水素ワークショップ', d:'8/17', exp:'リーチ非公開', likes:492, rts:'シェア 9', com:'コメント 3'},
    note:'自然リーチが構造的に低い媒体（想定リーチ率8%）だが、活動報告のストック置き場として機能。シェア×30の重み付けを持つFBアルゴに対し、地域・共催者のシェアを誘発する「タグ付け設計」が最小工数の改善'}
 ];
+
+/* ============ OWNED v4（2026-08-19）：目的起点KPI・効果額積み上げ・CV実測分解・媒体別直近5件 ============ */
+/* JP実測ベースの導線シナリオ再計算（分母=完了 年換算31,663件・1件あたり価値7,905円=レポート#007の 200万円÷253件 から逆算） */
+OWNED.junction.perClickYen = 7905;
+OWNED.junction.scenarios = [
+  {k:'実測ペース', r:.28, n:92,   h:18,  v:73,   req:'現状の配置のまま（クリック7件/29日 実測）'},
+  {k:'Step1',     r:2,   n:633,  h:121, v:500,  req:'完了文直下へ配置＋3本全表示'},
+  {k:'Step2',     r:3,   n:950,  h:181, v:751,  req:'＋見出し・コピーの具体化'},
+  {k:'Step3',     r:5,   n:1583, h:302, v:1251, req:'＋ボタン化・車種パーソナライズ'}
+];
+OWNED.junction.denom.perYear = 31663;
+/* 活動 v2：目的 → 目的から設計したKPI → 効果額 */
+OWNED.junction.activities[0].purpose = 'CVが起きた直後のHOTなユーザーに、コネクティッド（T-Connect）を知ってもらう';
+OWNED.junction.activities[0].kpis = [
+  {k:'表示（露出）', v:'2,516', u:'件/29日', s:'完了ページ表示＝試乗予約完了数（GA4実測）'},
+  {k:'クリック', v:'7', u:'件', s:'padid実測（7/7〜8/5）'},
+  {k:'クリック率', v:'0.28', u:'%', s:'7 ÷ 2,516'},
+  {k:'クリック後 滞在', v:'11:27', u:'/件', s:'予約完了後の純増接触時間'},
+  {k:'クリック後 回遊', v:'×2.1', u:'', s:'T-Connect滞在 1分34秒 vs 通常45秒'}
+];
+OWNED.junction.activities[0].money = {now:73, pot:1251, note:'年92件（実測ペース0.28%×分母31,663件）× 7,905円/件。改修後5%なら1,251万円'};
+OWNED.junction.activities[1].purpose = '同じHOTなユーザーに「トヨタのお店でスマホもまとめて相談できる」ことを知ってもらう';
+OWNED.junction.activities[1].kpis = [
+  {k:'表示（露出）', v:'2,516', u:'件/29日', s:'同・完了ページ'},
+  {k:'クリック', v:'計測1件〜', u:'', s:'8/4 第1号を実測（稼働2週間・蓄積中）'},
+  {k:'クリック率', v:'集計中', u:'', s:'次回GA4集計で確定'},
+  {k:'クリック後 回遊', v:'1:45', u:'', s:'第1号はリモートエアコン機能ページを読了'}
+];
+OWNED.junction.activities[1].money = {now:null, pot:null, note:'クリック蓄積後にA-01と同ロジックで算出（自動で積み上がる建て付け）'};
+OWNED.junction.activities[2].purpose = '同ユーザーに純正アップグレード用品を知ってもらう（遷移先が外部サイト）';
+OWNED.junction.activities[2].kpis = [
+  {k:'表示（露出）', v:'2,516', u:'件/29日', s:'同・完了ページ'},
+  {k:'クリック', v:'計測不可', u:'', s:'toyota.jp側GA4では遷移後を追えない'}
+];
+OWNED.junction.activities[2].money = {now:null, pot:null, note:'KINTO側GA4との連携合意後に計測開始'};
+
+/* 商材・CV：キーイベント実測分解（GA4・7/22〜8/18） */
+OWNED.tjCV = [
+  {ev:'estimate_simulation_complete', name:'見積りシミュレーション完了', n:393556, biz:'販売・宣伝'},
+  {ev:'maker_estimate_complete',      name:'メーカー見積り完了',        n:328160, biz:'販売・宣伝'},
+  {ev:'sign_up',                      name:'会員登録（TOYOTAアカウント）', n:161185, biz:'CRM・オウンド'},
+  {ev:'dealer_search',                name:'販売店検索',                n:79579,  biz:'販売店送客'},
+  {ev:'tel',                          name:'電話タップ',                n:7559,   biz:'販売店送客'},
+  {ev:'jp_improvement_cv_no_tell',    name:'JP改善CV（電話除く）',       n:5104,   biz:'オウンド'},
+  {ev:'lead_complete',                name:'リード獲得 完了',            n:3209,   biz:'CRM'},
+  {ev:'purchase',                     name:'purchase（EC系）',          n:2960,   biz:'EC・用品'},
+  {ev:'test_drive_normal_reserve',    name:'試乗予約（通常）',           n:2194,   biz:'販売店送客', hot:1},
+  {ev:'purchase_consultation',        name:'購入相談 完了',              n:775,    biz:'販売店送客'},
+  {ev:'test_drive_instant_reserve',   name:'試乗予約（即時）',           n:235,    biz:'販売店送客', hot:1}
+];
+
+/* SNS 媒体別 直近5件（実測クロール 8/19。※印＝投稿から間もない時点の値） */
+OWNED.sns.media[0].last5 = [
+  {d:'8/19', t:'トヨタの改善で畜産（トヨタイムズ引用）', exp:'1.8万', likes:55, rt:'RP3', com:'—', note:'※投稿4時間時点'},
+  {d:'8/17', t:'トヨタオス道場 エンジンブレーキ篇', exp:'5.2万', likes:133, rt:'RP12', com:'返信6'},
+  {d:'8/16', t:'三春町 水素ワークショップ', exp:'3.2万', likes:210, rt:'RP21', com:'返信3'},
+  {d:'8/14', t:'バッテリー打音【ヤバい兆し】', exp:'5.7万', likes:152, rt:'RP18', com:'返信8'},
+  {d:'8/12', t:'カギ音の正体（トヨタオス）', exp:'未取得', likes:null, rt:'—', com:'—', na:1}
+];
+OWNED.sns.media[1].last5 = [
+  {d:'8/18', t:'トヨタオス道場 エンジンブレーキ篇', exp:'非公開', likes:1038, rt:'—', com:'コメ10', naExp:1},
+  {d:'8/15', t:'バッテリー打音篇【ヤバい兆し】', exp:'非公開', likes:978, rt:'RP20', com:'コメ9', naExp:1},
+  {d:'8/13', t:'精霊馬の帰省ラッシュ 🎉', exp:'非公開', likes:89000, rt:'シェア4,802', com:'コメ463', naExp:1, buzz:1},
+  {d:'8/13', t:'カギ音の正体（トヨタオス）', exp:'非公開', likes:1241, rt:'RP15', com:'コメ4', naExp:1},
+  {d:'8/11頃', t:'エアコン篇【ヤバい兆し】', exp:'未取得', likes:null, rt:'—', com:'—', na:1}
+];
+OWNED.sns.media[2].last5 = [
+  {d:'8/17', t:'ウーブン・シティ#6（トヨタイムズ）', exp:'2万回', likes:null, rt:'—', com:'—', naRea:1},
+  {d:'8/13', t:'精霊馬が大渋滞（ドライバーズch）🎉', exp:'30万回', likes:null, rt:'ch通常比600倍', com:'—', naRea:1, buzz:1},
+  {d:'8月上旬', t:'【福祉】愛してくれた人が困っているかも（SR）', exp:'705万回', likes:null, rt:'広告併用と推定', com:'—', naRea:1},
+  {d:'2週間前', t:'SIENTA 商品紹介 乗降性/居住性（SR）', exp:'6,227回', likes:null, rt:'—', com:'—', naRea:1},
+  {d:'2週間前', t:'TOYOTA SOCIAL FES!! 旭川（SR）', exp:'1,398回', likes:null, rt:'—', com:'—', naRea:1}
+];
+OWNED.sns.media[3].last5 = [
+  {d:'8/17', t:'三春町 水素ワークショップ（とびchan.）', exp:'非公開', likes:492, rt:'シェア9', com:'コメ3', naExp:1},
+  {d:'—', t:'過去投稿は次回クロールで蓄積', exp:'', likes:null, rt:'', com:'', na:1}
+];
+OWNED.sns.naHints = {
+  igReach:'Instagramインサイト（管理画面）の閲覧権限共有、または Meta Business Suite 連携で取得できるようになります',
+  ytRea:'YouTube Studio の閲覧権限共有（またはAPI連携）で高評価・コメント・CTR・視聴維持率まで取得できるようになります',
+  fbReach:'Meta Business Suite 連携で投稿別リーチ・リアクション内訳が取得できるようになります',
+  notYet:'次回定例クロール（または該当投稿の個別クロール）で取得予定です'
+};
