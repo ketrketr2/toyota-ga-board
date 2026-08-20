@@ -977,3 +977,81 @@ OWNED.assetAt = snap => {                                       // 総資産（�
   const fl=28.6 + Object.values(OWNED.flowFixed).reduce((a,b)=>a+b,0);
   return { stock:st, flow:fl, total:st+fl };
 };
+
+/* ============ OWNED 再構築データ（2026-08-19 v3）：活動台帳・投稿統一テーブル・四象限 ============ */
+/* --- JP活用実績：活動台帳（行クリック → 何が変わったか） --- */
+OWNED.junction.activities = [
+  { id:'A-01', name:'T-Connect バナー実装', target:'リクエスト（試乗予約）完了ページ', since:'2026-07-27', state:'live',
+    what:'完了ページ下部「トピックス」枠にT-Connect訴求バナーを新設。padid付き実URLで個別計測',
+    url:'https://toyota.jp/tconnectservice/?padid=from_service_request_done_260727',
+    vol:{ exposure:'予約完了者 2,429件/28日（GA4実測）の眼前に常時表示', clicks:'クリック 7セッション（7/7〜8/5・29日）', note:'到達率 現状0.87%' },
+    fx:[ ['CV寄与','来店予約step1 到達 1件（7/30深夜・実測第1号）'],
+         ['追加滞在','11分27秒/件 — 予約完了後に純増で得た接触時間'],
+         ['回遊の深さ','T-Connect滞在 ×2.1（1分34秒 vs 通常45秒）・ページ内行動 ×3.8'],
+         ['来店行動','店舗検索滞在 +63%（1分51秒）・地図検索 +46%'] ],
+    before:'完了文 → 販売店連絡先 → 横スクロールのカルーセル（2枚目以降はスワイプ必須）',
+    after:'T-Connectバナーが完了ページに常設。クリック者は「試乗当日の予習」（リモートエアコン1分45秒・対応車種リスト確認）に回遊',
+    timeline:true,
+    next:'完了文直下へ配置＋3本全表示（レポート#007改善案）→ 到達率2%で年579件・460万円へ' },
+  { id:'A-02', name:'au / UQ mobile バナー実装', target:'リクエスト（試乗予約）完了ページ', since:'2026-08-04', state:'live',
+    what:'同トピックス枠に「クルマもスマホもトヨタのお店でまとめてサポート」バナーを追加',
+    url:'https://toyota.jp/service/request/',
+    vol:{ exposure:'予約完了者 2,429件/28日（GA4実測）の眼前に常時表示', clicks:'第1号ユーザーを 8/4 実測（稼働2週間）', note:'クリック蓄積はこれから' },
+    fx:[ ['回遊','第1号はauの回線案内でなくT-Connectリモートエアコン機能へ回遊（1分45秒読了）'],
+         ['示唆','「来店のついでにスマホも相談」文脈が自然 — 回線訴求より“来店時にできること”が刺さる'] ],
+    before:'au/UQの接点は完了ページに存在せず',
+    after:'完了ページからauショップ関連へ導線が開通。8/4に第1号回遊を確認',
+    next:'主見出しを「来店のついでに、スマホもまとめて相談」へ（画像内文言の昇格）' },
+  { id:'A-03', name:'用品UG（アップグレードファクトリー）バナー', target:'同・完了ページ', since:'稼働中', state:'ext',
+    what:'純正装備の後付け訴求。遷移先が別サイト（KINTO側）',
+    url:'https://toyota.jp/',
+    vol:{ exposure:'同上の露出面', clicks:'toyota.jp側GA4では計測不可', note:'先方GA4連携待ち' },
+    fx:[ ['計測','効果計測は連携後に追加（このボードに行が増える建て付け）'] ],
+    before:'—', after:'—', next:'KINTO側GA4との計測連携を提案中' }
+];
+
+/* --- SNS：投稿統一テーブル（列分離・ソート用）＋カテゴリ＋媒体内倍率 --- */
+/* mult: 媒体・チャンネル通常帯に対する倍率（露出xm / リアクションrm）。基準値はnorm参照 */
+OWNED.sns.norm = { X:{exp:42000, rea:170, expL:'imp中央値4.2万（直近4投稿実測）', reaL:'いいね+RP+返信 通常計170'},
+  IG:{exp:1100, rea:1120, expL:'いいね通常帯1,100（リーチ非公開のため代理・注記）', reaL:'総リアクション通常帯1,120'},
+  FB:{exp:450, rea:460, expL:'想定リーチ4.5万×ER1%＝450', reaL:'同460'},
+  YTSR:{exp:6000}, YTDR:{exp:500}, YTTM:{exp:18000} };
+OWNED.sns.posts2 = [
+  {sns:'IG', ch:'@toyota_jp', title:'お盆の帰省ラッシュ。もしご先祖様も渋滞に巻き込まれていたら？（精霊馬・CV:ファイルーズあい）', d:'8/13', cat:'キャラ×季節',
+   exp:null, likes:89000, rts:4802, com:463, rea:94265, xm:80.9, rm:84.2, url:'https://www.instagram.com/p/Db83dLLgc-i/', cap:'assets/sns/ig_viral.jpg', buzz:1},
+  {sns:'YT', ch:'ドライバーズch', title:'【前代未聞】帰省ラッシュで精霊馬が大渋滞（CV:ファイルーズあい）', d:'8/13', cat:'キャラ×季節',
+   exp:300000, likes:null, rts:null, com:null, rea:null, xm:600, rm:null, url:'https://www.youtube.com/@toyotadriverschannel/videos', cap:'assets/sns/yt_dr.jpg', buzz:1},
+  {sns:'YT', ch:'ショールーム', title:'【福祉】あなたを愛してくれた人が困っているかも', d:'8月上旬', cat:'感動CM（広告併用）',
+   exp:7050000, likes:null, rts:null, com:null, rea:null, xm:1175, rm:null, url:'https://www.youtube.com/@toyotajpchannel/videos', cap:'assets/sns/yt_sr.jpg', ad:1},
+  {sns:'X', ch:'@TOYOTA_PR', title:'ｶｯｶｯｶｯ…バッテリー上がりの打音【本当にあったヤバい兆し】', d:'8/14', cat:'実用ホラー',
+   exp:57000, likes:152, rts:18, com:8, rea:178, xm:1.36, rm:1.05, url:'https://x.com/TOYOTA_PR'},
+  {sns:'X', ch:'@TOYOTA_PR', title:'＼モット！トヨタオス！／ エンジンブレーキ篇', d:'8/17', cat:'道場シリーズ',
+   exp:52000, likes:133, rts:12, com:6, rea:151, xm:1.24, rm:0.89, url:'https://x.com/TOYOTA_PR'},
+  {sns:'X', ch:'@TOYOTA_PR', title:'福島県三春町 水素ワークショップ（SAMURAI BLUE クラウンFCEV）', d:'8/16', cat:'活動報告',
+   exp:32000, likes:210, rts:21, com:3, rea:234, xm:0.76, rm:1.38, url:'https://x.com/TOYOTA_PR', cap:'assets/sns/x_post_h2.jpg'},
+  {sns:'IG', ch:'@toyota_jp', title:'トヨタオス道場「カギ音の正体」篇', d:'8/13', cat:'道場シリーズ',
+   exp:null, likes:1241, rts:15, com:4, rea:1260, xm:1.13, rm:1.13, url:'https://www.instagram.com/p/Db7JyBRFISK/', cap:'assets/sns/ig_key.jpg'},
+  {sns:'IG', ch:'@toyota_jp', title:'トヨタオス道場「エンジンブレーキ」篇', d:'8/18', cat:'道場シリーズ',
+   exp:null, likes:1038, rts:null, com:10, rea:1048, xm:0.94, rm:0.94, url:'https://www.instagram.com/p/DcIBp7lkhOX/', cap:'assets/sns/ig_reel.jpg'},
+  {sns:'IG', ch:'@toyota_jp', title:'ゾッとする前に。バッテリー打音篇【ヤバい兆し】', d:'8/15', cat:'実用ホラー',
+   exp:null, likes:978, rts:20, com:9, rea:1007, xm:0.89, rm:0.90, url:'https://www.instagram.com/p/DcATpx-AhoP/', cap:'assets/sns/ig_battery.jpg'},
+  {sns:'FB', ch:'TOYOTA公式', title:'三春町 水素ワークショップ（とびchan.）', d:'8/17', cat:'活動報告',
+   exp:null, likes:492, rts:9, com:3, rea:504, xm:1.09, rm:1.10, url:'https://www.facebook.com/ToyotaMotorCorporation', cap:'assets/sns/fb_post.jpg'},
+  {sns:'YT', ch:'トヨタイムズ', title:'【新体制】豊田大輔SVP帰任｜月イチ！ウーブン・シティ#6', d:'8/17', cat:'企業ニュース',
+   exp:20000, likes:null, rts:null, com:null, rea:null, xm:1.11, rm:null, url:'https://www.youtube.com/@toyotatimes/videos'}
+];
+/* --- 媒体別 最新投稿＋分析コメント --- */
+OWNED.sns.media = [
+  {id:'X', name:'X @TOYOTA_PR', col:'#8A96A8', f:'64.7万', asof:'8/19実測', cap:'assets/sns/x_profile.jpg', url:'https://x.com/TOYOTA_PR',
+   latest:{t:'＼モット！トヨタオス！／ エンジンブレーキ篇', d:'8/17', exp:'5.2万 imp', likes:133, rts:'RP 12', com:'返信 6'},
+   note:'実用ホラー（ヤバい兆し）が通常帯の1.4倍impと安定して跳ねる。活動報告（水素WS）はimpこそ0.8倍だが反応率1.4倍＝コア層に濃く刺さる。会話（返信）を最重視するXアルゴと道場シリーズの質問誘発が好相性'},
+  {id:'IG', name:'Instagram @toyota_jp', col:'#D55181', f:'85.1万', asof:'8/19実測', cap:'assets/sns/ig_profile.jpg', url:'https://www.instagram.com/toyota_jp/',
+   latest:{t:'トヨタオス道場「エンジンブレーキ」篇', d:'8/18', exp:'リーチ非公開', likes:1038, rts:'リポスト —', com:'コメント 10'},
+   note:'精霊馬が通常帯の81倍いいね・シェア4,802で圧勝 — シェアを最重視するIGアルゴの勝ち筋そのもの。通常投稿は1,000いいね前後で安定。リール保持率・保存数（管理画面）が届けば伸びしろの特定が可能'},
+  {id:'YT', name:'YouTube 3ch', col:'#E66767', f:'127.9万', asof:'8/19実測', cap:'assets/sns/yt_dr.jpg', url:'https://www.youtube.com/@toyotadriverschannel',
+   latest:{t:'精霊馬が大渋滞（ドライバーズch）', d:'8/13', exp:'30万回視聴', likes:null, rts:'ch通常比 600倍', com:'—'},
+   note:'チャンネルごとに通常帯が2桁違う（SR 6千・TM 1.8万・DR 500）。精霊馬はDR通常比600倍でチャンネルの天井を突破 — バズ企画の受け皿をDRに固定するとチャンネル成長が歪むため、キャラ企画は本体chへの同時投稿を推奨'},
+  {id:'FB', name:'Facebook TOYOTA公式', col:'#3987E5', f:'56万', asof:'8/19実測', cap:'assets/sns/fb_page.jpg', url:'https://www.facebook.com/ToyotaMotorCorporation',
+   latest:{t:'三春町 水素ワークショップ', d:'8/17', exp:'リーチ非公開', likes:492, rts:'シェア 9', com:'コメント 3'},
+   note:'自然リーチが構造的に低い媒体（想定リーチ率8%）だが、活動報告のストック置き場として機能。シェア×30の重み付けを持つFBアルゴに対し、地域・共催者のシェアを誘発する「タグ付け設計」が最小工数の改善'}
+];

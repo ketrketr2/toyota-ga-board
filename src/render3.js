@@ -235,146 +235,77 @@ function drawAstTrend(a0,a1,s0,s1){
   }));
 }
 
-/* ================= SECTOR 09: JP活用実績（活動 → ボリューム → 質 → 効果） ================= */
+/* ================= SECTOR 09: JP活用実績（効果 → 活動台帳 → 根拠） ================= */
 function renderOps(){
   const J=OWNED.junction, T=OWNED.tj, root=$('#opsRoot');
   if(!SIS) SIS=sisLoad();
-  const doneY=Math.round((T.tdN+T.tdI)/28*365);   // 完了ページ到達 年換算（実測）
+  const ACTS=J.activities, live=ACTS.filter(a=>a.state==='live').length;
 
   root.innerHTML=`
-  <!-- STEP 0: 何が生まれたか -->
-  <div class="card glow s12 reveal" style="border-color:color-mix(in srgb,var(--gd) 26%,transparent)">
-    <div class="ct"><span class="stepLbl" style="background:var(--gd)">ACTIVITY ─ 生まれた活用</span><span class="sub">オウンドチームの提案で リクエスト完了ページに3導線を実装</span>
-      <div class="r"><span style="font-size:10px;color:var(--mut)">計測: GA4実測（レポート#007 7/7〜8/5 ＋ 全体28日 7/22〜8/18）</span></div></div>
-    <div class="grid" style="gap:12px">
-      ${J.lines.map(l=>`
-      <div class="s4" style="min-width:0"><div class="lineCard" style="background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:13px 15px;height:100%">
-        <span class="st ${l.state}">${l.state==='live'?'● LIVE':'◪ 外部計測'}　${l.since}</span>
-        <h4>${l.name}</h4>
-        <div class="d">${l.desc}</div>
-        <div class="pad">${l.id==='tconnect'?`<a href="${l.url}" target="_blank" rel="noopener" style="color:var(--cy)">padid=${l.padid}</a>`:l.padid}</div>
-      </div></div>`).join('')}
+  <!-- 効果ファースト・ヒーロー -->
+  <div class="card glow s12 reveal" style="border-color:color-mix(in srgb,var(--gd) 30%,transparent)">
+    <div class="oneHero">
+      <div class="oneBig">
+        <div class="cap">OWNED ACTIVITY — 実装済みの活動</div>
+        <div class="n" data-cu="${live}">0</div>
+        <div class="u">件<span style="color:var(--mut)">　＝ リクエスト完了ページの <b class="hl">2つのバナー</b></span></div>
+        <div style="font-size:10.5px;color:var(--mut);margin-top:7px">T-Connect（7/27〜）／ au・UQ（8/4〜）。<br>下の台帳の行をクリック → <b style="color:var(--gd)">何が変わったか</b>を表示。<br>活動が増えるたびにこの数字と行が増える。</div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:var(--gd);margin-bottom:8px">EFFECT — この2件が生んだ効果（GA4実測）</div>
+        <div class="oneStats">
+          <div class="oneStat" style="border-color:color-mix(in srgb,var(--gd) 40%,transparent)"><div class="k">CV寄与</div><div class="v" style="color:var(--gd)"><span data-cu="1">0</span><small> 件</small></div><div class="s">来店予約step1到達（7/30 実測第1号）</div></div>
+          <div class="oneStat"><div class="k">1クリックあたり追加滞在</div><div class="v">11<small>分</small>27<small>秒</small></div><div class="s">予約完了後に純増した接触時間</div></div>
+          <div class="oneStat"><div class="k">回遊の深さ</div><div class="v">×<span data-cu="2.1" data-dec="1">0</span></div><div class="s">T-Connect滞在 1分34秒 vs 通常45秒</div></div>
+          <div class="oneStat"><div class="k">来店行動（店舗検索）</div><div class="v">+<span data-cu="63">0</span><small> %</small></div><div class="s">滞在1分51秒 vs 通常1分08秒</div></div>
+        </div>
+        <div style="margin-top:11px;font-size:11.3px;color:var(--tx2);line-height:1.8">アピールの型：<b class="hl">「完了ページに2本のバナーを実装し、クリック者の回遊は通常の2.1倍・店舗検索+63%、来店予約1件に到達」</b>。分母（アクセス量）は下の台帳と母数バーに。</div>
+      </div>
     </div>
   </div>
 
-  <!-- STEP 1: ボリューム -->
+  <!-- 活動台帳 -->
   <div class="card s12 reveal">
-    <div class="ct"><span class="stepLbl" style="background:var(--cy)">STEP 1 ─ VOLUME　どれだけの量に届いているか</span><span class="sub">toyota.jp GA4実測 7/22〜8/18（28日間）</span></div>
-    <div class="volGrid">
-      <div class="volCard" style="--vc:var(--gd)">
-        <div class="vk">導線の設置面 ＝ 試乗予約 完了者<br>（完了ページ到達・28日実測）</div>
-        <div class="vv"><span data-cu="${T.tdN+T.tdI}">0</span><small> 件</small></div>
-        <div class="vs">日平均 <b>${((T.tdN+T.tdI)/28).toFixed(1)}件</b> → 年換算 <b>${CM(doneY)}件</b> が3導線の露出対象。通常予約${CM(T.tdN)}＋即時${T.tdI}</div>
-      </div>
-      <div class="volCard" style="--vc:var(--cy)">
-        <div class="vk">toyota.jp 全体セッション（28日）</div>
-        <div class="vv"><span data-cu="${(T.s/1e4).toFixed(0)}">0</span><small> 万</small></div>
-        <div class="vs">PV <b>${fmtJP(T.pv)}</b>・ユーザー ${fmtJP(T.u)}。年換算 <b>1.26億セッション</b> の巨大な母集団の最深部に導線が立つ</div>
-      </div>
-      <div class="volCard" style="--vc:var(--te)">
-        <div class="vk">周辺の事業KPIボリューム（28日）</div>
-        <div class="vv"><span data-cu="${(T.sim/1e4).toFixed(1)}" data-dec="1">0</span><small> 万件</small></div>
-        <div class="vs">見積りシミュレーション完了。6種CV複合は <b>${fmtJP(T.cv6)}件</b>、キーイベント総数 ${fmtJP(T.ke)}件</div>
-      </div>
-      <div class="volCard" style="--vc:#9085E9">
-        <div class="vk">導線クリック（7/7〜8/5・29日）</div>
-        <div class="vv"><span data-cu="7">0</span><small> セッション</small></div>
-        <div class="vs">到達率 現状0.87%（レポート#007試算）。<b>量はこれからの伸びしろ</b> — 配置改善で2〜5%へ（下のシナリオ）</div>
-      </div>
-    </div>
-    <div class="chart" id="chOpsVolume" style="height:230px;margin-top:14px"></div>
-    <div style="font-size:10.5px;color:var(--mut);margin-top:4px">毎日 <b class="hl">約80人の「試乗予約を完了した高温度ユーザー」</b>の眼前に導線が表示され続けている — この面の価値がボリュームの土台。</div>
+    <div class="ct"><span class="bar" style="background:var(--gd);box-shadow:0 0 8px rgba(255,216,77,.5)"></span><h3>活動台帳 — 何をして、どれだけ見られ、何を生んだか</h3><span class="sub">行をクリック → 変更内容・数値詳細・次の一手</span></div>
+    <div class="twrap"><table class="actTbl">
+      <thead><tr><th>ID</th><th>活動</th><th>状態</th><th>アクセスボリューム</th><th>生んだ効果</th><th class="op"></th></tr></thead>
+      <tbody>${ACTS.map((a,i)=>`<tr class="actRow" data-act="${i}">
+        <td class="num" style="color:var(--mut);font-size:10.5px">${a.id}</td>
+        <td style="min-width:220px"><b style="font-size:12.8px">${a.name}</b><div style="font-size:10.3px;color:var(--mut);margin-top:2px">${a.target}</div></td>
+        <td><span class="st ${a.state}" style="display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9.5px;padding:2.5px 9px;border-radius:999px;${a.state==='live'?'color:var(--gn);background:color-mix(in srgb,var(--gn) 12%,transparent)':'color:var(--am);background:color-mix(in srgb,var(--am) 12%,transparent)'}">${a.state==='live'?'● LIVE':'◪ 外部計測'}</span><div style="font-family:var(--mono);font-size:9.5px;color:var(--mut);margin-top:3px">${a.since}</div></td>
+        <td style="font-size:11.3px;line-height:1.75;min-width:200px"><b class="num" style="color:var(--cy)">${a.vol.clicks}</b><div style="color:var(--mut);font-size:10.3px">${a.vol.exposure}</div></td>
+        <td style="font-size:11.3px;line-height:1.8;min-width:240px">${a.fx.slice(0,2).map(f=>`<div><span style="color:var(--gd);font-family:var(--mono);font-size:9px">${f[0]}</span>　${f[1].split('—')[0].split('（')[0]}</div>`).join('')}</td>
+        <td class="op" style="white-space:nowrap"><span style="font-family:var(--mono);font-size:10px;color:var(--gd)">詳細 ▸</span></td>
+      </tr>`).join('')}</tbody></table></div>
+    <div style="font-size:10.5px;color:var(--mut);margin-top:8px">露出面（分母）＝試乗予約 完了 <b class="num">2,429件/28日</b>（GA4実測・日平均86.8件）。この面に立つバナーが上の2件。</div>
   </div>
 
-  <!-- STEP 2: 質 -->
+  <!-- 効果の根拠 -->
   <div class="card s7 reveal">
-    <div class="ct"><span class="stepLbl" style="background:var(--te)">STEP 2 ─ QUALITY　どれだけ深く使われたか</span><span class="sub">クリック者 vs 非クリック者（GA4実測・秒）</span></div>
+    <div class="ct"><span class="bar"></span><h3>効果の根拠 — クリックした人 vs しなかった人</h3><span class="sub">同一ページ滞在の実測差（GA4・秒）</span></div>
     <div id="opsLift"></div>
-    <div class="insight" style="margin-top:10px">${J.liftNote}</div>
   </div>
   <div class="card s5 reveal">
-    <div class="ct"><span class="bar"></span><h3>導線群 × 対照群</h3><span class="sub">7/7〜8/5 · 29日間</span></div>
-    <div class="twrap"><table>
-      <thead><tr><th>指標</th><th class="num">導線クリック者</th><th class="num">通常の完了者</th></tr></thead>
-      <tbody>
-        <tr><td>セッション</td><td class="num">7</td><td class="num">2,351</td></tr>
-        <tr><td>平均継続時間</td><td class="num" style="color:var(--te)">11分27秒<div style="color:var(--mut);font-size:9.5px">完了後の純増分</div></td><td class="num">18分11秒<div style="color:var(--mut);font-size:9.5px">予約作業を含む</div></td></tr>
-        <tr><td>エンゲージメント率</td><td class="num" style="color:var(--gn)">100%</td><td class="num">96.68%</td></tr>
-        <tr><td>T-Connect関連 平均滞在</td><td class="num" style="color:var(--te)">1分34秒（×2.1）</td><td class="num">45秒</td></tr>
-        <tr><td>ページ内イベント</td><td class="num" style="color:var(--te)">15件（×3.8）</td><td class="num">4件</td></tr>
-      </tbody></table></div>
+    <div class="ct"><span class="bar"></span><h3>この効果を量産すると</h3><span class="sub">到達率シナリオ（分母=完了 年換算31,663件 実測）</span></div>
+    <div class="chart" id="chOpsScenario" style="height:238px"></div>
+    <div style="font-size:10.8px;color:var(--tx2);line-height:1.8;margin-top:8px">現状0.87%＝年253クリック・約200万円。<b class="hl">配置と文言の改修のみで 2〜5%＝460万〜1,200万円/年</b>（レポート#007前提）。</div>
   </div>
 
-  <!-- 閲覧箇所 × 実キャプチャ -->
-  <div class="card s12 reveal">
-    <div class="ct"><span class="bar"></span><h3>何を読み込んだか — 閲覧箇所と実際の画面</h3><span class="sub">滞在実測 × 実ページキャプチャ（8/19取得・クリックで拡大）</span></div>
-    <div class="jpcap">
-      ${[
-        {img:'assets/jp/jp_tconnect.jpg',t:'T-Connect トップ',stay:'1分50秒',note:'通常45秒の2.4倍。12イベント＝スクロール読破。導線の着地点',url:J.lines[0].url},
-        {img:'assets/jp/jp_aircon.jpg',t:'リモートエアコン機能ページ',stay:'1分45秒',note:'「夏の暑い時や冬の寒い時」— 真夏の試乗前に最も刺さる1機能。対応車種リストまでクリック',url:'https://toyota.jp/tconnectservice/service/remote_aircon.html'},
-        {img:'assets/jp/jp_store.jpg',t:'販売店検索',stay:'1分51秒（+63%）',note:'クリック者が最も長く使う面。「どの店に行くか」＝来店直前の行動',url:'https://toyota.jp/service/store-search/dc/search'}
-      ].map(c=>`<a class="capIt" href="javascript:void(0)" data-cap="${c.img}" data-t="${c.t}" data-m="${c.note}" data-u="${c.url}">
-        <img src="${c.img}" alt="${c.t}" loading="lazy">
-        <div class="cl"><b>${c.t}</b> — 滞在 <span style="color:var(--te);font-family:var(--mono)">${c.stay}</span><br><span style="color:var(--mut)">${c.note}</span></div></a>`).join('')}
+  <!-- 母数（参考・小さく） -->
+  <div class="card s12 reveal" style="padding:13px 20px">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--mut)">
+      <span style="font-family:var(--mono);font-size:9px;letter-spacing:.2em">母数の文脈（28日・GA4実測）</span>
+      <span>toyota.jp全体 <b class="num" style="color:var(--tx2)">970万</b>セッション</span><span style="color:var(--line2)">▶</span>
+      <span>試乗予約 完了 <b class="num" style="color:var(--tx2)">2,429</b>件（露出面）</span><span style="color:var(--line2)">▶</span>
+      <span>導線クリック <b class="num" style="color:var(--cy)">7</b></span><span style="color:var(--line2)">▶</span>
+      <span>CV寄与 <b class="num" style="color:var(--gd)">1</b>件</span>
+      <span style="margin-left:auto;font-size:10px">JPの資産換算は<a href="javascript:void(0)" id="goAssets2" style="color:var(--gd)">オウンド資産</a>へ</span>
     </div>
   </div>
 
-  <!-- STEP 3: 効果 -->
-  <div class="card glow s5 reveal" style="border-color:color-mix(in srgb,var(--gd) 30%,transparent)">
-    <div class="ct"><span class="stepLbl" style="background:var(--gd)">STEP 3 ─ EFFECT　何が生まれたか</span></div>
-    <div class="oneBig" style="border:none;padding:6px 8px 0;text-align:center">
-      <div class="cap">CV寄与 — 実測第1号</div>
-      <div class="n" data-cu="1" style="font-size:84px">0</div>
-      <div class="u">件　—　導線経由の <b class="hl">オンライン来店予約 step1 到達</b></div>
-      <div style="font-size:10.5px;color:var(--mut);margin:8px 0 4px">7/30 深夜0:46 実測。量産前提のカウンター — 導線・成果の追加で拡張</div>
-    </div>
-    <div class="oneStats" style="grid-template-columns:1fr 1fr;margin-top:8px">
-      <div class="oneStat"><div class="k">1件あたり追加滞在</div><div class="v">11<small>分</small>27<small>秒</small></div><div class="s">完了後に純増で得た接触時間</div></div>
-      <div class="oneStat"><div class="k">step1 到達率</div><div class="v">16.7<small> %</small></div><div class="s">クリック者のうち（通常完了者は0）</div></div>
-    </div>
-    <div class="tl" style="margin-top:14px">${J.timeline.slice(0,4).map((r,i)=>`
-      <div class="tlr"><div class="tt">${r.t}</div><div class="te">${r.e}</div></div>`).join('')}
-      ${J.timeline.slice(4).map((r,i)=>`
-      <div class="tlr ${i===1?'gold':''}"><div class="tt">${r.t}</div><div class="te">${r.e}</div><div class="ts">${r.s}</div></div>`).join('')}
-    </div>
-  </div>
-
-  <div class="card s7 reveal">
-    <div class="ct"><span class="bar"></span><h3>年間価値シナリオ — 量を伸ばすといくらになるか</h3><span class="sub">分母＝完了ページ到達 実測（年換算 ${CM(doneY)}件）</span></div>
-    <div class="chart" id="chOpsScenario" style="height:240px"></div>
-    <div class="twrap" style="margin-top:8px"><table>
-      <thead><tr><th>シナリオ</th><th class="num">到達率</th><th class="num">年間導線経由</th><th class="num">追加接触時間</th><th class="num">年間価値</th><th>要件</th></tr></thead>
-      <tbody>${J.scenarios.map((s,i)=>`<tr>
-        <td><b style="color:${i===0?'var(--tx2)':'var(--gd)'}">${s.k}</b></td>
-        <td class="num">${s.r}%</td><td class="num">${CM(s.n)}件</td><td class="num">約${s.h}時間</td>
-        <td class="num" style="color:${i===0?'var(--tx)':'var(--gd)'};font-weight:700">約${CM(s.v)}万円</td>
-        <td style="font-size:11px;color:var(--tx2)">${s.req}</td></tr>`).join('')}</tbody></table></div>
-    <div style="font-size:10.5px;color:var(--mut);margin-top:8px">前提：step1→来店30%・来店→成約20%・新車限界利益30万円/台・T-Connect寄与0.5万円/S（レポート#007）。必要な改修は<b class="hl">ブロック順序・表示・文言のみ＝開発コスト軽微</b>。</div>
-    <div class="card clickable" data-logic="jp" style="margin-top:12px;padding:13px 16px;background:var(--card2)">
-      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><b>JP自体の資産価値</b>
-        <span class="num" style="color:var(--gd);font-weight:800;font-size:19px">28.6億円/年</span>
-        <span style="font-size:11px;color:var(--tx2)">＋ 回遊価値 ${OWNED.jpAsset.kaiyu.val}億円（実測PV/S ${T.pvps.toFixed(2)}）</span>
-        <span class="clickHint" style="margin-left:auto">▸ クリックで計算式</span></div>
-      <div style="font-size:10.8px;color:var(--mut);margin-top:4px">この面の活用改善は、オウンド総資産の最大チャネル（JP）の価値を直接引き上げる活動 — オウンド資産ビューと同じロジックで換算。</div>
-    </div>
-  </div>
-
-  <!-- 行き先・改善・施策リスト -->
-  <div class="card s6 reveal">
-    <div class="ct"><span class="bar"></span><h3>導線セッションの行き先</h3><span class="sub">日付別・実測</span></div>
-    <div class="twrap"><table>
-      <thead><tr><th>日付</th><th>着地後の経路</th><th>知ろうとしたこと</th></tr></thead>
-      <tbody>${J.sessions4.map(r=>`<tr><td class="num">${r.d}</td><td style="font-size:11px;line-height:1.7">${r.path}<div style="color:var(--te);font-family:var(--mono);font-size:9.5px;margin-top:2px">${r.stay}</div></td><td style="font-size:11.3px;color:var(--tx2)">${r.want}</td></tr>`).join('')}</tbody></table></div>
-  </div>
-  <div class="card s6 reveal">
-    <div class="ct"><span class="bar"></span><h3>クリエイティブ改善案</h3><span class="sub">完了ページ実機検証（8/5）</span></div>
-    <div class="twrap"><table>
-      <thead><tr><th style="width:96px">対象</th><th>改善案（滞在データが根拠）</th></tr></thead>
-      <tbody>${J.improve.map(r=>`<tr><td><b>${r.t}</b></td><td style="font-size:11.4px;color:var(--tx2)">${r.to}<div style="font-size:10px;color:var(--mut);margin-top:2px">現状: ${r.now}</div></td></tr>`).join('')}</tbody></table></div>
-  </div>
-
+  <!-- 施策リスト（これから活動になるパイプライン） -->
   <div class="card s12 reveal" id="sisCard">
-    <div class="ct"><span class="bar"></span><h3>提案・進行中 施策リスト</h3><span class="sub">このブラウザに保存（localStorage）— 自由に追加・編集・削除OK</span>
+    <div class="ct"><span class="bar"></span><h3>提案・進行中 施策リスト — 次の「活動」候補</h3><span class="sub">このブラウザに保存（localStorage）— 自由に追加・編集・削除OK</span>
       <div class="r" style="display:flex;gap:8px">
         <button class="btnG" id="sisAdd">＋ 施策を追加</button>
         <button class="btnQ" id="sisReset" title="初期リスト（8/18版・41件）に戻す">初期データに戻す</button>
@@ -382,21 +313,35 @@ function renderOps(){
     </div>
     <div class="sisCtl" id="sisCtl"></div>
     <div class="twrap"><table class="sisTbl" id="sisTbl"></table></div>
-    <div class="localnote" style="margin-top:9px">✎ 保存先はこのブラウザの localStorage。共有時は同URLを開いた各自のローカル編集となる。</div>
+    <div class="localnote" style="margin-top:9px">✎ 合意→実装に進んだ施策は、上の活動台帳に実測付きで昇格していく建て付け。</div>
   </div>
 
   <div class="card s12 reveal"><div class="insight" style="font-size:10.5px">
-    出典：全体ボリューム＝<b>GA4実測</b>（Toyota.jp プロパティ・Windsor.ai経由・7/22〜8/18取得 2026-08-19）／ 導線の質・効果＝<b>導線価値レポート#007</b>（GA4データ探索 7/7〜8/5・完了ページ実機検証 8/5）／ <a href="${J.lines[0].url}" target="_blank" rel="noopener" style="color:var(--cy)">T-Connect導線 実URL（padid付き）</a> ／ 用品UGは遷移先が別サイトのため toyota.jp 側GA4では計測不可（連携待ち）。
+    出典：効果・クリック＝<b>導線価値レポート#007</b>（GA4データ探索 7/7〜8/5 実測）／ 露出面・母数＝GA4実測（Toyota.jp・7/22〜8/18・Windsor.ai経由 2026-08-19取得）／ <a href="${ACTS[0].url}" target="_blank" rel="noopener" style="color:var(--cy)">T-Connectバナー実URL（padid付き）</a> ／ 用品UGは遷移先が別サイトのため計測連携待ち。
   </div></div>`;
 
   drawOpsLift(J);
-  drawOpsVolume(T);
   drawOpsScenario(J);
   drawSisaku();
-  // JPロジック・キャプチャ
-  $$('#opsRoot [data-logic]').forEach(el=>el.onclick=()=>logicOpen(logicHTML(el.dataset.logic)));
-  $$('#opsRoot [data-cap]').forEach(el=>el.onclick=()=>capOpen(el.dataset.cap,el.dataset.t,el.dataset.m,el.dataset.u));
+  $('#goAssets2').onclick=()=>showView('assets');
+  $$('#opsRoot .actRow').forEach(r=>r.onclick=()=>actOpen(+r.dataset.act));
   runCountUps(root);
+}
+
+/* 活動詳細モーダル：何が変わったか */
+function actOpen(i){
+  const a=OWNED.junction.activities[i], J=OWNED.junction;
+  const tl=a.timeline?`
+    <div class="lrow"><div class="lk">実測ログ</div><div class="lf"><div style="font-size:11px;color:var(--mut);margin-bottom:6px">成果第1号（7/30深夜）の全行動 — 4分43秒・20ページ・37イベント</div>
+    <div class="tl" style="margin-left:4px">${J.timeline.map((r,x)=>`<div class="tlr ${x===5?'gold':''}"><div class="tt">${r.t}</div><div class="te" style="font-size:11.8px">${r.e}</div></div>`).join('')}</div></div></div>`:'';
+  logicOpen(`<h3>${a.id}　${a.name}<span class="v" style="font-size:13px;color:${a.state==='live'?'var(--gn)':'var(--am)'}">${a.state==='live'?'● LIVE '+a.since+'〜':'◪ 外部計測'}</span></h3>
+    <div class="lsub">${a.target}</div>
+    <div class="lrow gold"><div class="lk">何をしたか</div><div class="lf">${a.what}<small>Before: ${a.before}<br>After: ${a.after}</small></div></div>
+    <div class="lrow"><div class="lk">ボリューム</div><div class="lf"><b>${a.vol.clicks}</b><small>露出面: ${a.vol.exposure}／${a.vol.note}</small></div></div>
+    <div class="lrow"><div class="lk">生んだ効果</div><div class="lf">${a.fx.map(f=>`<div style="margin-bottom:5px"><span style="font-family:var(--mono);font-size:9.5px;color:var(--gd);letter-spacing:.1em">${f[0]}</span><br>${f[1]}</div>`).join('')}</div></div>
+    ${tl}
+    <div class="lrow"><div class="lk">次の一手</div><div class="lf">${a.next}</div></div>
+    <div class="lsrc">出典：レポート#007（GA4実測 7/7〜8/5）／ 露出面＝GA4実測 7/22〜8/18 ／ <a href="${a.url}" target="_blank" rel="noopener" style="color:var(--cy)">実ページを開く ↗</a></div>`);
 }
 
 function drawOpsLift(J){
@@ -407,30 +352,10 @@ function drawOpsLift(J){
     return `<div class="liftRow">
       <div class="t"><b>${r.p}</b><span class="pill ${r.hot?'up':'down'}">${r.d}</span></div>
       <div class="bars">
-        <div class="bwrap"><span>導線経由</span><div><div class="bar2" style="width:${r.a/mx*100}%;background:linear-gradient(90deg,${r.hot?'var(--te)':'#5B6B84'},${r.hot?'var(--cy)':'#3d4c66'})"></div></div><span class="val">${r.a}${unit}</span></div>
-        <div class="bwrap"><span>通常完了者</span><div><div class="bar2" style="width:${r.b/mx*100}%;background:#31415C"></div></div><span class="val">${r.b}${unit}</span></div>
+        <div class="bwrap"><span>クリック者</span><div><div class="bar2" style="width:${r.a/mx*100}%;background:linear-gradient(90deg,${r.hot?'var(--te)':'#5B6B84'},${r.hot?'var(--cy)':'#3d4c66'})"></div></div><span class="val">${r.a}${unit}</span></div>
+        <div class="bwrap"><span>非クリック者</span><div><div class="bar2" style="width:${r.b/mx*100}%;background:#31415C"></div></div><span class="val">${r.b}${unit}</span></div>
       </div></div>`;
   }).join('');
-}
-
-function drawOpsVolume(T){
-  const c=E('chOpsVolume'); if(!c)return;
-  const ds=T.daily, days=[...Array(28)].map((_,i)=>{
-    const d=new Date('2026-07-22'); d.setDate(d.getDate()+i);
-    return `${d.getMonth()+1}/${d.getDate()}`;
-  });
-  c.setOption(baseOpt({
-    grid:{left:46,right:60,top:32,bottom:26},
-    legend:{top:0,textStyle:{color:TX2,fontSize:10.5},data:['試乗予約 完了（設置面到達）','見積りSIM完了']},
-    xAxis:axX({data:days,axisLabel:{color:MUT,fontSize:9,fontFamily:MONOF,interval:3}}),
-    yAxis:[axY({name:'予約完了/日',nameTextStyle:{color:MUT,fontSize:9}}),
-           axY({name:'見積SIM/日',position:'right',splitLine:{show:false},nameTextStyle:{color:MUT,fontSize:9},axisLabel:{formatter:v=>fmtJP(v)}})],
-    series:[
-      {name:'試乗予約 完了（設置面到達）',type:'bar',data:ds.map(r=>r[1]),barWidth:'55%',
-       itemStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'#FFE98A'},{offset:1,color:'#C98500'}]},borderRadius:[3,3,0,0]}},
-      {name:'見積りSIM完了',type:'line',yAxisIndex:1,data:ds.map(r=>r[2]),symbol:'none',lineStyle:{color:CY,width:2},smooth:.3}
-    ]
-  }));
 }
 
 function drawOpsScenario(J){
@@ -438,13 +363,13 @@ function drawOpsScenario(J){
   const ks=J.scenarios.map(s=>`${s.k}\n${s.r}%`);
   c.setOption(baseOpt({
     grid:{left:52,right:56,top:34,bottom:34},
-    legend:{top:0,textStyle:{color:TX2,fontSize:10.5},itemWidth:14,data:['年間導線経由（件）','年間価値（万円）']},
+    legend:{top:0,textStyle:{color:TX2,fontSize:10.5},itemWidth:14,data:['年間クリック（件）','年間価値（万円）']},
     xAxis:axX({data:ks,axisLabel:{color:MUT,fontSize:10,fontFamily:MONOF,interval:0,lineHeight:15}}),
     yAxis:[axY({name:'件',nameTextStyle:{color:MUT,fontSize:9}}),
            axY({name:'万円',position:'right',splitLine:{show:false},nameTextStyle:{color:MUT,fontSize:9}})],
     series:[
-      {name:'年間導線経由（件）',type:'bar',data:J.scenarios.map((s,i)=>({value:s.n,itemStyle:{color:i===0?'#31415C':{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'#FFE98A'},{offset:1,color:'#C98500'}]},borderRadius:[5,5,0,0]}})),
-       barWidth:34,label:{show:true,position:'top',color:TX2,fontFamily:MONOF,fontSize:10,formatter:p=>CM(p.value)}},
+      {name:'年間クリック（件）',type:'bar',data:J.scenarios.map((s,i)=>({value:s.n,itemStyle:{color:i===0?'#31415C':{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'#FFE98A'},{offset:1,color:'#C98500'}]},borderRadius:[5,5,0,0]}})),
+       barWidth:30,label:{show:true,position:'top',color:TX2,fontFamily:MONOF,fontSize:10,formatter:p=>CM(p.value)}},
       {name:'年間価値（万円）',type:'line',yAxisIndex:1,data:J.scenarios.map(s=>s.v),symbol:'circle',symbolSize:8,
        lineStyle:{color:TE,width:2.5},itemStyle:{color:TE},
        label:{show:true,position:'right',color:TE,fontFamily:MONOF,fontSize:10,formatter:p=>p.value+'万'}}
@@ -524,126 +449,208 @@ function sisEdit(ix){
   };
 }
 
-/* ================= SECTOR 10: SNSパフォーマンス ================= */
-const POST_CAPS={   // 投稿 → 実画面キャプチャ
-  'Db83dLLgc-i':{img:'assets/sns/ig_viral.jpg'},
-  'DcIBp7lkhOX':{img:'assets/sns/ig_reel.jpg'},
-  'DcATpx-AhoP':{img:'assets/sns/ig_battery.jpg'},
-  'Db7JyBRFISK':{img:'assets/sns/ig_key.jpg'},
-  'x_suiso':{img:'assets/sns/x_post_h2.jpg'},
-  'fb_suiso':{img:'assets/sns/fb_post.jpg'},
-  'yt_seirei':{img:'assets/sns/yt_dr.jpg'},
-  'yt_fukushi':{img:'assets/sns/yt_sr.jpg'}
-};
-function postCapKey(p){
-  const m=p.url.match(/\/p\/([^/]+)\//); if(m)return m[1];
-  if(p.title.includes('水素')&&p.sns==='X')return 'x_suiso';
-  if(p.title.includes('水素')&&p.sns==='FB')return 'fb_suiso';
-  if(p.title.includes('精霊馬')&&p.sns==='YT')return 'yt_seirei';
-  if(p.title.includes('福祉'))return 'yt_fukushi';
-  return null;
+/* ================= SECTOR 10: SNSパフォーマンス（バズ → 媒体別 → ソート表 → 四象限） ================= */
+const CAT_COLORS={'キャラ×季節':'#FFD84D','実用ホラー':'#D55181','道場シリーズ':'#38BDF8','活動報告':'#199E70','企業ニュース':'#C98500','感動CM（広告併用）':'#9085E9'};
+const PFC={X:'#8A96A8',IG:'#D55181',YT:'#E66767',FB:'#3987E5'};
+ST.snsSort={key:'xm',dir:-1};
+
+function postModal(p){
+  const m=[ p.exp!=null?['露出',fmtJP(p.exp)+(p.sns==='YT'?' 回視聴':' imp')]:null,
+    p.likes!=null?['いいね',CM(p.likes)]:null,
+    p.rts!=null?[p.sns==='X'?'リポスト':'シェア・RP',CM(p.rts)]:null,
+    p.com!=null?['コメント・返信',CM(p.com)]:null,
+    p.xm!=null?['露出倍率','×'+(p.xm>=10?Math.round(p.xm):p.xm.toFixed(2))+'（媒体通常帯比）']:null,
+    p.rm!=null?['反応倍率','×'+(p.rm>=10?Math.round(p.rm):p.rm.toFixed(2))]:null ].filter(Boolean);
+  const meta=`${p.d} 投稿 ・ ${p.ch} ・ カテゴリ: ${p.cat}　｜　`+m.map(x=>`${x[0]} ${x[1]}`).join(' ・ ');
+  if(p.cap) capOpen(p.cap, `${p.sns}：${p.title}`, meta, p.url);
+  else logicOpen(`<h3 style="font-size:15px;line-height:1.6">${p.sns}：${p.title}</h3><div class="lsub">${p.d} 投稿 ・ ${p.ch} ・ カテゴリ: ${p.cat}</div>
+    ${m.map(x=>`<div class="lrow"><div class="lk">${x[0]}</div><div class="lf"><b class="num" style="font-size:15px">${x[1]}</b></div></div>`).join('')}
+    <div class="lsrc">実測 2026-08-19 ／ <a href="${p.url}" target="_blank" rel="noopener" style="color:var(--cy)">実ページを開く ↗</a></div>`);
 }
-const ACC_CAPS={x:'assets/sns/x_profile.jpg',ig:'assets/sns/ig_profile.jpg',fb:'assets/sns/fb_page.jpg',ytsr:'assets/sns/yt_sr.jpg',ytdr:'assets/sns/yt_dr.jpg'};
 
 function renderSNS(){
   const S=OWNED.sns, root=$('#snsRoot');
-  const ac=S.accounts;
-  const totalF=647000+851000+804000+560000+S.ytTotal.f;
+  const buzz=S.posts2.find(p=>p.buzz&&p.sns==='IG'), buzzYT=S.posts2.find(p=>p.buzz&&p.sns==='YT');
 
   root.innerHTML=`
-  <!-- 実測ヘッダ -->
-  <div class="card glow s12 reveal">
-    <div class="ct"><span class="bar" style="background:var(--gd);box-shadow:0 0 8px rgba(255,216,77,.5)"></span><h3>公式アカウント 実測ボード</h3><span class="sub">クロール ${OWNED.crawledAt}（Δは7/29実測比）— カードクリックで実画面</span>
-      <div class="r"><span style="font-size:11px;color:var(--tx2)">総フォロワー・登録 <b class="num" style="color:var(--tx);font-size:14px">${fmtF(totalF)}</b>　·　資産換算は<a href="javascript:void(0)" id="goAssets" style="color:var(--gd)">オウンド資産</a>へ</span></div></div>
-    <div class="snsGrid">${ac.map(a=>{
-      const d=a.f-a.fPrev;
-      const cap=ACC_CAPS[a.id];
-      return `<div class="snsCard ${cap?'clickable':''}" style="--ac:${a.col}" ${cap?`data-cap="${cap}" data-t="${a.sns} ${a.name}" data-m="取得 ${OWNED.crawledAt}" data-u="${a.url}"`:''}>
-      <div class="h"><span class="snsn">${a.sns}</span><span class="asof">${a.asof}</span></div>
-      <div class="nm">${a.name}</div>
-      <div class="fv">${fmtF(a.f)}<small> ${a.sns==='YouTube'?'登録者':'フォロワー'}</small>
-        ${d>0?`<span class="pill up" style="font-size:10px">▲ +${fmtF(d)}</span>`:d===0?`<span class="pill flat" style="font-size:10px">→ ±0</span>`:''}</div>
-      <div class="sub2">${a.posts}<br>${a.note}</div>
-      <div class="foot2">${cap?'<span class="hasCap">実画面 ▸</span>':'<span></span>'}<a class="lnk" href="${a.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">開く ↗</a></div>
-    </div>`}).join('')}</div>
+  <!-- バズ・ヒーロー -->
+  <div class="card glow s12 reveal" style="border-color:color-mix(in srgb,var(--gd) 34%,transparent)">
+    <div style="display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:20px;align-items:center">
+      <a href="javascript:void(0)" id="buzzCap" style="display:block;border-radius:12px;overflow:hidden;border:1px solid color-mix(in srgb,var(--gd) 40%,transparent)">
+        <img src="${buzz.cap}" alt="精霊馬" style="width:100%;display:block"></a>
+      <div>
+        <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.24em;color:var(--gd);margin-bottom:6px">BUZZ OF THE WEEK — 通常帯の80倍</div>
+        <div style="font-size:16.5px;font-weight:800;line-height:1.6">お盆の帰省ラッシュ。もしご先祖様も渋滞に巻き込まれていたら？<span style="font-size:11px;color:var(--mut);font-weight:400">（精霊馬・CV:ファイルーズあい・8/13）</span></div>
+        <div style="display:flex;gap:22px;flex-wrap:wrap;margin:13px 0 10px">
+          <div><div style="font-size:10px;color:var(--mut)">いいね（IG）</div><div class="num" style="font-size:27px;font-weight:800;color:var(--gd)"><span data-cu="8.9" data-dec="1">0</span>万</div><div style="font-size:9.5px;color:var(--gn)">通常帯1,100の <b>81倍</b></div></div>
+          <div><div style="font-size:10px;color:var(--mut)">シェア（拡散の源泉）</div><div class="num" style="font-size:27px;font-weight:800"><span data-cu="4802">0</span></div><div style="font-size:9.5px;color:var(--mut)">コメント463</div></div>
+          <div><div style="font-size:10px;color:var(--mut)">YouTube版（ドライバーズch）</div><div class="num" style="font-size:27px;font-weight:800"><span data-cu="30">0</span>万<small style="font-size:11px;color:var(--tx2)">回</small></div><div style="font-size:9.5px;color:var(--gn)">ch通常帯500の <b>600倍</b></div></div>
+        </div>
+        <div style="font-size:11.5px;color:var(--tx2);line-height:1.85">勝ち筋の分解：<b class="hl">キャラ（精霊馬）× 季節文脈（お盆渋滞）× 声優起用</b>の三段掛け。シェア4,802がIGアルゴの最重要シグナルを直撃し、海外からも「日本のお盆らしさ」への共感コメントが発生。<b class="hlc">IG・YT・Xの3面同時展開</b>で媒体別の伸びが比較可能になった。</div>
+      </div>
+    </div>
   </div>
 
-  <!-- 投稿パフォーマンス（媒体タブ + ランキング） -->
-  <div class="card s7 reveal">
-    <div class="ct"><span class="bar"></span><h3>投稿パフォーマンス ランキング</h3><span class="sub">実測 8/19 — 投稿をクリックすると実画面キャプチャ</span></div>
-    <div class="mtab" id="snsTabCtl"></div>
-    <div id="snsPosts"></div>
-    <div id="snsTabNote" style="font-size:10.5px;color:var(--mut);margin-top:8px"></div>
+  <!-- 媒体別ボード -->
+  <div class="card s12 reveal">
+    <div class="ct"><span class="bar"></span><h3>媒体別ボード — 最新投稿の実測とコメント</h3><span class="sub">クロール ${OWNED.crawledAt}・カードクリックで実画面</span></div>
+    <div class="grid" style="gap:12px">
+      ${S.media.map(md=>`
+      <div class="s6" style="min-width:0"><div class="mediaBox clickable" data-mcap="${md.cap}" data-mt="${md.name}" data-mu="${md.url}" style="--ac:${md.col}">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+          <span style="font-family:var(--mono);font-weight:800;font-size:12px;color:${md.col}">${md.id}　<span style="color:var(--tx);font-family:inherit;font-weight:700">${md.name}</span></span>
+          <span class="num" style="font-size:13px;color:var(--tx)">${md.f}<span style="font-size:9px;color:var(--mut)"> ${md.id==='YT'?'登録':'フォロワー'}・${md.asof}</span></span>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:9px">
+          <div style="font-size:9.5px;color:var(--mut);font-family:var(--mono);letter-spacing:.12em;margin-bottom:3px">LATEST POST ・ ${md.latest.d}</div>
+          <div style="font-size:12px;font-weight:700;line-height:1.55">${md.latest.t}</div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-family:var(--mono);font-size:10.5px;color:var(--tx2)">
+            <span>${md.latest.exp}</span>${md.latest.likes!=null?`<span>♥ ${CM(md.latest.likes)}</span>`:''}<span>${md.latest.rts}</span><span>${md.latest.com}</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.8"><span style="font-family:var(--mono);font-size:9px;color:${md.col};letter-spacing:.14em">ANALYSIS</span><br>${md.note}</div>
+      </div></div>`).join('')}
+    </div>
   </div>
 
-  <!-- 刺さる/刺さらない -->
-  <div class="card s5 reveal">
-    <div class="ct"><span class="bar"></span><h3>何が刺さるのか</h3><span class="sub">直近2週間の実測から — 事例クリックで実画面</span></div>
-    <div class="wl">${S.insights.win.map((w,i)=>{
-      const capMap=['assets/sns/ig_viral.jpg','assets/sns/ig_battery.jpg','assets/sns/ig_reel.jpg','assets/sns/yt_dr.jpg'];
-      return `<div class="wlIt clickable" data-cap="${capMap[i]}" data-t="◎ ${w.t}" data-m="${w.d}" data-u=""><div class="t">◎ ${w.t}<span class="m">${w.m}</span></div><div class="d">${w.d}</div></div>`}).join('')}</div>
-    <div class="wl" style="margin-top:10px">${S.insights.lose.map(w=>`<div class="wlIt lose"><div class="t">△ ${w.t}<span class="m">${w.m}</span></div><div class="d">${w.d}</div></div>`).join('')}</div>
-    <div class="insight warn" style="margin-top:10px;font-size:10.8px">${S.insights.boost}</div>
+  <!-- ソート可能な投稿テーブル -->
+  <div class="card s12 reveal">
+    <div class="ct"><span class="bar"></span><h3>投稿パフォーマンス 一覧</h3><span class="sub">列見出しクリックでソート・行クリックで実画面／詳細 — 実測 8/19</span>
+      <div class="r" id="snsCatFilter"></div></div>
+    <div class="twrap"><table id="snsTable"></table></div>
+    <div style="font-size:10.3px;color:var(--mut);margin-top:7px">露出＝imp（X）／回視聴（YT）。IG・FBはリーチ非公開のため <b>倍率＝いいね基準の媒体内通常帯比</b>（代理指標）。倍率の基準値：X imp4.2万・いいね等170／IG 1,100／FB 450／YTはチャンネル別（SR 6千・TM 1.8万・DR 500）。</div>
+  </div>
+
+  <!-- 四象限 -->
+  <div class="card s8 reveal">
+    <div class="ct"><span class="bar"></span><h3>投稿カテゴリ × 四象限 — どの型が跳ねるか</h3><span class="sub">X軸=露出倍率（媒体通常帯比・対数）／ Y軸=反応倍率（同）・バブル=リアクション実数</span></div>
+    <div class="chart" id="chSnsQuad" style="height:340px"></div>
+    <div style="font-size:10.3px;color:var(--mut);margin-top:4px">リアクション実測が取れる8投稿をプロット（YTは反応数非公開のため対象外：精霊馬YT版は露出600倍・福祉篇は1,175倍/広告併用）。1.0=その媒体の通常投稿。</div>
+  </div>
+  <div class="card s4 reveal">
+    <div class="ct"><span class="bar"></span><h3>カテゴリ別の成績</h3><span class="sub">倍率平均（実測）</span></div>
+    <div id="catTable"></div>
+    <div class="insight" style="margin-top:11px;font-size:10.8px"><span class="it">READ</span>右上に飛び抜ける<b>キャラ×季節</b>が拡散の主砲。<b>活動報告</b>は露出0.9倍でも反応1.2倍＝<b class="hl">コア層に濃く刺さる</b>型で、体験レポート化すれば露出も伸ばせる。<b>道場・実用ホラー</b>は通常帯の安定運転＝会話率で効くシリーズ資産。</div>
   </div>
 
   <!-- フォロワー動向 + パワー -->
   <div class="card s5 reveal">
     <div class="ct"><span class="bar"></span><h3>3週間のフォロワー動向</h3><span class="sub">7/29 実測 → 8/19 実測</span></div>
-    <div class="chart" id="chSnsDelta" style="height:270px"></div>
+    <div class="chart" id="chSnsDelta" style="height:250px"></div>
   </div>
   <div class="card s7 reveal">
-    <div class="ct"><span class="bar"></span><h3>アカウントパワー 100点採点式 — 配点マップ</h3><span class="sub">各媒体アルゴリズムの公開情報に基づく配点。管理画面データ受領後にスコア化</span></div>
-    <div class="chart" id="chSnsPower" style="height:270px"></div>
-    <div style="font-size:10.3px;color:var(--mut);margin-top:6px;line-height:1.8">${S.powerNote}</div>
+    <div class="ct"><span class="bar"></span><h3>アカウントパワー 100点採点式 — 配点マップ</h3><span class="sub">管理画面データ受領後にスコア化</span></div>
+    <div class="chart" id="chSnsPower" style="height:250px"></div>
   </div>
 
   <div class="card s12 reveal"><div class="insight" style="font-size:10.5px">
-    出典：フォロワー・投稿数値＝各公式アカウント実測クロール（<a href="https://x.com/TOYOTA_PR" target="_blank" rel="noopener" style="color:var(--cy)">X</a>・<a href="https://www.instagram.com/toyota_jp/" target="_blank" rel="noopener" style="color:var(--cy)">Instagram</a>・<a href="https://www.facebook.com/ToyotaMotorCorporation" target="_blank" rel="noopener" style="color:var(--cy)">Facebook</a>・<a href="https://www.youtube.com/@toyotajpchannel" target="_blank" rel="noopener" style="color:var(--cy)">YouTube SR</a>・<a href="https://www.youtube.com/@toyotatimes" target="_blank" rel="noopener" style="color:var(--cy)">トヨタイムズ</a>・<a href="https://www.youtube.com/@toyotadriverschannel" target="_blank" rel="noopener" style="color:var(--cy)">ドライバーズch</a>）2026-08-19 JST。TikTokのみアクセス制限のため7/29公開値。SNS→JP流入の実数はGA4のセッション参照元で計測設計中（メルマガ誘導は9.5万件/年・UTM実績）。金額換算はすべて「オウンド資産」ビューに集約。
+    出典：全数値＝各公式アカウント実測クロール（<a href="https://x.com/TOYOTA_PR" target="_blank" rel="noopener" style="color:var(--cy)">X</a>・<a href="https://www.instagram.com/toyota_jp/" target="_blank" rel="noopener" style="color:var(--cy)">Instagram</a>・<a href="https://www.facebook.com/ToyotaMotorCorporation" target="_blank" rel="noopener" style="color:var(--cy)">Facebook</a>・<a href="https://www.youtube.com/@toyotajpchannel" target="_blank" rel="noopener" style="color:var(--cy)">YouTube</a>）2026-08-19 JST。TikTokはアクセス制限のため7/29公開値（80.4万）。金額換算は<a href="javascript:void(0)" id="goAssets3" style="color:var(--gd)">オウンド資産</a>へ集約。リール保持率・保存数・YT高評価などの非公開指標は管理画面データ受領後に追加。
   </div></div>`;
 
-  drawSnsTabs();
+  drawSnsTable();
+  drawSnsQuad(S);
+  drawCatTable(S);
   drawSnsPower(S);
   drawSnsDelta(S);
-  $('#goAssets').onclick=()=>showView('assets');
-  $$('#snsRoot [data-cap]').forEach(el=>el.onclick=()=>capOpen(el.dataset.cap,el.dataset.t,el.dataset.m,el.dataset.u));
+  $('#buzzCap').onclick=()=>capOpen(buzz.cap,'IG 精霊馬の帰省ラッシュ','8/13投稿・いいね8.9万（通常帯81倍）・シェア4,802・コメント463',buzz.url);
+  $('#goAssets3').onclick=()=>showView('assets');
+  $$('#snsRoot .mediaBox').forEach(el=>el.onclick=()=>capOpen(el.dataset.mcap,el.dataset.mt,'取得 '+OWNED.crawledAt,el.dataset.mu));
   runCountUps(root);
 }
 
-function drawSnsTabs(){
+/* ---- ソート可能テーブル ---- */
+ST.snsCat='all';
+function drawSnsTable(){
   const S=OWNED.sns;
-  const tabs=[['all','すべて'],['YT','YouTube'],['IG','Instagram'],['X','X'],['FB','Facebook']];
-  const PFC={X:'#8A96A8',IG:'#D55181',YT:'#E66767',FB:'#3987E5',TT:'#00E5C7'};
-  const counts={all:S.posts.length}; S.posts.forEach(p=>counts[p.sns]=(counts[p.sns]||0)+1);
-  $('#snsTabCtl').innerHTML=tabs.map(([k,l])=>`<span class="chip ${ST.snsTab===k?'on':''}" data-tab="${k}">${k!=='all'?`<span class="sw" style="background:${PFC[k]}"></span>`:''}${l} <b>${counts[k]||0}</b></span>`).join('');
-  $$('#snsTabCtl .chip').forEach(c=>c.onclick=()=>{ST.snsTab=c.dataset.tab;drawSnsTabs()});
+  // カテゴリフィルタチップ
+  const cats=['all',...new Set(S.posts2.map(p=>p.cat))];
+  $('#snsCatFilter').innerHTML=cats.map(c=>`<span class="chip ${ST.snsCat===c?'on':''}" data-c="${c}">${c==='all'?'すべて':`<span class="sw" style="background:${CAT_COLORS[c]||'#8A96A8'}"></span>${c}`}</span>`).join('');
+  $$('#snsCatFilter .chip').forEach(ch=>ch.onclick=()=>{ST.snsCat=ch.dataset.c;drawSnsTable()});
 
-  let posts=[...S.posts].sort((a,b)=>b.main-a.main);
-  if(ST.snsTab!=='all') posts=posts.filter(p=>p.sns===ST.snsTab);
-  $('#snsPosts').innerHTML=posts.map((p,i)=>{
-    const key=postCapKey(p), cap=key&&POST_CAPS[key];
-    return `
-    <div class="postR ${i<3&&ST.snsTab==='all'?'top':''}" ${cap?`data-cap="${cap.img}"`:''} data-t="${p.sns}：${p.title.replace(/"/g,'')}" data-m="${p.d} 投稿 ・ ${p.mainL} ${fmtJP(p.main)} ・ ${p.sub}" data-u="${p.url}">
-      <div class="rk">${i+1}</div>
-      <div class="pf" style="color:${PFC[p.sns]};background:color-mix(in srgb,${PFC[p.sns]} 13%,transparent)">${p.sns}</div>
-      <div><div class="ttl">${p.title}<span class="ptag" style="color:${p.tagc};background:color-mix(in srgb,${p.tagc} 13%,transparent)">${p.tag}</span>${cap?'<span class="hasCap">実画面 ▸</span>':''}</div>
-        <div class="meta2">${p.d} 投稿 ・ ${p.sub}</div></div>
-      <div class="mv"><b>${fmtJP(p.main)}</b><span>${p.mainL}</span></div>
-    </div>`}).join('');
-  // 媒体別の注釈
-  const notes={
-    all:'単位は媒体準拠（imp / 回視聴 / いいね）のため、媒体をまたぐ順位は「その媒体でどれだけ跳ねたか」の目安。',
-    YT:'ドライバーズchの通常帯は数百〜数千回 → 精霊馬30万回は約600倍。ショールーム705万回は広告配信併用と推定。',
-    IG:'通常帯は1,000前後のいいね → 精霊馬8.9万は約70倍。シェア4,802が拡散を牽引。',
-    X:'直近4投稿のimpは1.8万〜5.7万。「ヤバい兆し」ホラー演出シリーズが上位。',
-    FB:'リーチ率が構造的に低い媒体（自然到達〜10%）。活動報告のストック置き場として機能。'
-  };
-  $('#snsTabNote').textContent=notes[ST.snsTab]||'';
-  $$('#snsPosts .postR').forEach(el=>{
-    el.onclick=()=>{
-      if(el.dataset.cap) capOpen(el.dataset.cap,el.dataset.t,el.dataset.m,el.dataset.u);
-      else if(el.dataset.u) window.open(el.dataset.u,'_blank','noopener');
-    };
+  let rows=[...S.posts2];
+  if(ST.snsCat!=='all') rows=rows.filter(p=>p.cat===ST.snsCat);
+  const {key,dir}=ST.snsSort;
+  rows.sort((a,b)=>((b[key]??-1)-(a[key]??-1))*(dir<0?1:-1));
+
+  const cols=[['sns','媒体',0],['title','投稿',0],['d','日付',0],['exp','露出(imp/再生)',1],['likes','いいね',1],['rts','RP・シェア',1],['com','コメント',1],['xm','露出倍率',1],['rm','反応倍率',1]];
+  $('#snsTable').innerHTML=`<thead><tr>${cols.map(([k,l,n])=>`<th class="${n?'sortable num':''}" data-k="${n?k:''}">${l}${ST.snsSort.key===k?`<span class="arrow">${ST.snsSort.dir<0?'▼':'▲'}</span>`:''}</th>`).join('')}</tr></thead>
+  <tbody>${rows.map(p=>`<tr class="snsRow" data-i="${OWNED.sns.posts2.indexOf(p)}">
+    <td><span class="pf" style="display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:7px;color:${PFC[p.sns]};background:color-mix(in srgb,${PFC[p.sns]} 13%,transparent)">${p.sns}</span></td>
+    <td style="min-width:250px;font-size:12px;line-height:1.6">${p.buzz?'<span class="ptag" style="color:var(--gd);background:color-mix(in srgb,var(--gd) 14%,transparent);margin:0 6px 0 0">バズ</span>':''}${p.ad?'<span class="ptag" style="color:#9085E9;background:color-mix(in srgb,#9085E9 14%,transparent);margin:0 6px 0 0">広告併用</span>':''}${p.title}<div style="font-size:9.5px;color:var(--mut)"><span style="color:${CAT_COLORS[p.cat]}">■</span> ${p.cat} ・ ${p.ch}${p.cap?' ・ <span style="color:var(--gd)">実画面 ▸</span>':''}</div></td>
+    <td class="num" style="font-size:10.5px;color:var(--mut)">${p.d}</td>
+    <td class="num">${p.exp!=null?fmtJP(p.exp):'<span style="color:var(--mut)">非公開</span>'}</td>
+    <td class="num">${p.likes!=null?CM(p.likes):'—'}</td>
+    <td class="num">${p.rts!=null?CM(p.rts):'—'}</td>
+    <td class="num">${p.com!=null?CM(p.com):'—'}</td>
+    <td class="num" style="color:${p.xm>=2?'var(--gd)':p.xm>=1?'var(--gn)':'var(--tx2)'};font-weight:700">×${p.xm>=10?Math.round(p.xm):p.xm.toFixed(2)}</td>
+    <td class="num" style="color:${p.rm==null?'var(--mut)':p.rm>=2?'var(--gd)':p.rm>=1?'var(--gn)':'var(--tx2)'};font-weight:700">${p.rm!=null?'×'+(p.rm>=10?Math.round(p.rm):p.rm.toFixed(2)):'—'}</td>
+  </tr>`).join('')}</tbody>`;
+  $$('#snsTable th.sortable').forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k; if(!k)return;
+    ST.snsSort = ST.snsSort.key===k ? {key:k,dir:-ST.snsSort.dir} : {key:k,dir:-1};
+    drawSnsTable();
   });
+  $$('#snsTable .snsRow').forEach(tr=>tr.onclick=()=>postModal(OWNED.sns.posts2[+tr.dataset.i]));
+}
+
+/* ---- 四象限 ---- */
+function drawSnsQuad(S){
+  const c=E('chSnsQuad'); if(!c)return;
+  const pts=S.posts2.filter(p=>p.rm!=null);
+  const cats=[...new Set(pts.map(p=>p.cat))];
+  c.setOption(baseOpt({
+    grid:{left:56,right:26,top:34,bottom:44},
+    legend:{top:0,textStyle:{color:TX2,fontSize:10.5},data:cats},
+    xAxis:{type:'log',name:'露出倍率（対数）',nameLocation:'middle',nameGap:28,nameTextStyle:{color:MUT,fontSize:10},
+      min:.5,max:200,axisLine:{lineStyle:{color:LINE2}},splitLine:{lineStyle:{color:LINE,type:[3,4]}},
+      axisLabel:{color:MUT,fontSize:10,fontFamily:MONOF,formatter:v=>'×'+v}},
+    yAxis:{type:'log',name:'反応倍率（対数）',nameGap:40,nameLocation:'middle',nameTextStyle:{color:MUT,fontSize:10},
+      min:.5,max:200,axisLine:{show:false},splitLine:{lineStyle:{color:LINE,type:[3,4]}},
+      axisLabel:{color:MUT,fontSize:10,fontFamily:MONOF,formatter:v=>'×'+v}},
+    tooltip:Object.assign({},TIP,{formatter:p=>{
+      const d=p.data.p;
+      return `<b>${d.sns}：${d.title.slice(0,30)}…</b><br>露出 ×${d.xm>=10?Math.round(d.xm):d.xm.toFixed(2)} ・ 反応 ×${d.rm.toFixed(2)}<br><span style="color:#A5B6CE;font-size:10.5px">リアクション計 ${CM(d.rea)} ・ ${d.cat}</span>`}}),
+    series:cats.map(cat=>({name:cat,type:'scatter',
+      data:pts.filter(p=>p.cat===cat).map(p=>({value:[p.xm,p.rm],p,
+        symbolSize:Math.max(13,Math.sqrt(p.rea)/3.2),
+        label:p.xm>10?{show:true,position:'left',color:'#FFE98A',fontSize:10,fontWeight:700,formatter:'精霊馬 ×81'}:{show:false},
+        itemStyle:{color:CAT_COLORS[cat],opacity:.88,borderColor:'#0A1120',borderWidth:1.5}}))})),
+    graphic:[
+      {type:'text',right:30,top:40,style:{text:'拡散 × 高反応（バズ）',fill:'#FFD84D',fontSize:10,fontFamily:FONT}},
+      {type:'text',left:64,top:40,style:{text:'コアに刺さる（濃い反応）',fill:'#199E70',fontSize:10,fontFamily:FONT}},
+      {type:'text',left:64,bottom:52,style:{text:'通常運転',fill:'#647694',fontSize:10,fontFamily:FONT}},
+      {type:'text',right:30,bottom:52,style:{text:'見られたが反応薄',fill:'#647694',fontSize:10,fontFamily:FONT}}
+    ]
+  }));
+  // 基準線 x=1, y=1
+  c.setOption({series:[{markLine:{silent:true,symbol:'none',lineStyle:{color:'#3d4c66',type:'dashed'},
+    data:[{xAxis:1},{yAxis:1}],label:{show:false}}}]});
+}
+
+function drawCatTable(S){
+  const pts=S.posts2.filter(p=>p.rm!=null);
+  const byCat={};
+  pts.forEach(p=>{(byCat[p.cat]=byCat[p.cat]||[]).push(p)});
+  const rows=Object.entries(byCat).map(([cat,ps])=>({cat,
+    n:ps.length,
+    xm:ps.reduce((a,p)=>a+p.xm,0)/ps.length,
+    rm:ps.reduce((a,p)=>a+p.rm,0)/ps.length}))
+    .sort((a,b)=>b.xm-a.xm);
+  // YT露出のみ組も追記
+  $('#catTable').innerHTML=rows.map(r=>`
+    <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px dashed var(--line)">
+      <div style="font-size:11.8px"><span style="color:${CAT_COLORS[r.cat]}">■</span> <b>${r.cat}</b> <span style="color:var(--mut);font-size:9.5px">${r.n}本</span></div>
+      <div class="num" style="font-size:11px;color:${r.xm>=2?'var(--gd)':'var(--tx2)'}">露出 ×${r.xm>=10?Math.round(r.xm):r.xm.toFixed(2)}</div>
+      <div class="num" style="font-size:11px;color:${r.rm>=1.1?'var(--gn)':'var(--tx2)'}">反応 ×${r.rm>=10?Math.round(r.rm):r.rm.toFixed(2)}</div>
+    </div>`).join('')+`
+    <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px dashed var(--line)">
+      <div style="font-size:11.8px"><span style="color:${CAT_COLORS['感動CM（広告併用）']}">■</span> <b>感動CM</b> <span style="color:var(--mut);font-size:9.5px">1本・広告併用</span></div>
+      <div class="num" style="font-size:11px;color:var(--tx2)">露出 ×1175</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 4px">
+      <div style="font-size:11.8px"><span style="color:${CAT_COLORS['企業ニュース']}">■</span> <b>企業ニュース</b> <span style="color:var(--mut);font-size:9.5px">1本・YT</span></div>
+      <div class="num" style="font-size:11px;color:var(--tx2)">露出 ×1.11</div>
+    </div>`;
 }
 
 function drawSnsPower(S){
@@ -652,9 +659,9 @@ function drawSnsPower(S){
   const maxBlocks=Math.max(...ms.map(m=>m.blocks.length));
   const series=[];
   for(let bi=0;bi<maxBlocks;bi++){
-    series.push({type:'bar',stack:'p',barWidth:17,
+    series.push({type:'bar',stack:'p',barWidth:15,
       data:ms.map(m=>{const b=m.blocks[bi];return b?{value:b[1],_n:b[0],_s:b[2],itemStyle:{color:m.col,opacity:.34+ .66*(1-bi/maxBlocks),borderColor:'#0A1120',borderWidth:1.2}}:0}),
-      label:{show:true,position:'inside',fontSize:8.8,fontFamily:MONOF,color:'#EAF2FC',
+      label:{show:true,position:'inside',fontSize:8.6,fontFamily:MONOF,color:'#EAF2FC',
         formatter:p=>p.data&&p.data.value>=15?`${p.data._n} ${p.data.value}`:(p.data&&p.data.value?p.data.value:'')}
     });
   }
@@ -686,7 +693,7 @@ function drawSnsDelta(S){
       const r=rows.find(x=>x.n===p.name), d=r.b-r.a;
       return `<b>${p.name}</b><br>7/29: ${fmtF(r.a)} → 8/19: <b>${fmtF(r.b)}</b><br>Δ <b style="color:${d>0?'#34D399':'#A5B6CE'}">${d>0?'+':''}${fmtF(d)||'±0'}</b>${r.n==='TikTok'?'<br><span style="font-size:10px;color:#A5B6CE">8/19取得不可のため7/29値を継続表示</span>':''}`}}),
     series:[
-      {type:'bar',barWidth:13,data:rows.map(r=>r.b).reverse(),
+      {type:'bar',barWidth:12,data:rows.map(r=>r.b).reverse(),
        itemStyle:{color:p=>rows.slice().reverse()[p.dataIndex].col,opacity:.9,borderRadius:[0,4,4,0]},
        label:{show:true,position:'right',fontFamily:MONOF,fontSize:10,color:TX2,
          formatter:p=>{const r=rows.slice().reverse()[p.dataIndex];const d=r.b-r.a;

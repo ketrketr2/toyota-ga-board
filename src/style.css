@@ -542,3 +542,15 @@ select.sel:focus{outline:1px solid var(--cy)}
 /* JPキャプチャ対比 */
 .jpcap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
 @media(max-width:1100px){.jpcap{grid-template-columns:1fr}}
+
+/* ============ OWNED v3（活動台帳・SNSソート表・媒体別・四象限） ============ */
+.actTbl tr.actRow{cursor:pointer;transition:.15s}
+.actTbl tr.actRow:hover{background:color-mix(in srgb,var(--gd) 6%,transparent)}
+.mediaBox{background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:14px 16px;height:100%;position:relative;overflow:hidden;transition:.2s;cursor:pointer}
+.mediaBox::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ac,#8A96A8)}
+.mediaBox:hover{border-color:var(--line2);transform:translateY(-2px)}
+#snsTable tr.snsRow{cursor:pointer;transition:.13s}
+#snsTable tr.snsRow:hover{background:rgba(56,189,248,.05)}
+#snsTable th.sortable{cursor:pointer;white-space:nowrap}
+#snsTable th.sortable:hover{color:var(--cy)}
+#snsTable th .arrow{color:var(--gd);margin-left:3px;font-size:9px}
