@@ -1,0 +1,67 @@
+name: ga-board-daily-sector09
+
+# 毎朝 06:38 JST（= 21:38 UTC 前日）に SECTOR 09「JP活用実績」を前日実測まで更新。
+# Windsor.ai REST → 復号 → 数値差し替え → 再暗号化 → main へコミット（Pages 自動デプロイ）。
+# Settings > Secrets and variables > Actions に
+#   WINDSOR_API_KEY / BOARD_GATE_KEY（"id:pw" 形式）
+# を登録すると自動で有効になる。未登録の間は何もせず緑で終わる。
+
+on:
+  schedule:
+    - cron: "38 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ga-board-daily
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets
+        id: gate
+        env:
+          WK: ${{ secrets.WINDSOR_API_KEY }}
+          GK: ${{ secrets.BOARD_GATE_KEY }}
+        run: |
+          if [ -z "$WK" ] || [ -z "$GK" ]; then
+            echo "::notice::WINDSOR_API_KEY / BOARD_GATE_KEY が未登録のためスキップ（登録すると自動更新が始まります）"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Update SECTOR09 (fetch → decrypt → patch → re-encrypt → verify)
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          WINDSOR_API_KEY: ${{ secrets.WINDSOR_API_KEY }}
+          BOARD_GATE_KEY: ${{ secrets.BOARD_GATE_KEY }}
+        run: |
+          pip install cryptography
+          python3 tools/daily_sector09.py | tee /tmp/s09.txt
+
+      - name: Commit
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          git config user.name  "ga-board-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html
+          if git diff --staged --quiet; then
+            echo "変更なし"
+          else
+            git commit -m "data: SECTOR09 JP活用実績 auto refresh $(date -u -d '+9 hours' +%m/%d)"
+            git pull --rebase -q || true
+            git push
+          fi
